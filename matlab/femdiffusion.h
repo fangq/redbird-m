@@ -1,0 +1,101 @@
+#ifndef _REDBIRD_MATLAB_DIFFUSION_H
+#define _REDBIRD_MATLAB_DIFFUSION_H
+
+#define GET_1ST_POINTER(x,y,z)  if(strcmp(name,#y)==0) {x->y=(z*)mxGetData(item);printf("reading rb3.%s\n",#y);}
+#define GET_ONE_POINTER(x,y,z)  else GET_1ST_POINTER(x,y,z)
+
+#define GET_1ST_FIELD(x,y)  if(strcmp(name,#y)==0) {double *val=mxGetPr(item);x->y=val[0];printf("rb3.%s=%g;\n",#y,(float)(x->y));}
+#define GET_ONE_FIELD(x,y)  else GET_1ST_FIELD(x,y)
+
+#define GET_VEC3_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];\
+                                 printf("rb3.%s=[%g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z));}
+#define GET_VEC34_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];if(mxGetNumberOfElements(item)==4) u->v.w=val[3];\
+                                 printf("rb3.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w));}
+#define GET_VEC4_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];u->v.w=val[3];\
+                                 printf("rb3.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w));}
+
+#define ABS(a)    ((a)<0?-(a):(a))
+#define MIN(a,b)  ((a)>(b)?(a):(b))
+#define MAX(a,b)  ((a)>(b)?(a):(b))
+#define MEXERROR(a)  rb3_throw_exception(999,a,__FILE__,__LINE__)
+#define R_C0       3.335640951981520e-12f  //1/C0 in s/mm
+
+#if (! defined MX_API_VER) || (MX_API_VER < 0x07300000)
+	typedef int dimtype;
+#else
+	typedef size_t dimtype;
+#endif
+
+typedef struct Float4{
+	float x,y,z,w;
+} float4;
+
+typedef struct Float3{
+	float x,y,z;
+} float3;
+
+typedef struct Integer4{
+	int x,y,z,w;
+} int4;
+
+typedef struct Integer3{
+	int x,y,z;
+} int3;
+
+typedef struct Medium{
+	float mua;
+	float mus;
+	float g;
+	float n;
+} medium;
+
+typedef struct RedbirdConfig{
+	double omega;
+	float4 srcpos;
+	float4 srcdir;
+} Config;
+
+typedef struct MMC_mesh{
+	int nn;      /**< number of nodes */
+	int ne;      /**< number of elements */
+	int nf;      /**< number of surface triangles */
+	int prop;    /**< number of media */
+	int ntot;
+	int e0;
+	int isreoriented;
+	float3 *node;/**< node coordinates */
+	int3 *face;  /**< boundary triangle node indices */
+	int4 *elem;  /**< tetrahedron node indices */
+	int  *type;  /**< element-based media index */
+	medium *med; /**< optical property of different media */
+	float *evol; /**< volume of an element */
+	float *area; /**< area of the triangular face */
+	int *rows;
+	int *cols;
+	int *idxcount;
+	int *idxsum;
+} tetmesh;
+
+typedef struct FEMForward{
+	tetmesh *mesh;
+	double *Ar;
+	double *Ai;
+	double *Dr;
+	double *Di;
+	double *deldotdel;
+} Forward;
+
+void femdiffusion(Config *cfg, tetmesh *mesh, Forward *fem);
+void femdiffusion_boundary(Config *cfg, tetmesh *mesh, Forward *fem);
+
+void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh);
+void config_init(Config *cfg);
+void mcx_clearcfg(Config *cfg);
+void mesh_init(tetmesh *mesh);
+void mesh_clear(tetmesh *mesh);
+void forward_init(Forward *fem,tetmesh *m);
+void rb3_usage();
+int sub2ind(tetmesh *mesh, int i, int j);
+extern "C" int rb3_throw_exception(const int id, const char *msg, const char *filename, const int linenum);
+
+#endif
