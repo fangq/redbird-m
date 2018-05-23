@@ -51,6 +51,7 @@ typedef struct Medium{
 
 typedef struct RedbirdConfig{
 	double omega;
+	double reff;
 	float4 srcpos;
 	float4 srcdir;
 } Config;

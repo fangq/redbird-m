@@ -20,6 +20,8 @@
 #include "mex.h"
 #include "femdiffusion.h"
 
+#define N137_REFF 0.468407140351385
+
 void mexFunction(int nlhs,       mxArray *plhs[],
                  int nrhs, const mxArray *prhs[]){
   Config cfg;
@@ -104,6 +106,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
     GET_VEC34_FIELD(cfg,srcdir)
     GET_ONE_FIELD(mesh,e0)
     GET_ONE_FIELD(mesh,isreoriented)
+    GET_ONE_FIELD(cfg,reff)
     else if(strcmp(name,"node")==0){
         arraydim=mxGetDimensions(item);
 	if(arraydim[0]<=0 || arraydim[1]!=3)
@@ -229,6 +232,8 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
           for(i=0;i<=mesh->prop;i++)
              ((double *)(&mesh->med[i]))[j]=val[j*(mesh->prop+1)+i];
         printf("rb3.prop=%d;\n",mesh->prop);
+    }else if(strcmp(name,"detpos")==0){
+        // do nothing
     }else{
         printf("WARNING: redundant field '%s'\n",name);
     }
@@ -236,6 +241,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
 
 void config_init(Config *cfg){
 	cfg->omega=0.f;
+	cfg->reff=N137_REFF;
 	memset(&(cfg->srcpos),0,sizeof(float4));
 	memset(&(cfg->srcdir),0,sizeof(float4));
 }
@@ -324,7 +330,7 @@ void mesh_clear(tetmesh *mesh){
 void femdiffusion_boundary(Config *cfg,tetmesh *mesh, Forward *fem){
     int t,ij;
     double val;
-    double Reff=(1.-0.493)/(1.+0.493);
+    double Reff=(1.0-cfg->reff)/(1.0+cfg->reff);
 
     for(t=0;t<mesh->nf;t++){
         val=mesh->area[t]*Reff*(1.0/12.0);
