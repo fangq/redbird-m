@@ -114,7 +114,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->node=(float3 *)calloc(sizeof(float3),mesh->nn);
         for(j=0;j<3;j++)
           for(i=0;i<mesh->nn;i++)
-             ((float *)(&mesh->node[i]))[j]=val[j*mesh->nn+i];
+             ((double *)(&mesh->node[i]))[j]=val[j*mesh->nn+i];
         printf("rb3.nn=%d;\n",mesh->nn);
     }else if(strcmp(name,"elem")==0){
         arraydim=mxGetDimensions(item);
@@ -158,7 +158,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         double *val=mxGetPr(item);
         mesh->ne=MAX(arraydim[0],arraydim[1]);
 	if(mesh->evol) free(mesh->evol);
-        mesh->evol=(float *)malloc(sizeof(float)*mesh->ne);
+        mesh->evol=(double *)malloc(sizeof(double)*mesh->ne);
         for(i=0;i<mesh->ne;i++)
            mesh->evol[i]=val[i];
         printf("rb3.evol=%d;\n",mesh->ne);
@@ -169,7 +169,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         double *val=mxGetPr(item);
         mesh->nf=MAX(arraydim[0],arraydim[1]);
 	if(mesh->area) free(mesh->area);
-        mesh->area=(float *)malloc(sizeof(float)*mesh->nf);
+        mesh->area=(double *)malloc(sizeof(double)*mesh->nf);
         for(i=0;i<mesh->nf;i++)
            mesh->area[i]=val[i];
         printf("rb3.area=%d;\n",mesh->nf);
@@ -227,7 +227,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->med=(medium *)calloc(sizeof(medium),mesh->prop+1);
         for(j=0;j<4;j++)
           for(i=0;i<=mesh->prop;i++)
-             ((float *)(&mesh->med[i]))[j]=val[j*(mesh->prop+1)+i];
+             ((double *)(&mesh->med[i]))[j]=val[j*(mesh->prop+1)+i];
         printf("rb3.prop=%d;\n",mesh->prop);
     }else{
         printf("WARNING: redundant field '%s'\n",name);
@@ -415,8 +415,8 @@ void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
 	    if(fem->deldotdel)
 	        fem->deldotdel[t*10+(i<<2)+j-i-(i>1)-((i>2)<<1)]=deldotdel;
 
-            sm = Ve/20.0;
-            if (i==j) sm = Ve/10.0;
+            sm = Ve*0.05;
+            if (i==j) sm = Ve*0.1;
 
             /* D*Ve*delFi*delF */
             ra=dcoeff*deldotdel+mua*sm;

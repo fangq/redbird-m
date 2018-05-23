@@ -27,11 +27,11 @@
 #endif
 
 typedef struct Float4{
-	float x,y,z,w;
+	double x,y,z,w;
 } float4;
 
 typedef struct Float3{
-	float x,y,z;
+	double x,y,z;
 } float3;
 
 typedef struct Integer4{
@@ -43,10 +43,10 @@ typedef struct Integer3{
 } int3;
 
 typedef struct Medium{
-	float mua;
-	float mus;
-	float g;
-	float n;
+	double mua;
+	double mus;
+	double g;
+	double n;
 } medium;
 
 typedef struct RedbirdConfig{
@@ -68,8 +68,8 @@ typedef struct MMC_mesh{
 	int4 *elem;  /**< tetrahedron node indices */
 	int  *type;  /**< element-based media index */
 	medium *med; /**< optical property of different media */
-	float *evol; /**< volume of an element */
-	float *area; /**< area of the triangular face */
+	double *evol; /**< volume of an element */
+	double *area; /**< area of the triangular face */
 	int *rows;
 	int *cols;
 	int *idxcount;
