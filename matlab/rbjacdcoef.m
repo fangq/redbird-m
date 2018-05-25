@@ -11,15 +11,14 @@ idx=[2 3 4 6 7 9
      2 3 4 3 4 4];
 id0=[1 5 8 10];
  
-JD=zeros(size(sd,1),size(deldotdel,1));
-
 nmax=max(felem);
+nelem=size(deldotdel,1);
+
+JD=zeros(size(sd,1),nelem);
 
 for i=1:size(sd,1)
-    for j=1:size(idx,2)
-        JD(i,:)=JD(i,:)+(deldotdel(:,idx(1,j)).*(phi(felem(:,idx(2,j)),sd(i,1)).*phi(felem(:,idx(3,j)),sd(i,2))+ ...
-                                                 phi(felem(:,idx(2,j)),sd(i,2)).*phi(felem(:,idx(3,j)),sd(i,1))))';
-    end
+    JD(i,:)=JD(i,:)+sum(deldotdel(:,idx(1,:)).*reshape(phi(felem(:,idx(2,:)),sd(i,1)).*phi(felem(:,idx(3,:)),sd(i,2))+...
+                    phi(felem(:,idx(2,:)),sd(i,2)).*phi(felem(:,idx(3,:)),sd(i,1)),nelem,size(idx,2)),2)';
     for j=1:size(id0,2)
         JD(i,:)=JD(i,:)+(deldotdel(:,id0(j)).*phi(felem(:,j),sd(i,1)).*phi(felem(:,j),sd(i,2)))';
     end
@@ -28,4 +27,5 @@ for i=1:size(sd,1)
         Jd(i,1:nmax(j))=Jd(i,1:nmax(j))+val;
     end
 end
-Jd=Jd*0.25;
+Jd=-Jd*0.25;
+JD=-JD;

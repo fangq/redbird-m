@@ -10,7 +10,7 @@
 addpath('../matlab')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   prepare simulation input
+%%   prepare simulation input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear cfg
@@ -48,7 +48,7 @@ cfg=rbmeshprep(cfg);
 save config.mat
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Build LHS
+%%   Build LHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % tic
 % [Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
@@ -60,13 +60,13 @@ Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
 toc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Build RHS
+%%   Build RHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [rhs,loc,bary]=rbfemrhs(cfg);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Solve for solutions at all freenodes: Afree*sol=rhs
+%%   Solve for solutions at all freenodes: Afree*sol=rhs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic;fprintf(1,'solving for the solution ...\n');
@@ -75,13 +75,13 @@ phi=rbfemsolve(Amat,rhs);
 toc 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Extract detector readings from the solutions
+%%   Extract detector readings from the solutions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 detval=rbfemgetdet(phi, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Build Jacobians
+%%   Build Jacobians
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % nvol=nodevolume(cfg.node,cfg.elem);
@@ -90,7 +90,7 @@ detval=rbfemgetdet(phi, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs);
 % Jd=rbjacdcoef(sd, phi, deldotdel, cfg.elem);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Analytical solution
+%%   Analytical solution
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 sid=13;
@@ -102,7 +102,7 @@ detloc=cfg.node;
 phicw=cwdiffusion(cfg.prop(2,1), cfg.prop(2,2)*(1-cfg.prop(2,3)), 0.431, srcloc, detloc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Visualization
+%%   Visualization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 figure;
