@@ -99,7 +99,8 @@ cfg.srcpos(:,3)=cfg.srcpos(:,3)-z0;
 
 srcloc=cfg.srcpos(sid,1:3);
 detloc=cfg.node;
-phicw=cwdiffusion(cfg.prop(2,1), cfg.prop(2,2)*(1-cfg.prop(2,3)), 0.431, srcloc, detloc);
+
+phicw=cwdiffusion(cfg.prop(2,1), cfg.prop(2,2)*(1-cfg.prop(2,3)), cfg.reff, srcloc, detloc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Visualization
