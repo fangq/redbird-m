@@ -1,4 +1,4 @@
-function Jmua=rbjacmua(sd, phi, nvol, elem)
+function Jmua=rbjacmua(sd, phi, nvol, cfg)
 
 if(nargin<3 || isempty(sd) || isempty(phi) || isempty(nvol))
     error('you must give at least the first 3 inputs and they must not be empty');
@@ -9,11 +9,11 @@ if(size(phi,1)==length(nvol))
     for i=1:size(sd,1)
         Jmua(i,:)=phi(:,sd(i,1)).*phi(:,sd(i,2)).*nvol(:);
     end
-elseif(nargin>3 && size(nvol,1)==size(elem,1))
-    Jmua=zeros(size(elem,1),size(sd,1));
+elseif(nargin>3 && size(nvol,1)==size(cfg.elem,1))
+    Jmua=zeros(size(cfg.elem,1),size(sd,1));
     for i=1:size(sd,1)
         for j=1:4
-           Jmua(:,i)=Jmua(:,i)+phi(elem(:,j),sd(i,1)).*phi(elem(:,j),sd(i,2)).*nvol(:);
+           Jmua(:,i)=Jmua(:,i)+phi(cfg.elem(:,j),sd(i,1)).*phi(cfg.elem(:,j),sd(i,2)).*nvol(:);
         end
     end
     Jmua=Jmua.'*0.25;

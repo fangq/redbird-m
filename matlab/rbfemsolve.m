@@ -28,6 +28,12 @@ for i=1:size(rhs,2)
             [sol{:}]=qmr(Amat,rhs(:,i),varargin{:});
         case 'tfqmr'
             [sol{:}]=tfqmr(Amat,rhs(:,i),varargin{:});
+        case 'cgs'
+            [sol{:}]=cgs(Amat,rhs(:,i),varargin{:});
+        case 'lsqr'
+            [sol{:}]=lsqr(Amat,rhs(:,i),varargin{:});
+        case 'gmres'
+            [sol{:}]=gmres(Amat,rhs(:,i),varargin{:});
         case 'gmres'
             [sol{:}]=gmres(Amat,rhs(:,i),varargin{:});
         case 'pcg'

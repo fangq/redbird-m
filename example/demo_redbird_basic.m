@@ -7,7 +7,7 @@
 % This file is part of Redbird URL:http://mcx.sf.net/mmc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath('../matlab')
+addpath(fullfile(pwd, '../matlab'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   prepare simulation input

@@ -5,6 +5,7 @@ if(~isfield(cfg,'node') || ~isfield(cfg,'elem'))
 end
 if(~isfield(cfg,'elemprop') ||isempty(cfg.elemprop) && size(cfg.elem,2)>4)
     cfg.elemprop=cfg.elem(:,5);
+    cfg.elem(:,5)=[];
 end
 if(~isfield(cfg,'isreoriented') || isempty(cfg.isreoriented) || cfg.isreoriented==0)
     cfg.elem=meshreorient(cfg.node,cfg.elem(:,1:4));
@@ -18,6 +19,9 @@ if(~isfield(cfg,'area') || isempty(cfg.area))
 end
 if(~isfield(cfg,'evol') || isempty(cfg.evol))
     cfg.evol=elemvolume(cfg.node,cfg.elem);
+end
+if(~isfield(cfg,'nvol') || isempty(cfg.nvol))
+    cfg.nvol=nodevolume(cfg.node,cfg.elem, cfg.evol);
 end
 if(find(cfg.evol==0))
     fprintf(1,['degenerated elements are detected: [' sprintf('%d ',find(cfg.evol==0)) ']\n']);
@@ -44,4 +48,7 @@ if(~isfield(cfg,'idxsum') || isempty(cfg.idxsum))
     cfg.idxsum=cumsum(cfg.idxcount);
 end
 
+if(~isfield(cfg,'deldotdel') || isempty(cfg.deldotdel))
+    cfg.deldotdel=rbdeldotdel(cfg);
+end
 newcfg=cfg;

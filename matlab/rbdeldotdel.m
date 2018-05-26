@@ -1,7 +1,7 @@
 function [deldotdel, delphi]=rbdeldotdel(cfg)
 
 no=cfg.node;
-el=cfg.elem;
+el=cfg.elem(:,1:4);
 
 no=reshape(no(el',:)',3,4,size(el,1));
 
