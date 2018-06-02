@@ -86,13 +86,28 @@ typedef struct FEMForward{
 	double *deldotdel;
 } Forward;
 
+typedef struct FEMJacobian{
+	int nn;
+	int nsd, nsdcol;
+	double *Phir;
+	double *Phii;
+	double *Jmuar;
+	double *Jmuai;
+	double *Jdr;
+	double *Jdi;
+	double *sd;
+	double *deldotdel;
+} Jacobian;
+
 void femdiffusion(Config *cfg, tetmesh *mesh, Forward *fem);
 void femdiffusion_boundary(Config *cfg, tetmesh *mesh, Forward *fem);
+void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac);
 
-void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh);
+void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh, Jacobian *jac);
 void config_init(Config *cfg);
 void mcx_clearcfg(Config *cfg);
 void mesh_init(tetmesh *mesh);
+void jacobian_init(Jacobian *jac);
 void mesh_clear(tetmesh *mesh);
 void forward_init(Forward *fem,tetmesh *m);
 void rb3_usage();

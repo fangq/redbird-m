@@ -27,6 +27,8 @@ void mexFunction(int nlhs,       mxArray *plhs[],
   Config cfg;
   tetmesh mesh;
   Forward femdata;
+  Jacobian jac;
+  int isjacobian=0;
   int nfields, ifield;
 
   if (nrhs<1){
@@ -43,45 +45,100 @@ void mexFunction(int nlhs,       mxArray *plhs[],
     config_init(&cfg);
     mesh_init(&mesh);
     forward_init(&femdata,&mesh);
+    jacobian_init(&jac);
     
     nfields = mxGetNumberOfFields(prhs[0]);
     for (ifield = 0; ifield < nfields; ifield++) { /* how many input struct fields */
       mxArray *tmp = mxGetFieldByNumber(prhs[0], 0, ifield);
       if (tmp == NULL) 
             continue;
-      mcx_set_field(prhs[0],tmp,ifield,&cfg,&mesh);
+      mcx_set_field(prhs[0],tmp,ifield,&cfg,&mesh,&jac);
     }
 
     if(mesh.nn<=0||mesh.ne<=0)
       mexErrMsgTxt("dimensions of the input or output parameters are incorrect.");
 
+    if(nrhs>1){
+        const dimtype *arraydim;
+	arraydim=mxGetDimensions(prhs[1]);
+	if(arraydim[1]<3 || arraydim[0]==0)
+	    MEXERROR("sd must have at least 3 columns");
+        jac.sd=mxGetPr(prhs[1]);
+	jac.nsd=arraydim[0];
+	jac.nsdcol=arraydim[1];
+	isjacobian=nlhs;
+        if(nrhs<=2)
+	    MEXERROR("sd and phi must be given to calculate Jacobians");
+	arraydim=mxGetDimensions(prhs[2]);
+	if(arraydim[0]!=mesh.nn)
+	    MEXERROR("phi's row number must be the same as the number of node");
+	jac.Phir=mxGetPr(prhs[2]); // phi: [mesh.nn x noptodes]
+	if(mxIsComplex(prhs[2]))
+	    jac.Phii=mxGetPi(prhs[2]); // phi: [mesh.nn x noptodes]
+
+        if(nrhs>3){
+	    arraydim=mxGetDimensions(prhs[3]);
+	    if(arraydim[0]!=mesh.nn || arraydim[1]!=10)
+	        MEXERROR("deldotphi must have be a 2D array with size: node number x 10");
+	    jac.deldotdel=mxGetPr(prhs[3]); // phi: [mesh.nn x jac.nsd]
+	}
+    }
+
     /* Assign a pointer to the output. */  
     if(cfg.omega>0.f){
         if(nlhs>=1){
-            plhs[0] = mxCreateDoubleMatrix(1,mesh.nn, mxCOMPLEX);
-            femdata.Di= mxGetPi(plhs[0]);
+	    if(isjacobian==0){
+                plhs[0] = mxCreateDoubleMatrix(1,mesh.nn, mxCOMPLEX);
+                femdata.Di= mxGetPi(plhs[0]);
+	    }else{
+                plhs[0] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxCOMPLEX);
+                jac.Jmuai = mxGetPi(plhs[0]);
+	    }
 	}
 	if(nlhs>=2){
-            plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxCOMPLEX);
-            femdata.Ai= mxGetPi(plhs[1]);
+	    if(isjacobian==0){
+                plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxCOMPLEX);
+                femdata.Ai= mxGetPi(plhs[1]);
+	    }else{
+                plhs[1] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxCOMPLEX);
+                jac.Jdi = mxGetPi(plhs[1]);
+	    }
 	}
     }else{
-        if(nlhs>=1)
+        if(isjacobian==0){
+          if(nlhs>=1)
             plhs[0] = mxCreateDoubleMatrix(1,mesh.nn, mxREAL);
-	if(nlhs>=2)
+	  if(nlhs>=2)
             plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxREAL);
+	}else{
+          if(nlhs>=1)
+            plhs[0] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxREAL);
+	  if(nlhs>=2)
+            plhs[1] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxREAL);
+	}
     }
-    if(nlhs>=1)
+    if(isjacobian==0){
+      if(nlhs>=1)
         femdata.Dr= mxGetPr(plhs[0]);
-    if(nlhs>=2)
+      if(nlhs>=2)
         femdata.Ar= mxGetPr(plhs[1]);
+    }else{
+      if(nlhs>=1)
+        jac.Jmuar = mxGetPr(plhs[0]);
+      if(nlhs>=2)
+        jac.Jdr = mxGetPr(plhs[1]);
+    }
     if(nlhs>=3){
 	plhs[2] = mxCreateDoubleMatrix(10,mesh.ne, mxREAL);
         femdata.deldotdel = mxGetPr(plhs[2]);
     }
-
-    femdiffusion(&cfg,&mesh,&femdata);
-    femdiffusion_boundary(&cfg,&mesh,&femdata);
+    
+    if(isjacobian==0){
+	femdiffusion(&cfg,&mesh,&femdata);
+	femdiffusion_boundary(&cfg,&mesh,&femdata);
+    }else{
+        femjacobian(&cfg,&mesh,&jac);
+    }
 
     /** \subsection sclean End the simulation */
     mesh_clear(&mesh);
@@ -96,7 +153,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
   }
 }
 
-void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh){
+void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh, Jacobian *jac){
     const char *name=mxGetFieldNameByNumber(root,idx);
     const dimtype *arraydim;
     int i,j;
@@ -118,7 +175,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<3;j++)
           for(i=0;i<mesh->nn;i++)
              ((double *)(&mesh->node[i]))[j]=val[j*mesh->nn+i];
-        printf("rb3.nn=%d;\n",mesh->nn);
+        printf("rbm.nn=%d;\n",mesh->nn);
     }else if(strcmp(name,"elem")==0){
         arraydim=mxGetDimensions(item);
 	if(arraydim[0]<=0 || arraydim[1]!=4)
@@ -130,7 +187,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<4;j++)
           for(i=0;i<mesh->ne;i++)
              ((int *)(&mesh->elem[i]))[j]=(int)val[j*mesh->ne+i]-1;
-        printf("rb3.ne=%d;\n",mesh->ne);
+        printf("rbm.ne=%d;\n",mesh->ne);
     }else if(strcmp(name,"face")==0){
         arraydim=mxGetDimensions(item);
 	if(arraydim[0]<=0 || arraydim[1]!=3)
@@ -142,7 +199,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<3;j++)
           for(i=0;i<mesh->nf;i++)
              ((int *)(&mesh->face[i]))[j]=(int)val[j*mesh->nf+i]-1;
-        printf("rb3.nf=%d;\n",mesh->nf);
+        printf("rbm.nf=%d;\n",mesh->nf);
     }else if(strcmp(name,"elemprop")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -153,7 +210,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
 	mesh->type=(int  *)malloc(sizeof(int )*mesh->ne);
         for(i=0;i<mesh->ne;i++)
            mesh->type[i]=val[i];
-        printf("rb3.ne=%d;\n",mesh->ne);
+        printf("rbm.ne=%d;\n",mesh->ne);
     }else if(strcmp(name,"evol")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -164,7 +221,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->evol=(double *)malloc(sizeof(double)*mesh->ne);
         for(i=0;i<mesh->ne;i++)
            mesh->evol[i]=val[i];
-        printf("rb3.evol=%d;\n",mesh->ne);
+        printf("rbm.evol=%d;\n",mesh->ne);
     }else if(strcmp(name,"area")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -175,7 +232,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->area=(double *)malloc(sizeof(double)*mesh->nf);
         for(i=0;i<mesh->nf;i++)
            mesh->area[i]=val[i];
-        printf("rb3.area=%d;\n",mesh->nf);
+        printf("rbm.area=%d;\n",mesh->nf);
     }else if(strcmp(name,"idxcount")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -186,7 +243,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->idxcount=(int *)malloc(sizeof(int)*mesh->nn);
         for(i=0;i<mesh->nn;i++)
            mesh->idxcount[i]=val[i];
-        printf("rb3.idxcount=%d;\n",mesh->nn);
+        printf("rbm.idxcount=%d;\n",mesh->nn);
     }else if(strcmp(name,"idxsum")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -197,7 +254,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->idxsum=(int *)malloc(sizeof(int)*mesh->nn);
         for(i=0;i<mesh->nn;i++)
            mesh->idxsum[i]=val[i];
-        printf("rb3.idxsum=%d;\n",mesh->nn);
+        printf("rbm.idxsum=%d;\n",mesh->nn);
     }else if(strcmp(name,"rows")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -208,7 +265,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->rows=(int *)malloc(sizeof(int)*mesh->ntot);
         for(i=0;i<mesh->ntot;i++)
            mesh->rows[i]=(int)val[i]-1;
-        printf("rb3.rows=%d;\n",mesh->ntot);
+        printf("rbm.rows=%d;\n",mesh->ntot);
     }else if(strcmp(name,"cols")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -219,7 +276,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->cols=(int *)malloc(sizeof(int)*mesh->ntot);
         for(i=0;i<mesh->ntot;i++)
            mesh->cols[i]=(int)val[i]-1;
-        printf("rb3.cols=%d;\n",mesh->ntot);
+        printf("rbm.cols=%d;\n",mesh->ntot);
     }else if(strcmp(name,"prop")==0){
         arraydim=mxGetDimensions(item);
         if(arraydim[0]>0 && arraydim[1]!=4)
@@ -231,8 +288,18 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<4;j++)
           for(i=0;i<=mesh->prop;i++)
              ((double *)(&mesh->med[i]))[j]=val[j*(mesh->prop+1)+i];
-        printf("rb3.prop=%d;\n",mesh->prop);
+        printf("rbm.prop=%d;\n",mesh->prop);
+    }else if(strcmp(name,"deldotdel")==0){
+        if(jac->deldotdel==NULL){
+	    arraydim=mxGetDimensions(item);
+	    if(arraydim[1]!=10)
+	        MEXERROR("deldotphi must have be a 2D array with size: node number x 10");
+	    jac->deldotdel=mxGetPr(item); // phi: [mesh.nn x jac.nsd]
+            printf("rbm.deldotdel=<%d,10>;\n",arraydim[0]);
+	}
     }else if(strcmp(name,"detpos")==0){
+        // do nothing
+    }else if(strcmp(name,"nvol")==0){
         // do nothing
     }else{
         printf("WARNING: redundant field '%s'\n",name);
@@ -256,6 +323,20 @@ void forward_init(Forward *fem, tetmesh *m){
 	fem->Dr=NULL;
 	fem->Di=NULL;
 	fem->deldotdel=NULL;
+}
+
+void jacobian_init(Jacobian *jac){
+	jac->nn=0;
+	jac->nsd=0;
+	jac->nsdcol=0;
+	jac->Jmuar=NULL;
+	jac->Jmuai=NULL;
+	jac->Jdr=NULL;
+	jac->Jdi=NULL;
+	jac->Phir=NULL;
+	jac->Phii=NULL;
+	jac->sd=NULL;
+	jac->deldotdel=NULL;
 }
 
 void mesh_init(tetmesh *mesh){
@@ -327,8 +408,89 @@ void mesh_clear(tetmesh *mesh){
                 mesh->idxsum=NULL;
         }
 }
+
+void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
+    int t,sd,sid,rid, i,j,k, ij, *ee;
+    double Ve, mphi, dmua, dscat;
+
+    for(t=0;t<mesh->ne;t++){
+        Ve=mesh->evol[t];
+        ee=(int *)(mesh->elem+t);
+        for(sd=0;sd<jac->nsd;sd++){
+            sid=(int)jac->sd[sd]-1;
+	    rid=(int)jac->sd[sd+jac->nsd]-1;
+	    //wid=(int)jac->sd[sd+(jac->nsd<<1)]-1;
+
+	    for(i=0;i<4;i++){
+	       mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+	       if(jac->Phii)
+		    mphi -= jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
+	       for(j=i+1;j<4;j++){
+		   ij=(i<<2)+j-i-(i>1)-((i>2)<<1);
+		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
+	           for(k=0;k<4;k++){
+		       dmua=mphi*(i==k ? (1./60.) : (1./120.))*Ve;
+	               jac->Jmuar[ee[i]*jac->nsd+sd]+=dmua;
+		       jac->Jmuar[ee[j]*jac->nsd+sd]+=dmua;
+		       if(jac->Jdr){
+		           jac->Jdr[ee[i]*jac->nsd+sd]+=dscat;
+		           jac->Jdr[ee[j]*jac->nsd+sd]+=dscat;
+		       }
+	           }
+	       }
+	    }
+	    for(i=0;i<4;i++){
+	           mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+		   if(jac->Phii)
+		      mphi -=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
+		   ij=(i<<2)-(i>1)-((i>2)<<1);
+		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
+	           for(k=0;k<4;k++){
+		       dmua=mphi*(i==k ? (1./20.) : (1./60.))*Ve;
+	               jac->Jmuar[ee[i]*jac->nsd+sd]+=dmua;
+		       if(jac->Jdr){
+		           jac->Jdr[ee[i]*jac->nsd+sd]+=dscat;
+		       }
+	           }
+	    }
+	    if(jac->Phii){
+	      for(i=0;i<4;i++){
+	        mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]] + 
+		     jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+	        for(j=i+1;j<4;j++){
+		   ij=(i<<2)+j-i-(i>1)-((i>2)<<1);
+		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
+	           for(k=0;k<4;k++){
+		       dmua=mphi*(i==k ? (1./60.) : (1./120.))*Ve;
+	               jac->Jmuai[ee[i]*jac->nsd+sd]+=dmua;
+		       jac->Jmuai[ee[j]*jac->nsd+sd]+=dmua;
+		       if(jac->Jdi){
+		           jac->Jdi[ee[i]*jac->nsd+sd]+=dscat;
+		           jac->Jdi[ee[j]*jac->nsd+sd]+=dscat;
+		       }
+	           }
+	        }
+	      }
+	      for(i=0;i<4;i++){
+	           mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]] + 
+		        jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+		   ij=(i<<2)-(i>1)-((i>2)<<1);
+		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
+	           for(k=0;k<4;k++){
+		       dmua=mphi*(i==k ? (1./20.) : (1./60.))*Ve;
+	               jac->Jmuai[ee[i]*jac->nsd+sd]+=dmua;
+		       if(jac->Jdi){
+		           jac->Jdi[ee[i]*jac->nsd+sd]+=dscat;
+		       }
+	           }
+	      }
+	    }
+      }
+    }
+}
+
 void femdiffusion_boundary(Config *cfg,tetmesh *mesh, Forward *fem){
-    int t,ij;
+    int t;
     double val;
     double Reff=(1.0-cfg->reff)/(1.0+cfg->reff);
 
@@ -348,7 +510,7 @@ void femdiffusion_boundary(Config *cfg,tetmesh *mesh, Forward *fem){
 void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
     double mua, musp,dcoeff,nref;
     float3 *N;
-    int i1,i2,i3,i4,i,j,k,t,ii,jj,ij,base;
+    int i1,i2,i3,i4,i,j,t,ii,jj,ij;
     double derx[4],dery[4],derz[4];
     double ra,ri,Ve,RVe6,deldotdel,sm;
     
