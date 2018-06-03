@@ -87,7 +87,7 @@ typedef struct FEMForward{
 } Forward;
 
 typedef struct FEMJacobian{
-	int nn;
+	int isnodal;
 	int nsd, nsdcol;
 	double *Phir;
 	double *Phii;

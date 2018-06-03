@@ -78,9 +78,12 @@ void mexFunction(int nlhs,       mxArray *plhs[],
 
         if(nrhs>3){
 	    arraydim=mxGetDimensions(prhs[3]);
-	    if(arraydim[0]!=mesh.nn || arraydim[1]!=10)
-	        MEXERROR("deldotphi must have be a 2D array with size: node number x 10");
+	    if(arraydim[0]!=mesh.ne || arraydim[1]!=10)
+	        MEXERROR("deldotdel must have be a 2D array with size: elem number x 10");
 	    jac.deldotdel=mxGetPr(prhs[3]); // phi: [mesh.nn x jac.nsd]
+	}
+	if(nrhs>4){
+	    jac.isnodal=((int)*(mxGetPr(prhs[4])));
 	}
     }
 
@@ -91,7 +94,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
                 plhs[0] = mxCreateDoubleMatrix(1,mesh.nn, mxCOMPLEX);
                 femdata.Di= mxGetPi(plhs[0]);
 	    }else{
-                plhs[0] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxCOMPLEX);
+                plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxCOMPLEX);
                 jac.Jmuai = mxGetPi(plhs[0]);
 	    }
 	}
@@ -100,7 +103,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
                 plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxCOMPLEX);
                 femdata.Ai= mxGetPi(plhs[1]);
 	    }else{
-                plhs[1] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxCOMPLEX);
+                plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxCOMPLEX);
                 jac.Jdi = mxGetPi(plhs[1]);
 	    }
 	}
@@ -112,9 +115,9 @@ void mexFunction(int nlhs,       mxArray *plhs[],
             plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxREAL);
 	}else{
           if(nlhs>=1)
-            plhs[0] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxREAL);
+            plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxREAL);
 	  if(nlhs>=2)
-            plhs[1] = mxCreateDoubleMatrix(jac.nsd, mesh.nn, mxREAL);
+            plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxREAL);
 	}
     }
     if(isjacobian==0){
@@ -304,6 +307,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
     }else{
         printf("WARNING: redundant field '%s'\n",name);
     }
+    mexEvalString("pause(.0001);");
 }
 
 void config_init(Config *cfg){
@@ -326,7 +330,7 @@ void forward_init(Forward *fem, tetmesh *m){
 }
 
 void jacobian_init(Jacobian *jac){
-	jac->nn=0;
+	jac->isnodal=1;
 	jac->nsd=0;
 	jac->nsdcol=0;
 	jac->Jmuar=NULL;
@@ -410,81 +414,98 @@ void mesh_clear(tetmesh *mesh){
 }
 
 void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
-    int t,sd,sid,rid, i,j,k, ij, *ee;
-    double Ve, mphi, dmua, dscat;
+    int t, sd, sid, rid, i;
+    int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,1,2,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
+    int inode[4]={0,4,7,9}; // position in deldotdel for diagonal
 
+    if(jac->Jmuar)
+       memset(jac->Jmuar,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+    if(jac->Jmuai)
+       memset(jac->Jmuai,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+    if(jac->Jdr)
+       memset(jac->Jdr,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+    if(jac->Jdi)
+       memset(jac->Jdi,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+
+    // loop over all elements
     for(t=0;t<mesh->ne;t++){
-        Ve=mesh->evol[t];
-        ee=(int *)(mesh->elem+t);
-        for(sd=0;sd<jac->nsd;sd++){
+	double jdr=0.0, jmuar=0.0, dtemp;
+        int *ee=(int *)(mesh->elem+t);
+
+        // first calculate real-part of Jmua and Jd
+        for(sd=0;sd<jac->nsd;sd++){  // loop over sd pairs
             sid=(int)jac->sd[sd]-1;
 	    rid=(int)jac->sd[sd+jac->nsd]-1;
-	    //wid=(int)jac->sd[sd+(jac->nsd<<1)]-1;
 
+	    // accummulate diagonal terms
 	    for(i=0;i<4;i++){
-	       mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
-	       if(jac->Phii)
-		    mphi -= jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
-	       for(j=i+1;j<4;j++){
-		   ij=(i<<2)+j-i-(i>1)-((i>2)<<1);
-		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
-	           for(k=0;k<4;k++){
-		       dmua=mphi*(i==k ? (1./60.) : (1./120.))*Ve;
-	               jac->Jmuar[ee[i]*jac->nsd+sd]+=dmua;
-		       jac->Jmuar[ee[j]*jac->nsd+sd]+=dmua;
-		       if(jac->Jdr){
-		           jac->Jdr[ee[i]*jac->nsd+sd]+=dscat;
-		           jac->Jdr[ee[j]*jac->nsd+sd]+=dscat;
-		       }
-	           }
-	       }
+	        dtemp=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+		if(jac->Phii)
+		    dtemp-=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
+		jdr+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
+		jmuar+=dtemp*(1./60.);
 	    }
+	    // accummulate off-diagonal terms
+	    for(i=0;i<6;i++){
+	        dtemp=jac->Phir[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[rid*mesh->nn+ee[pairs[1][i]]] +
+		      jac->Phir[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[sid*mesh->nn+ee[pairs[1][i]]];
+		if(jac->Phii)
+		    dtemp-=jac->Phii[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[rid*mesh->nn+ee[pairs[1][i]]] +
+		           jac->Phii[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[sid*mesh->nn+ee[pairs[1][i]]];
+	        jmuar+=dtemp*(1./120.);
+		jdr+=jac->deldotdel[pairs[2][i]*mesh->ne+t]*dtemp;
+	    }
+	    if(jac->isnodal){
+	        for(i=0;i<4;i++){
+	            jac->Jdr[ee[i]*jac->nsd+sd]+=jdr*0.25;
+		    jac->Jmuar[ee[i]*jac->nsd+sd]+=jmuar*0.25*mesh->evol[t];
+		}
+	    }else{ // element-based jacobian
+		jac->Jdr[t*jac->nsd+sd]+=jdr;
+		jac->Jmuar[t*jac->nsd+sd]+=jmuar*mesh->evol[t];
+	    }
+	}
+    }
+
+    // if measurement has complex val, then calculate the imag part of J
+    if(jac->Phii){
+      for(t=0;t<mesh->ne;t++){
+	double jdi=0.0, jmuai=0.0, dtemp;
+        int *ee=(int *)(mesh->elem+t);
+    
+        // first calculate real-part of Jmua and Jd
+        for(sd=0;sd<jac->nsd;sd++){  // loop over sd pairs
+            sid=(int)jac->sd[sd]-1;
+	    rid=(int)jac->sd[sd+jac->nsd]-1;
+
+	    // accummulate diagonal terms
 	    for(i=0;i<4;i++){
-	           mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
-		   if(jac->Phii)
-		      mphi -=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
-		   ij=(i<<2)-(i>1)-((i>2)<<1);
-		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
-	           for(k=0;k<4;k++){
-		       dmua=mphi*(i==k ? (1./20.) : (1./60.))*Ve;
-	               jac->Jmuar[ee[i]*jac->nsd+sd]+=dmua;
-		       if(jac->Jdr){
-		           jac->Jdr[ee[i]*jac->nsd+sd]+=dscat;
-		       }
-	           }
+	        dtemp=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
+		if(jac->Phii)
+		    dtemp+=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
+		jdi+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
+		jmuai+=dtemp*(1./60.);
 	    }
-	    if(jac->Phii){
-	      for(i=0;i<4;i++){
-	        mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]] + 
-		     jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
-	        for(j=i+1;j<4;j++){
-		   ij=(i<<2)+j-i-(i>1)-((i>2)<<1);
-		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
-	           for(k=0;k<4;k++){
-		       dmua=mphi*(i==k ? (1./60.) : (1./120.))*Ve;
-	               jac->Jmuai[ee[i]*jac->nsd+sd]+=dmua;
-		       jac->Jmuai[ee[j]*jac->nsd+sd]+=dmua;
-		       if(jac->Jdi){
-		           jac->Jdi[ee[i]*jac->nsd+sd]+=dscat;
-		           jac->Jdi[ee[j]*jac->nsd+sd]+=dscat;
-		       }
-	           }
-	        }
-	      }
-	      for(i=0;i<4;i++){
-	           mphi=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]] + 
-		        jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
-		   ij=(i<<2)-(i>1)-((i>2)<<1);
-		   dscat=mphi*jac->deldotdel[ij*mesh->ne+t]*0.25;
-	           for(k=0;k<4;k++){
-		       dmua=mphi*(i==k ? (1./20.) : (1./60.))*Ve;
-	               jac->Jmuai[ee[i]*jac->nsd+sd]+=dmua;
-		       if(jac->Jdi){
-		           jac->Jdi[ee[i]*jac->nsd+sd]+=dscat;
-		       }
-	           }
-	      }
+	    // accummulate off-diagonal terms
+	    for(i=0;i<6;i++){
+	        dtemp=jac->Phir[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[rid*mesh->nn+ee[pairs[1][i]]] +
+		      jac->Phir[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[sid*mesh->nn+ee[pairs[1][i]]];
+		if(jac->Phii)
+		    dtemp+=jac->Phii[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[rid*mesh->nn+ee[pairs[1][i]]] +
+		           jac->Phii[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[sid*mesh->nn+ee[pairs[1][i]]];
+	        jmuai+=dtemp*(1./120.);
+		jdi+=jac->deldotdel[pairs[2][i]*mesh->ne+t]*dtemp;
 	    }
+	    if(jac->isnodal){ // nodal-based Jacobian
+	        for(i=0;i<4;i++){
+	            jac->Jdi[ee[i]*jac->nsd+sd]+=jdi*0.25;
+		    jac->Jmuai[ee[i]*jac->nsd+sd]+=jmuai*0.25*mesh->evol[t];
+		}
+	    }else{ // element-based jacobian
+		jac->Jdi[t*jac->nsd+sd]+=jdi;
+		jac->Jmuai[t*jac->nsd+sd]+=jmuai*mesh->evol[t];
+	    }
+	}
       }
     }
 }
