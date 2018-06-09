@@ -135,8 +135,19 @@ satisfies the following condition on the boundary $\partial\Omega$
 \begin{equation}
 \label{eq:partialcurrent} \left(\boldsymbol\Phi=l_s\nabla{\boldsymbol\Phi}\right)|_{\partial\Omega}
 \end{equation}
+where $l_s$ is defined in Eq. 2.4.1 in Haskell, as
+\begin{equation}
+l_s=\frac{1+R_{eff}}{1-R_{eff}}2D
+\end{equation}
+and $R_{eff}=\frac{R_\phi+R_j}{2-R_\phi+R_j}$ is the effective reflection coefficient, and 
+\begin{eqnarray}
+R_\phi &=& \int_0^{\pi/2}2\sin \theta \cos\theta R_{Fresnel(\theta)}d\theta\\
+R_j &=& \int_0^{\pi/2}3\sin \theta \cos^2\theta R_{Fresnel(\theta)}d\theta \\
+R_{Fresnel}(\theta) &=& \frac{1}{2}\left(\frac{n \cos\theta' - n_{out} \cos\theta}{n \cos\theta' + n_{out} \cos\theta}\right)^2 \\
+   &+&\frac{1}{2}\left(\frac{n \cos\theta - n_{out} \cos\theta'}{n \cos\theta + n_{out} \cos\theta'}\right)^2
+\end{eqnarray}
 
-Replacing $\nabla{\boldsymbol\Phi}=\boldsymbol\Phi/l_s$ in (\ref{eq:weakformzerobd}), we
+Replacing $\nabla{\boldsymbol\Phi}=\boldsymbol\Phi/l_s$ to the boundary term in (\ref{eq:weakform}), we
 have
 
 \begin{eqnarray}
@@ -147,13 +158,31 @@ have
 \\&&\left.+\sum_{k}\left(\mu_{a}^k+\frac{j\omega}{c}\right)\left\langle\phi_k(r)\varphi_i(r)\varphi_j(r)\right\rangle\right)=\left\langle
 S_0(r)\varphi_j(r)\right\rangle
 \end{eqnarray}
+and the boundary integration $\langle\phi_k(r)\varphi_j(r)\rangle_{\partial\Omega}=\frac{A}{6}$ if $k=j$ 
+or $\frac{A}{12}$ if $k\ne j$. The general expression for the surface element integration is
+\begin{equation}
+\int_{\Omega_e}\varphi_1^l\varphi_2^m\varphi_3^ndr=\frac{l!m!n!}{(l+m+n+2)!}2A_e
+\end{equation}
+
 
 Equation (\ref{eq:weakformpartial}) is the final formula used in
 the reconstruction code.
 
 \section{Widefield illumination}
-
-
+When a light source is located outside of the domain, i.e. a wide-field source, at the boundary, the 
+in-bound flux, $J^-$ is no longer zero, thus, the boundary condition should be modified as
+\begin{equation}
+\label{eq:widefieldsrc} \left(\boldsymbol\Phi-l_s\nabla{\boldsymbol\Phi}\right)|_{\partial\Omega}=J^-
+\end{equation}
+Thus, we should replace $\nabla{\boldsymbol\Phi}$ by $(\boldsymbol\Phi - J^-)/l_s$ in (\ref{eq:weakform}), and we get
+\begin{eqnarray}
+\label{eq:weakformpartial}\nonumber&&\sum_{i}\Phi_i\left(\sum_{k}D_k\left\langle
+\phi_k(r)\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle -
+\sum_{k}\frac{1-R_{eff}}{2(1+R_{eff})}\left\langle
+\phi_k(r)\varphi_j(r)\right\rangle_{\partial\Omega}\right.
+\\&&\left.+\sum_{k}\left(\mu_{a}^k+\frac{j\omega}{c}\right)\left\langle\phi_k(r)\varphi_i(r)\varphi_j(r)\right\rangle\right)=\\
+&& \left\langle S_0(r)\varphi_j(r)\right\rangle + \sum_kJ^-_kD_k/l_s\langle\phi_k(r)\varphi_j(r)\rangle|_{\partial\Omega}
+\end{eqnarray}
 
 \section{Nodal adjoint method for computing the Jacobian matrix}
 Equation (\ref{eq:weakformpartial}) for each element written in the
@@ -163,9 +192,17 @@ matrix form is
 \end{equation}
 where the element of $\mathbf{A}$ can be written as
 \begin{equation}
-a_{i,j}=\sum_{k}D_k\left\langle
-\phi_k(r)\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle+\sum_{k}\left(\mu_{a}^k+\frac{j\omega}{c}\right)\left\langle\phi_k(r)\varphi_i(r)\varphi_j(r)\right\rangle
+a_{i,j}=\sum_{i,j\in e}\left(\sum_{k=1}^4D_k\left\langle
+\phi_k(r)\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle+\sum_{k=1}^4\left(\mu_{a}^k+\frac{j\omega}{c}\right)\left\langle\phi_k(r)\varphi_i(r)\varphi_j(r)\right\rangle\right)
 \end{equation}
+for node-based FEM matrix, and 
+\begin{equation}
+a_{i,j}=\sum_{i,j\in e}\left(D_e\left\langle
+\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle+\left(\mu_{a}^{e}+\frac{j\omega}{c}\right)\left\langle\varphi_i(r)\varphi_j(r)\right\rangle\right)
+\end{equation}
+for element-based FEM matrix, where $D_e$ and $\mu_a^{e}$ are the diffusion and absorption coefficients 
+of the $e$-th element.
+
 Taking derivative of $\mu_a$ and $D$ on both sides of
 (\ref{eq:matrix}), we get
 \begin{eqnarray}
@@ -179,11 +216,104 @@ where the elements of matrix $\frac{\partial \mathbf{A}}{\partial
 \mu_a^k}$ and $\frac{\partial \mathbf{A}}{\partial D_k}$ are
 written as
 \begin{eqnarray}
-\frac{\partial
+k_{i,j}=\frac{\partial
 a_{i,j}}{\mu_a^k}&=&\left\langle\phi_k(r)\varphi_i(r)\varphi_j(r)\right\rangle\\
-\frac{\partial a_{i,j}}{D_k}&=&\left\langle
+h_{i,j}=\frac{\partial a_{i,j}}{D_k}&=&\left\langle
 \phi_k(r)\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle
 \end{eqnarray}
+respectively.
+
+Similarly, taking derivatives with respect to $D_e$ and $\mu_a^{e}$ yields
+\begin{eqnarray}
+k_{i,j}=\frac{\partial
+a_{i,j}}{\mu_a^{e}}&=&\left\langle\varphi_i(r)\varphi_j(r)\right\rangle\\
+h_{i,j}=\frac{\partial a_{i,j}}{D_e}&=&\left\langle
+\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle
+\end{eqnarray}
+respectively. Again, the angular bracket $\langle\cdot\rangle$ represents volume integration inside
+an element, i.e.
+\begin{equation}
+\langle f(r) \rangle=\int_{\Omega_e}f(r)dr
+\end{equation}
+Therefore, the deriatives to $\mu_a^e$ can be calculated using this relationship:
+\begin{equation}
+\int_{\Omega_e}\varphi_1^l\varphi_2^m\varphi_3^n\varphi_4^sdr=\frac{l!m!n!s!}{(l+m+n+s+3)!}6V_e
+\end{equation}
+As a result, for element-based $\mu_a$ Jacobian, we have
+\begin{equation}
+\mathbf{K}_e=\left[\frac{\partial a_{i,j}}{\mu_a^{e}}\right]=\sum_e\frac{V_e}{20}\left(
+\begin{array}{llll}
+2 & 1 & 1 & 1 \\
+1 & 2 & 1 & 1 \\
+1 & 1 & 2 & 1 \\
+1 & 1 & 1 & 2 
+\end{array}
+\right)
+\end{equation}
+For element-based $D$ Jacobian, we have
+\begin{eqnarray}\nonumber
+\mathbf{H}_e&=&\left[\frac{\partial
+a_{i,j}}{D^{e}}\right]\\&=&\sum_e\frac{1}{(6V_e)^2}\left(
+\begin{array}{llll}
+a_1a_1+b_1b_1+c_1c_1 & a_1a_2+b_1b_2+c_1c_2 & a_1a_3+b_1b_3+c_1c_3 & a_1a_4+b_1b_4+c_1c_4 \\
+a_2a_1+b_2b_1+c_2c_1 & a_2a_2+b_2b_2+c_2c_2 & a_2a_3+b_2b_3+c_2c_3 & a_2a_4+b_2b_4+c_2c_4 \\
+a_3a_1+b_3b_1+c_3c_1 & a_3a_2+b_3b_2+c_3c_2 & a_3a_3+b_3b_3+c_3c_3 & a_3a_4+b_3b_4+c_3c_4 \\
+a_4a_1+b_4b_1+c_4c_1 & a_4a_2+b_4b_2+c_4c_2 & a_4a_3+b_4b_3+c_4c_3 & a_4a_4+b_4b_4+c_4c_4
+\end{array}
+\right)
+\end{eqnarray}
+where $a_i,b_i,c_i (i=1,4)$ are the linear coefficients in the expressions of the basis functions $\varphi_i$ as
+\begin{equation}
+\left(
+\begin{array}{l}
+\varphi_1\\
+\varphi_2\\
+\varphi_3\\
+\varphi_4
+\end{array}\right)=\frac{1}{6V_e}\left(
+\begin{array}{llll}
+6V_{01} & a_1 & b_1 & c_1 \\
+6V_{02} & a_2 & b_2 & c_2 \\
+6V_{03} & a_3 & b_3 & c_3 \\
+6V_{04} & a_4 & b_4 & c_4 
+\end{array}
+\right)\left(
+\begin{array}{l}
+1\\
+x\\
+y\\
+z
+\end{array}\right)
+\end{equation}
+Here, the matrix is the inversion of the Jacobian ($\mathbf{J}_e$) of the tetrahedron, i.e.
+\begin{equation}\frac{1}{6V_e}
+\left(
+\begin{array}{llll}
+6V_{01} & a_1 & b_1 & c_1 \\
+6V_{02} & a_2 & b_2 & c_2 \\
+6V_{03} & a_3 & b_3 & c_3 \\
+6V_{04} & a_4 & b_4 & c_4 
+\end{array}
+\right)=\textrm{inv}\left(
+\begin{array}{llll}
+1 & 1 & 1 & 1 \\
+x_1 & x_2 & x_3 & x_4 \\
+y_1 & y_2 & y_3 & y_4 \\
+z_1 & z_2 & z_3 & z_4  
+\end{array}
+\right)=\textrm{inv}(\mathbf{J}_e)
+\end{equation}
+and the element volume $V_e=\textrm{det}(\mathbf{J}_e)/6$
+
+For the Jacobian corresponding to the $\mu_a^e$ in the $e$-th element, the 
+element-based Jacobian can be expressed as
+\begin{eqnarray}\nonumber
+J_{\mu_a}((s,r),e)&=&\frac{\partial
+\Phi_{s,r}}{d\mu_a^{e}}\\&=&\left(\mathbf{K}_e{\boldsymbol\Phi}_s^e\right)^T{\boldsymbol\Phi}_r^e
+\end{eqnarray}
+where vectors $\boldsymbol{\Phi}_s^e$ and $\boldsymbol{\Phi}_r^e$
+are defined by $\boldsymbol{\Phi}_s^e=\{\Phi_s(\vec{p}_k)\}$,
+$\boldsymbol{\Phi}_r^e=\{\Phi_r(\vec{p}_k)\}, (k=1,2,3,4)$,
 respectively.
 
 For the Jacobian corresponding to the $\tau$-th $\mu_a$, the nodal
@@ -211,16 +341,12 @@ J_{D}((s,r),\tau)&=&\frac{\partial
 \Phi_{s,r}}{dD_{\tau}}\\&=&\sum_{e\in\Omega_\tau}\left(\mathbf{H}_\tau^e{\boldsymbol\Phi}_s^e\right)^T{\boldsymbol\Phi}_r^e
 \end{eqnarray}
 where $\sum_{e\in\Omega_\tau}$ denotes the summation over all
-elements that in the immediate vicinity of parameter node $\tau$;
+elements that in the immediate vicinity of the parameter node $\tau$;
 matrix $\mathbf{H}_\tau^e$ has form of
 \begin{equation}
 h^\tau_{i,j}=\left\langle
 \phi_\tau(r)\nabla\varphi_i(r)\cdot\nabla\varphi_j(r)\right\rangle
 \end{equation}
-and vectors $\boldsymbol{\Phi}_s^e$ and $\boldsymbol{\Phi}_s^e$
-are defined by $\boldsymbol{\Phi}_s^e=\{\Phi_s(\vec{p}_k)\}$,
-$\boldsymbol{\Phi}_r^e=\{\Phi_r(\vec{p}_k)\}, (k=1,2,3,4)$,
-respectively.
 
 \section{Log-magnitude/unwrapped phase form of Jacobian}
 The complex form update equation is
@@ -245,8 +371,7 @@ then the real-form of (\ref{eq:cpxupdate}) is given by
 \begin{equation}
 \label{eq:realupdate}\left(
 \begin{array}{l}
-\Re e{\mathbf{J}}_{mua}\\
-\Im m{\mathbf{J}}_{D}
+\Re e{\mathbf{J}}_{\mu_a}, \Im m{\mathbf{J}}_{D}
 \end{array}\right)
 \left(
 \begin{array}{l}
