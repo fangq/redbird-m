@@ -25,7 +25,7 @@ s0=[70, 50, 20];
 
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg0.node,1);
-cfg0.elemprop=ones(size(cfg0.elem,1),1);
+cfg0.elemprop=cfg0.elem(:,5);
 cfg0.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);
@@ -61,7 +61,11 @@ detphi0=rbrunforward(cfg0);
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 40);
+%[cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 40);
+[nosp,fcsp]=meshasphere(s0, 5, 3);
+[no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
+
+[cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
 cfg.elemprop=ones(size(cfg.elem,1),1);
 cfg=rbmeshprep(cfg);
 
@@ -71,7 +75,7 @@ sd=rbsdmap(cfg);
 %%   Run 10 iterations to recover mua
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-maxiter=1;
+maxiter=10;
 resid=zeros(1,maxiter);
 
 cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.elemprop(1)+1,1);
@@ -79,11 +83,14 @@ cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.elemprop(1)+1,1);
 tic
 for i=1:maxiter
     [detphi, phi]=rbrunforward(cfg);
-    Jmua=rbjacmua(sd, phi, cfg.nvol); % build nodal-based Jacobian for mua
+    tic; Jmua=rbfemmatrix(cfg, sd, phi);toc
+    %Jmua=rbjacmua(sd, phi, cfg.nvol); % build nodal-based Jacobian for mua
     misfit=detphi0(:)-detphi(:);
     resid(i)=sum(abs(misfit));
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
-    dmu=rbreginv(Jmua, misfit, 1e-15);
+    dmu=rbreginv(Jmua, misfit, 1e-13);
     cfg.mua=cfg.mua + dmu;
 end
 
+plotmesh([cfg.node,cfg.mua],cfg.elem,'z=20','facecolor','interp','linestyle','none')
+view(3);

@@ -50,14 +50,14 @@ save config.mat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build LHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% tic
-% [Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
-% toc
-
 tic
-deldotdel=rbdeldotdel(cfg);
-Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
+[Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
 toc
+
+% tic
+% deldotdel=rbdeldotdel(cfg);
+% Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
+% toc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS

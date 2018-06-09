@@ -429,11 +429,11 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 
     // loop over all elements
     for(t=0;t<mesh->ne;t++){
-	double jdr=0.0, jmuar=0.0, dtemp;
         int *ee=(int *)(mesh->elem+t);
 
         // first calculate real-part of Jmua and Jd
         for(sd=0;sd<jac->nsd;sd++){  // loop over sd pairs
+	    double jdr=0.0, jmuar=0.0, dtemp;
             sid=(int)jac->sd[sd]-1;
 	    rid=(int)jac->sd[sd+jac->nsd]-1;
 
@@ -443,7 +443,7 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 		if(jac->Phii)
 		    dtemp-=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
 		jdr+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
-		jmuar+=dtemp*(1./60.);
+		jmuar+=dtemp;
 	    }
 	    // accummulate off-diagonal terms
 	    for(i=0;i<6;i++){
@@ -452,17 +452,24 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 		if(jac->Phii)
 		    dtemp-=jac->Phii[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[rid*mesh->nn+ee[pairs[1][i]]] +
 		           jac->Phii[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phii[sid*mesh->nn+ee[pairs[1][i]]];
-	        jmuar+=dtemp*(1./120.);
+	        jmuar+=dtemp*0.5;
 		jdr+=jac->deldotdel[pairs[2][i]*mesh->ne+t]*dtemp;
 	    }
+	    jmuar*=-0.1;
+	    jdr=-jdr;
 	    if(jac->isnodal){
-	        for(i=0;i<4;i++){
-	            jac->Jdr[ee[i]*jac->nsd+sd]+=jdr*0.25;
+	        for(i=0;i<4;i++)
 		    jac->Jmuar[ee[i]*jac->nsd+sd]+=jmuar*0.25*mesh->evol[t];
-		}
 	    }else{ // element-based jacobian
-		jac->Jdr[t*jac->nsd+sd]+=jdr;
 		jac->Jmuar[t*jac->nsd+sd]+=jmuar*mesh->evol[t];
+	    }
+	    if(jac->Jdr){
+	        if(jac->isnodal){
+	            for(i=0;i<4;i++)
+	                jac->Jdr[ee[i]*jac->nsd+sd]+=jdr*0.25;
+		}else{ // element-based jacobian
+		    jac->Jdr[t*jac->nsd+sd]+=jdr;
+	        }
 	    }
 	}
     }
@@ -470,11 +477,11 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
     // if measurement has complex val, then calculate the imag part of J
     if(jac->Phii){
       for(t=0;t<mesh->ne;t++){
-	double jdi=0.0, jmuai=0.0, dtemp;
         int *ee=(int *)(mesh->elem+t);
     
         // first calculate real-part of Jmua and Jd
         for(sd=0;sd<jac->nsd;sd++){  // loop over sd pairs
+	    double jdi=0.0, jmuai=0.0, dtemp;
             sid=(int)jac->sd[sd]-1;
 	    rid=(int)jac->sd[sd+jac->nsd]-1;
 
@@ -484,7 +491,7 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 		if(jac->Phii)
 		    dtemp+=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
 		jdi+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
-		jmuai+=dtemp*(1./60.);
+		jmuai+=dtemp;
 	    }
 	    // accummulate off-diagonal terms
 	    for(i=0;i<6;i++){
@@ -493,17 +500,24 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 		if(jac->Phii)
 		    dtemp+=jac->Phii[sid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[rid*mesh->nn+ee[pairs[1][i]]] +
 		           jac->Phii[rid*mesh->nn+ee[pairs[0][i]]]*jac->Phir[sid*mesh->nn+ee[pairs[1][i]]];
-	        jmuai+=dtemp*(1./120.);
+	        jmuai+=dtemp*0.5;
 		jdi+=jac->deldotdel[pairs[2][i]*mesh->ne+t]*dtemp;
 	    }
+	    jmuai*=-0.1;
+	    jdi=-jdi;
 	    if(jac->isnodal){ // nodal-based Jacobian
-	        for(i=0;i<4;i++){
-	            jac->Jdi[ee[i]*jac->nsd+sd]+=jdi*0.25;
+	        for(i=0;i<4;i++)
 		    jac->Jmuai[ee[i]*jac->nsd+sd]+=jmuai*0.25*mesh->evol[t];
-		}
 	    }else{ // element-based jacobian
-		jac->Jdi[t*jac->nsd+sd]+=jdi;
 		jac->Jmuai[t*jac->nsd+sd]+=jmuai*mesh->evol[t];
+	    }
+	    if(jac->Jdi){
+	        if(jac->isnodal){
+	            for(i=0;i<4;i++)
+	                jac->Jdi[ee[i]*jac->nsd+sd]+=jdi*0.25;
+		}else{ // element-based jacobian
+		    jac->Jdi[t*jac->nsd+sd]+=jdi;
+	        }
 	    }
 	}
       }
