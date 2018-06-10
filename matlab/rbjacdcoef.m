@@ -17,15 +17,16 @@ nelem=size(deldotdel,1);
 JD=zeros(size(sd,1),nelem);
 
 for i=1:size(sd,1)
-    JD(i,:)=JD(i,:)+sum(deldotdel(:,idx(1,:)).*reshape(phi(felem(:,idx(2,:)),sd(i,1)).*phi(felem(:,idx(3,:)),sd(i,2))+...
-                    phi(felem(:,idx(2,:)),sd(i,2)).*phi(felem(:,idx(3,:)),sd(i,1)),nelem,size(idx,2)),2)';
+    Jrow=sum(deldotdel(:,idx(1,:)).*reshape(phi(felem(:,idx(2,:)),sd(i,1)).*phi(felem(:,idx(3,:)),sd(i,2))+...
+                  phi(felem(:,idx(2,:)),sd(i,2)).*phi(felem(:,idx(3,:)),sd(i,1)),nelem,size(idx,2)),2)';
     for j=1:size(id0,2)
-        JD(i,:)=JD(i,:)+(deldotdel(:,id0(j)).*phi(felem(:,j),sd(i,1)).*phi(felem(:,j),sd(i,2)))';
+        Jrow=Jrow+(deldotdel(:,id0(j)).*phi(felem(:,j),sd(i,1)).*phi(felem(:,j),sd(i,2)))';
     end
     for j=1:4
-        val=accumarray(felem(:,j),JD(i,:))';
+        val=accumarray(felem(:,j),Jrow)';
         Jd(i,1:nmax(j))=Jd(i,1:nmax(j))+val;
     end
+    JD(i,:)=Jrow;
 end
 Jd=-Jd*0.25;
 JD=-JD;

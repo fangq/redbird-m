@@ -43,7 +43,7 @@ if(nargin==2)
     end
 
     edgebc=sort(meshedge(cfg.face),2);
-    Adiagbc=cfg.area(:)*(1-Reff)/(12*(1+Reff));
+    Adiagbc=cfg.area(:)*((1-Reff)/(12*(1+Reff)));
     Adiagbc=repmat(Adiagbc,1,3);
     Aoffdbc=Adiagbc*0.5;
     

@@ -1,4 +1,15 @@
 function [deldotdel, delphi]=rbdeldotdel(cfg)
+% Format:
+%   [deldotdel, delphi]=rbdeldotdel(cfg)
+%
+% Compute deldotdel=<grad(phi_i).grad(phi_j)>, where <> means spatial integration
+% inside elements, "." means dot-product, grad() means gradience, phi means
+% linear basis function in a tetrahedron. For a linear function phi,
+% grad(phi) is a constant across the element.
+%
+% Author:
+%   Qianqian Fang <q.fang at neu.edu>
+%
 
 no=cfg.node;
 el=cfg.elem(:,1:4);

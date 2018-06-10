@@ -442,8 +442,8 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	        dtemp=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
 		if(jac->Phii)
 		    dtemp-=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
-		jdr+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
 		jmuar+=dtemp;
+		jdr+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
 	    }
 	    // accummulate off-diagonal terms
 	    for(i=0;i<6;i++){
@@ -490,8 +490,8 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	        dtemp=jac->Phir[sid*mesh->nn+ee[i]]*jac->Phii[rid*mesh->nn+ee[i]];
 		if(jac->Phii)
 		    dtemp+=jac->Phii[sid*mesh->nn+ee[i]]*jac->Phir[rid*mesh->nn+ee[i]];
-		jdi+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
 		jmuai+=dtemp;
+		jdi+=jac->deldotdel[inode[i]*mesh->ne+t]*dtemp;
 	    }
 	    // accummulate off-diagonal terms
 	    for(i=0;i<6;i++){
@@ -527,10 +527,10 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 void femdiffusion_boundary(Config *cfg,tetmesh *mesh, Forward *fem){
     int t;
     double val;
-    double Reff=(1.0-cfg->reff)/(1.0+cfg->reff);
+    double Reff=(1.0-cfg->reff)/(1.0+cfg->reff)*(1.0/12.0);
 
     for(t=0;t<mesh->nf;t++){
-        val=mesh->area[t]*Reff*(1.0/12.0);
+        val=mesh->area[t]*Reff;
 	fem->Dr[mesh->face[t].x]+=val;
 	fem->Dr[mesh->face[t].y]+=val;
 	fem->Dr[mesh->face[t].z]+=val;

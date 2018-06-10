@@ -125,17 +125,19 @@ detval3=rbfemgetdet(phi3, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs
 %%   Build mua Jacobians
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-isnodal=1;  % isnodal=1 builds nodal Jacobain; isnodal=0 builds elem-based Jacobians
+isnodal=0;  % isnodal=1 builds nodal Jacobain; isnodal=0 builds elem-based Jacobians
 
 nvol=nodevolume(cfg.node,cfg.elem, cfg.evol);
 sd=rbsdmap(cfg);
 
 tic
-if(isnodal)
-    Jmua=rbjacmua(sd, phi, nvol); % build nodal-based Jacobian for mua
-else
-    Jmua=rbjacmua(sd, phi, cfg.evol, cfg.elem); % build elem-based J_mua, large & slow
-end
+[Jmua, Jd]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, isnodal);
+JD=Jd;
+% if(isnodal)
+%     Jmua=rbjacmua(sd, phi, nvol); % build nodal-based Jacobian for mua
+% else
+%     Jmua=rbjacmua(sd, phi, cfg.evol, cfg.elem); % build elem-based J_mua, large & slow
+% end
 fprintf('building J_mua ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
