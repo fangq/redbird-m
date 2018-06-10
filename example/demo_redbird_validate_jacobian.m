@@ -15,6 +15,7 @@ addpath(fullfile(pwd, '../matlab'));
 
 clear cfg
 
+%[cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 40, 100);
 [cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 20);
 
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
@@ -47,7 +48,7 @@ z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
 cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
 cfg.detpos(:,3)=cfg.detpos(:,3)-z0;
 
-cfg.omega=2*pi*70e6;
+%cfg.omega=2*pi*70e6;
 cfg.omega=0;
 
 cfg=rbmeshprep(cfg);
@@ -100,7 +101,7 @@ Amat2=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
 fprintf('solving forward with delta mua ... \t%f seconds\n',toc);
 
 phi2=rbfemsolve(Amat2,rhs);
-detval2=rbfemgetdet(phi2, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
+detval_dmua=rbfemgetdet(phi2, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   perturb D in an element
@@ -119,83 +120,119 @@ Amat3=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
 fprintf('solving forward with delta D ... \t%f seconds\n',toc);
 
 phi3=rbfemsolve(Amat3,rhs);
-detval3=rbfemgetdet(phi3, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
+detval_dd=rbfemgetdet(phi3, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build mua Jacobians
+%%   Build mua Jacobians, both c/matlab and node/elem
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-isnodal=0;  % isnodal=1 builds nodal Jacobain; isnodal=0 builds elem-based Jacobians
 
 nvol=nodevolume(cfg.node,cfg.elem, cfg.evol);
 sd=rbsdmap(cfg);
 
 tic
-[Jmua, Jd]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, isnodal);
-JD=Jd;
-% if(isnodal)
-%     Jmua=rbjacmua(sd, phi, nvol); % build nodal-based Jacobian for mua
-% else
-%     Jmua=rbjacmua(sd, phi, cfg.evol, cfg.elem); % build elem-based J_mua, large & slow
-% end
+[Jmua_node_c, Jd_node_c]=rbfemmatrix(cfg, sd, phi);
+toc
+
+tic
+[Jmua_elem_c, Jd_elem_c]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 0);
+toc
+
+Jmua_node_m=rbjacmua(sd, phi, nvol); % build nodal-based Jacobian for mua
+Jmua_elem_m=rbjacmua(sd, phi, cfg.evol, cfg.elem); % build elem-based J_mua, large & slow
 fprintf('building J_mua ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Compare mua Jacobian with direct measurement change
+%%   Compare mua Jacobian with direct measurement change - c 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dphi1=(detval2-detval)/dmua;          % change of measurement from separate forward
-if(isnodal)
-    totalvol=sum(nvol(cfg.elem(perturbeid,:)));
-    dphi2=sum(Jmua(:,cfg.elem(perturbeid,:)),2)*(cfg.evol(perturbeid)/totalvol);
-else
-    dphi2=Jmua(:,perturbeid);  % change of measurement predicted from Jacobians
-end
-dphi2=reshape(dphi2,size(cfg.detpos,1),size(cfg.srcpos,1));
+dphi_dmua=(detval_dmua-detval)/dmua;          % change of measurement from separate forward
+totalvol=sum(nvol(cfg.elem(perturbeid,:)));
+dphi_mua_node_c=sum(Jmua_node_c(:,cfg.elem(perturbeid,:)),2)*(cfg.evol(perturbeid)/totalvol);
+dphi_mua_node_c=reshape(dphi_mua_node_c,size(cfg.detpos,1),size(cfg.srcpos,1));
+
+dphi_mua_elem_c=Jmua_elem_c(:,perturbeid);  % change of measurement predicted from Jacobians
+dphi_mua_elem_c=reshape(dphi_mua_elem_c,size(cfg.detpos,1),size(cfg.srcpos,1));
 
 figure;
-plot(1:length(dphi1),dphi1,'r-o',1:length(dphi2),dphi2,'b-+');
-legend('direct measurement change','predicted from J_{\mua}');
+len=length(dphi_dmua);
+plot(1:len,dphi_dmua,'r-o',1:len,dphi_mua_node_c,'b-+',1:len,dphi_mua_elem_c,'g-^');
+legend('direct measurement change','predicted from node J_{\mua} c','predicted from elem J_{\mua} c');
 
-figure;
-dd=dphi1./dphi2;
-fprintf(1,'isnodal=\t%d\tsum(Jmua)=\t%f\tmedian(dphi1/dphi2)=\t%f\n',isnodal,sum(Jmua(:)), median(dd(:)));
-imagesc(dd)
-colorbar;
+dd_mua_node_c=dphi_mua_node_c./dphi_dmua;
+fprintf(1,'node-based c Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_node_c(:)), median(dd_mua_node_c(:)));
+dd_mua_elem_c=dphi_mua_elem_c./dphi_dmua;
+fprintf(1,'elem-based c Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_elem_c(:)), median(dd_mua_elem_c(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build D Jacobians
+%%   Compare mua Jacobian with direct measurement change - matlab
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dphi_mua_node_m=sum(Jmua_node_m(:,cfg.elem(perturbeid,:)),2)*(cfg.evol(perturbeid)/totalvol);
+dphi_mua_node_m=reshape(dphi_mua_node_m,size(cfg.detpos,1),size(cfg.srcpos,1));
+
+dphi_mua_elem_m=Jmua_elem_m(:,perturbeid);  % change of measurement predicted from Jacobians
+dphi_mua_elem_m=reshape(dphi_mua_elem_m,size(cfg.detpos,1),size(cfg.srcpos,1));
+
+figure;
+len=length(dphi_dmua);
+plot(1:len,dphi_dmua,'r-o',1:len,dphi_mua_node_m,'b-+',1:len,dphi_mua_elem_m,'g-^');
+legend('direct measurement change','predicted from node J_{\mua} m','predicted from elem J_{\mua} m');
+
+dd_mua_node_m=dphi_mua_node_m./dphi_dmua;
+fprintf(1,'node-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_node_m(:)), median(dd_mua_node_m(:)));
+dd_mua_elem_m=dphi_mua_elem_m./dphi_dmua;
+fprintf(1,'elem-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_elem_m(:)), median(dd_mua_elem_m(:)));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   Build D Jacobians with matlab
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic
-[Jd, JD]=rbjacdcoef(sd, phi, deldotdel, cfg.elem); % build nodal-based Jacobian for mua
+[Jd_node_m, Jd_elem_m]=rbjacdcoef(sd, phi, deldotdel, cfg.elem); % build nodal-based Jacobian for mua
 fprintf('building J_D ... \t%f seconds\n',toc);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Compare D Jacobian with direct measurement change
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-dphi3=(detval3-detval)/dD;          % change of measurement from separate forward
+dphi_dd=(detval_dd-detval)/dD;          % change of measurement from separate forward
 
 %idx=ismember(cfg.elem, cfg.elem(perturbeid,:));
 %[ix,iy]=find(idx);
 %totalgrad=sum(sum(deldotdel(ix,[1:end 2:4,6:7,9])));
 %dphi4=sum(Jd(:,cfg.elem(perturbeid,:)),2)*abs(sum(deldotdel(perturbeid,[1:end 2:4,6:7,9]))/totalgrad);
 
-dphi4=sum(Jd(:,cfg.elem(perturbeid,:)),2)/28;
-dphi4=reshape(dphi4,size(cfg.detpos,1),size(cfg.srcpos,1));
+dphi_d_node_c=sum(Jd_node_c(:,cfg.elem(perturbeid,:)),2)/28;
+dphi_d_node_c=reshape(dphi_d_node_c,size(cfg.detpos,1),size(cfg.srcpos,1));
 
-dphi5=JD(:,perturbeid);  % change of measurement predicted from Jacobians
-dphi5=reshape(dphi5,size(cfg.detpos,1),size(cfg.srcpos,1));
-
-figure;
-plot(1:length(dphi3),dphi3,'r-o',1:length(dphi4),dphi4,'b-+',1:length(dphi5),dphi5,'g-+');
-legend('direct measurement change','predicted from J_{D}');
+dphi_d_elem_c=Jd_elem_c(:,perturbeid);  % change of measurement predicted from Jacobians
+dphi_d_elem_c=reshape(dphi_d_elem_c,size(cfg.detpos,1),size(cfg.srcpos,1));
 
 figure;
-dd2=dphi3./dphi4;
-dd3=dphi3./dphi5;
-fprintf(1,'isnodal=\t%d\tsum(Jd)=\t%f\tsum(JD)=\t%f\tmedian(dphi3/dphi4)=\t%f\tmedian(dphi3/dphi5)=\t%f\n',isnodal,sum(Jd(:)),sum(JD(:)),median(dd2(:)), median(dd3(:)));
-imagesc(dd2)
-colorbar;
+plot(1:len,dphi_dd,'r-o',1:len,dphi_d_node_c,'b-+',1:len,dphi_d_elem_c,'g-^');
+legend('direct measurement change','predicted from node J_{D} c','predicted from elem J_{D} c');
+
+dd_d_node_c=dphi_dd./dphi_d_node_c;
+fprintf(1,'node-based c Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_node_c(:)), median(dd_d_node_c(:)));
+dd_d_elem_c=dphi_dd./dphi_d_elem_c;
+fprintf(1,'elem-based c Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_elem_c(:)), median(dd_d_elem_c(:)));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   Compare D Jacobian with direct measurement change
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+dphi_d_node_m=sum(Jd_node_m(:,cfg.elem(perturbeid,:)),2)/28;
+dphi_d_node_m=reshape(dphi_d_node_m,size(cfg.detpos,1),size(cfg.srcpos,1));
+
+dphi_d_elem_m=Jd_elem_m(:,perturbeid);  % change of measurement predicted from Jacobians
+dphi_d_elem_m=reshape(dphi_d_elem_m,size(cfg.detpos,1),size(cfg.srcpos,1));
+
+figure;
+plot(1:len,dphi_dd,'r-o',1:len,dphi_d_node_m,'b-+',1:len,dphi_d_elem_m,'g-^');
+legend('direct measurement change','predicted from node J_{D} m','predicted from elem J_{D} m');
+
+dd_d_node_m=dphi_dd./dphi_d_node_m;
+fprintf(1,'node-based m Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_node_m(:)), median(dd_d_node_m(:)));
+dd_d_elem_m=dphi_dd./dphi_d_elem_m;
+fprintf(1,'elem-based m Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_elem_m(:)), median(dd_d_elem_m(:)));
