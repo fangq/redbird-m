@@ -415,7 +415,7 @@ void mesh_clear(tetmesh *mesh){
 
 void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
     int t, sd, sid, rid, i;
-    int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,1,2,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
+    int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,2,3,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
     int inode[4]={0,4,7,9}; // position in deldotdel for diagonal
 
     if(jac->Jmuar)
