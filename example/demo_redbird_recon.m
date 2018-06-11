@@ -31,7 +31,6 @@ cfg0.srcdir=[0 0 1];
 [xi,yi]=meshgrid(60:20:140,20:20:100);
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
-cfg0.detpos(1:5,:)=[];
 
 cfg0.prop=[
     0 0 1 1
@@ -61,11 +60,13 @@ detphi0=rbrunforward(cfg0);
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%[cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 40);
-[nosp,fcsp]=meshasphere(s0, 5, 3);
-[no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
+[node,elem]=meshabox([40 0 0], [160, 120, 60], 30);
+rbsetmesh(cfg,node,elem);
 
-[cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
+% [nosp,fcsp]=meshasphere(s0, 5, 3);
+% [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
+% 
+% [cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
 cfg.elemprop=ones(size(cfg.elem,1),1);
 cfg=rbmeshprep(cfg);
 
@@ -93,4 +94,6 @@ for i=1:maxiter
 end
 
 plotmesh([cfg.node,cfg.mua],cfg.elem,'z=20','facecolor','interp','linestyle','none')
+hold on;
+plotmesh([cfg.node,cfg.mua],cfg.elem,'x=70','facecolor','interp','linestyle','none')
 view(3);

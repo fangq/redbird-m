@@ -161,19 +161,18 @@ detval_dd_node=rbfemgetdet(phi3_node, cfg, loc, bary); % or detval=rbfemgetdet(p
 %%   Build mua Jacobians, both c/matlab and node/elem
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-nvol=nodevolume(cfg.node,cfg.elem, cfg.evol);
 sd=rbsdmap(cfg);
+
+% build all Jacobians using mex code
 
 tic
 [Jmua_node_c, Jd_node_c]=rbfemmatrix(cfg, sd, phi);
-toc
-
-tic
 [Jmua_elem_c, Jd_elem_c]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 0);
 toc
 
-Jmua_node_m=rbjacmua(sd, phi, nvol); % build nodal-based Jacobian for mua
-Jmua_elem_m=rbjacmua(sd, phi, cfg.evol, cfg.elem); % build elem-based J_mua, large & slow
+% build all Jacobians using matlab native code
+tic
+[Jmua_node_m, Jmua_elem_m, Jd_node_m, Jd_elem_m]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); 
 fprintf('building J_mua ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,15 +225,6 @@ dd_mua_node_m=dphi_mua_node_m./dphi_dmua_node;
 fprintf(1,'node-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_node_m(:)), median(dd_mua_node_m(:)));
 dd_mua_elem_m=dphi_mua_elem_m./dphi_dmua;
 fprintf(1,'elem-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_elem_m(:)), median(dd_mua_elem_m(:)));
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build D Jacobians with matlab
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-tic
-[Jd_node_m, Jd_elem_m]=rbjacdcoef(sd, phi, deldotdel, cfg.elem); % build nodal-based Jacobian for mua
-fprintf('building J_D ... \t%f seconds\n',toc);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Compare D Jacobian with direct measurement change

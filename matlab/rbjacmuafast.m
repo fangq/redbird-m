@@ -1,4 +1,4 @@
-function Jmua=rbjacmua(sd, phi, nvol, elem)
+function Jmua=rbjacmuafast(sd, phi, nvol, elem)
 
 if(nargin<3 || isempty(sd) || isempty(phi) || isempty(nvol))
     error('you must give at least the first 3 inputs and they must not be empty');
