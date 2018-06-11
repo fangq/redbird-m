@@ -37,8 +37,12 @@ if(~isfield(cfg,'srcdir'))
     error('cfg.srcdir field is missing');
 end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
-    [ix,iy]=find(cfg.elem==cfg.face(1));
-    cfg.reff=rbgetreff(cfg.prop(cfg.elemprop(ix(1))+1,4), cfg.prop(1,4));
+    if(length(cfg.elemprop)==size(cfg.elem,1))
+        ix=find(cfg.elem==cfg.face(1));
+        cfg.reff=rbgetreff(cfg.prop(cfg.elemprop(ix(1))+1,4), cfg.prop(1,4));
+    else
+        cfg.reff=rbgetreff(cfg.prop(cfg.elemprop(cfg.face(1))+1,4), cfg.prop(1,4));
+    end
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))
     [cfg.rows,cfg.cols,cfg.idxcount]=rbfemnz(cfg.elem,size(cfg.node,1));

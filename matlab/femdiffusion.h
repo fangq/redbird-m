@@ -61,13 +61,14 @@ typedef struct MMC_mesh{
 	int ne;      /**< number of elements */
 	int nf;      /**< number of surface triangles */
 	int prop;    /**< number of media */
+	int ntype;   /**< number of property indices, i.e. type length */
 	int ntot;
 	int e0;
 	int isreoriented;
 	float3 *node;/**< node coordinates */
 	int3 *face;  /**< boundary triangle node indices */
 	int4 *elem;  /**< tetrahedron node indices */
-	int  *type;  /**< element-based media index */
+	int  *type;  /**< element or node-based media index */
 	medium *med; /**< optical property of different media */
 	double *evol; /**< volume of an element */
 	double *area; /**< area of the triangular face */
@@ -99,9 +100,11 @@ typedef struct FEMJacobian{
 	double *deldotdel;
 } Jacobian;
 
-void femdiffusion(Config *cfg, tetmesh *mesh, Forward *fem);
-void femdiffusion_boundary(Config *cfg, tetmesh *mesh, Forward *fem);
-void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac);
+void rb_femmatrix_nodal(Config *cfg, tetmesh *mesh, Forward *fem);
+void rb_femmatrix_elem (Config *cfg, tetmesh *mesh, Forward *fem);
+void rb_fem_bc(Config *cfg, tetmesh *mesh, Forward *fem);
+void rb_deldotdel(Config *cfg, tetmesh *mesh, Forward *fem);
+void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac);
 
 void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg, tetmesh *mesh, Jacobian *jac);
 void config_init(Config *cfg);

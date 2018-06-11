@@ -134,14 +134,25 @@ void mexFunction(int nlhs,       mxArray *plhs[],
     if(nlhs>=3){
 	plhs[2] = mxCreateDoubleMatrix(10,mesh.ne, mxREAL);
         femdata.deldotdel = mxGetPr(plhs[2]);
+    }else{
+        femdata.deldotdel=(double *)calloc(mesh.ne,10*sizeof(double));
     }
     
     if(isjacobian==0){
-	femdiffusion(&cfg,&mesh,&femdata);
-	femdiffusion_boundary(&cfg,&mesh,&femdata);
+	rb_deldotdel(&cfg,&mesh,&femdata);
+	if(mesh.ntype==mesh.ne)
+	    rb_femmatrix_elem (&cfg,&mesh,&femdata);
+	else if(mesh.ntype==mesh.nn)
+	    rb_femmatrix_nodal(&cfg,&mesh,&femdata);
+        else
+	    MEXERROR("cfg.elemprop must have a length that matches the length of either cfg.node or cfg.elem");
+        rb_fem_bc(&cfg,&mesh,&femdata);
     }else{
-        femjacobian(&cfg,&mesh,&jac);
+        rb_femjacobian(&cfg,&mesh,&jac);
     }
+
+    if(nlhs<3 && femdata.deldotdel)
+        delete(femdata.deldotdel);
 
     /** \subsection sclean End the simulation */
     mesh_clear(&mesh);
@@ -208,12 +219,12 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
 	if(MAX(arraydim[0],arraydim[1])==0)
             MEXERROR("the 'elemprop' field can not be empty");
         double *val=mxGetPr(item);
-        mesh->ne=MAX(arraydim[0],arraydim[1]);
+        mesh->ntype=MAX(arraydim[0],arraydim[1]);
 	if(mesh->type) free(mesh->type);
-	mesh->type=(int  *)malloc(sizeof(int )*mesh->ne);
-        for(i=0;i<mesh->ne;i++)
+	mesh->type=(int  *)malloc(sizeof(int )*mesh->ntype);
+        for(i=0;i<mesh->ntype;i++)
            mesh->type[i]=val[i];
-        printf("rbm.ne=%d;\n",mesh->ne);
+        printf("rbm.elemprop=<%d>;\n",mesh->ntype);
     }else if(strcmp(name,"evol")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -347,6 +358,7 @@ void mesh_init(tetmesh *mesh){
 	mesh->nn=0;
 	mesh->ne=0;
 	mesh->nf=0;
+	mesh->ntype=0;
 	mesh->prop=0;
 	mesh->node=NULL;
 	mesh->elem=NULL;
@@ -365,6 +377,7 @@ void mesh_clear(tetmesh *mesh){
 	mesh->nn=0;
 	mesh->ne=0;
 	mesh->nf=0;
+	mesh->ntype=0;
         mesh->ntot=0;
         mesh->prop=0;
 	if(mesh->node){
@@ -413,7 +426,7 @@ void mesh_clear(tetmesh *mesh){
         }
 }
 
-void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
+void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
     int t, sd, sid, rid, i;
     int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,2,3,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
     int inode[4]={0,4,7,9}; // position in deldotdel for diagonal
@@ -524,40 +537,11 @@ void femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
     }
 }
 
-void femdiffusion_boundary(Config *cfg,tetmesh *mesh, Forward *fem){
-    int t;
-    double val;
-    double Reff=(1.0-cfg->reff)/(1.0+cfg->reff)*(1.0/12.0);
-
-    for(t=0;t<mesh->nf;t++){
-        val=mesh->area[t]*Reff;
-	fem->Dr[mesh->face[t].x]+=val;
-	fem->Dr[mesh->face[t].y]+=val;
-	fem->Dr[mesh->face[t].z]+=val;
-
-	val=val*0.5;
-	fem->Ar[sub2ind(mesh,mesh->face[t].x,mesh->face[t].y)]+=val;
-	fem->Ar[sub2ind(mesh,mesh->face[t].x,mesh->face[t].z)]+=val;
-	fem->Ar[sub2ind(mesh,mesh->face[t].y,mesh->face[t].z)]+=val;
-    }
-}
-
-void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
-    double mua, musp,dcoeff,nref;
+void rb_deldotdel(Config *cfg,tetmesh *mesh, Forward *fem){
     float3 *N;
-    int i1,i2,i3,i4,i,j,t,ii,jj,ij;
+    int i1,i2,i3,i4,i,j,t;
     double derx[4],dery[4],derz[4];
-    double ra,ri,Ve,RVe6,deldotdel,sm;
-    
-    /*initialize output variables*/
-    if(fem->Dr)
-	memset(fem->Dr,0,mesh->nn*sizeof(double));
-    if(fem->Di)
-	memset(fem->Di,0,mesh->nn*sizeof(double));
-    if(fem->Ar)
-	memset(fem->Ar,0,mesh->ntot*sizeof(double));
-    if(fem->Ai)
-	memset(fem->Ai,0,mesh->ntot*sizeof(double));
+    double Ve,RVe6;
 
     /* map coordinate pointers*/
     N=mesh->node;
@@ -566,17 +550,11 @@ void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
     for(t=0;t<mesh->ne;t++){
         RVe6=1.0/(mesh->evol[t]*6.0);
         Ve =mesh->evol[t];
-        
+
         i1=mesh->elem[t].x;
         i2=mesh->elem[t].y;
         i3=mesh->elem[t].z;
         i4=mesh->elem[t].w;
-
-	mua=mesh->med[mesh->type[t]].mua;
-	musp=mesh->med[mesh->type[t]].mus;
-	nref=mesh->med[mesh->type[t]].n;
-
-	dcoeff=1.0/(3.0*(mua+musp));
 
         /*calculate del_x,del_y and del_z for 4 basis functions per elem*/
         derx[0]=-((N[i3].y*N[i4].z-N[i3].z*N[i4].y)-N[i2].y*(N[i4].z-N[i3].z)
@@ -607,16 +585,46 @@ void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
         derz[3]=((N[i2].x*N[i3].y-N[i2].y*N[i3].x)-N[i1].x*(N[i3].y-N[i2].y)
                +N[i1].y*(N[i3].x-N[i2].x))*RVe6;
 
+        /*loop over upper triangle*/
+        for(i=0;i<4;i++)
+          for(j=i;j<4;j++)
+            fem->deldotdel[t*10+(i<<2)+j-i-(i>1)-((i>2)<<1)]=(derx[i]*derx[j]+dery[i]*dery[j]+derz[i]*derz[j])*Ve;
+    }
+}
+
+void rb_femmatrix_elem(Config *cfg,tetmesh *mesh, Forward *fem){
+    double mua, musp,dcoeff,nref;
+    int i,j,t,ii,jj,ij,*ee;
+    double ra,ri,Ve,deldotdel,sm;
+
+    /*initialize output variables*/
+    if(fem->Dr)
+	memset(fem->Dr,0,mesh->nn*sizeof(double));
+    if(fem->Di)
+	memset(fem->Di,0,mesh->nn*sizeof(double));
+    if(fem->Ar)
+	memset(fem->Ar,0,mesh->ntot*sizeof(double));
+    if(fem->Ai)
+	memset(fem->Ai,0,mesh->ntot*sizeof(double));
+
+    /* loop over all elements*/
+    for(t=0;t<mesh->ne;t++){
+        Ve =mesh->evol[t];
+	ee=(int *)(mesh->elem+t);
+
+	mua=mesh->med[mesh->type[t]].mua;
+	musp=mesh->med[mesh->type[t]].mus;
+	nref=mesh->med[mesh->type[t]].n;
+
+	dcoeff=1.0/(3.0*(mua+musp));
+
         /*loop over index i*/
         for(i=0;i<4;i++){
-          ii = ((int *)(mesh->elem+t))[i];
-          /*loop over index j*/
+          ii = ee[i];
+          /*loop over index j, upper triangle only*/
           for(j=i;j<4;j++){
-            jj =((int *)(mesh->elem+t))[j];
-            deldotdel=(derx[i]*derx[j]+dery[i]*dery[j]+derz[i]*derz[j])*Ve;
-	    
-	    if(fem->deldotdel)
-	        fem->deldotdel[t*10+(i<<2)+j-i-(i>1)-((i>2)<<1)]=deldotdel;
+            jj =ee[j];
+            deldotdel=fem->deldotdel[t*10+(i<<2)+j-i-(i>1)-((i>2)<<1)];
 
             sm = Ve*0.05;
             if (i==j) sm = Ve*0.1;
@@ -638,6 +646,88 @@ void femdiffusion(Config *cfg,tetmesh *mesh, Forward *fem){
             }
           }
         }
+    }
+}
+
+void rb_femmatrix_nodal(Config *cfg,tetmesh *mesh, Forward *fem){
+    double mua, musp,dcoeff,nref;
+    int i,j,k,t,ii,jj,ij,*ee;
+    double ra,ri,Ve,deldotdel,sm;
+    
+    /*initialize output variables*/
+    if(fem->Dr)
+	memset(fem->Dr,0,mesh->nn*sizeof(double));
+    if(fem->Di)
+	memset(fem->Di,0,mesh->nn*sizeof(double));
+    if(fem->Ar)
+	memset(fem->Ar,0,mesh->ntot*sizeof(double));
+    if(fem->Ai)
+	memset(fem->Ai,0,mesh->ntot*sizeof(double));
+    
+    /* loop over all elements*/
+    for(t=0;t<mesh->ne;t++){
+        Ve =mesh->evol[t];
+	ee=(int *)(mesh->elem+t);
+
+        /*loop over index i*/
+        for(i=0;i<4;i++){
+          ii =ee[i];
+          /*loop over index j*/
+          for(j=i;j<4;j++){
+            jj =ee[j];
+            deldotdel=fem->deldotdel[t*10+(i<<2)+j-i-(i>1)-((i>2)<<1)]*0.25;
+
+            ra=0.0;
+	    ri=0.0;
+
+            for(k=0;k<4;k++){
+                sm = Ve*(1.0/120.);
+                if (i==j || i==k || j==k) sm = Ve*(1.0/60.);
+		if (i==j && i==k) sm = Ve*(1.0/20.);
+
+	        mua=mesh->med[mesh->type[ee[k]]].mua;
+	        musp=mesh->med[mesh->type[ee[k]]].mus;
+	        nref=mesh->med[mesh->type[ee[k]]].n;
+
+		dcoeff=1.0/(3.0*(mua+musp));
+
+                /* D*Ve*delFi*delF */
+                ra+=dcoeff*deldotdel+mua*sm;
+	        ri+=cfg->omega*R_C0*nref*sm;
+            }
+
+            /*add the values to the vectorized sparse matrix*/
+            if(ii==jj){
+                fem->Dr[ii]+=ra;
+		if(fem->Di)
+		    fem->Di[ii]+=ri;
+            }else{
+                ij=sub2ind(mesh,ii,jj);
+                fem->Ar[ij]+=ra;
+		if(fem->Ai)
+		    fem->Ai[ij]+=ri;		    
+            }
+          }
+        }
+    }
+}
+
+
+void rb_fem_bc(Config *cfg,tetmesh *mesh, Forward *fem){
+    int t;
+    double val;
+    double Reff=(1.0-cfg->reff)/(1.0+cfg->reff)*(1.0/12.0);
+
+    for(t=0;t<mesh->nf;t++){
+        val=mesh->area[t]*Reff;
+	fem->Dr[mesh->face[t].x]+=val;
+	fem->Dr[mesh->face[t].y]+=val;
+	fem->Dr[mesh->face[t].z]+=val;
+
+	val=val*0.5;
+	fem->Ar[sub2ind(mesh,mesh->face[t].x,mesh->face[t].y)]+=val;
+	fem->Ar[sub2ind(mesh,mesh->face[t].x,mesh->face[t].z)]+=val;
+	fem->Ar[sub2ind(mesh,mesh->face[t].y,mesh->face[t].z)]+=val;
     }
 }
 

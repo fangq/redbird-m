@@ -43,21 +43,23 @@ cfg.detpos(:,3)=cfg.detpos(:,3)-z0;
 cfg.omega=2*pi*70e6;
 cfg.omega=0;
 
+tic
 cfg=rbmeshprep(cfg);
+fprintf('preparing mesh ... \t%f seconds\n',toc);
 
-save config.mat
+% save config.mat
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build LHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% tic
-% [Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
-% toc
-
 tic
-deldotdel=rbdeldotdel(cfg);
-Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
-toc
+[Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
+fprintf('build LHS using mex ... \t%f seconds\n',toc);
+
+% tic
+% deldotdel=rbdeldotdel(cfg);
+% Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
+% fprintf('build LHS using native code ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS
@@ -72,7 +74,7 @@ toc
 tic;fprintf(1,'solving for the solution ...\n');
 %phi=rbfemsolve(Amat,rhs,'symmlq',1e-20,100);
 phi=rbfemsolve(Amat,rhs);
-toc 
+fprintf('solving forward solutions ... \t%f seconds\n',toc); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Extract detector readings from the solutions
