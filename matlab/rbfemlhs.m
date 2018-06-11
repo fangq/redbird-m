@@ -5,6 +5,8 @@ function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel)
 nn=size(cfg.node,1);
 ne=size(cfg.elem,1);
 
+R_C0=(1./299792458000.);
+
 if(nargin==2)
     if(~isfield(cfg,'mua') || isempty(cfg.mua))
         mua=cfg.prop(cfg.elemprop+1,1);
@@ -30,17 +32,20 @@ if(nargin==2)
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff(:),1,6) + repmat(0.05*mua(:).*cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff(:),1,4) + repmat(0.10*mua(:).*cfg.evol(:),1,4);
         if(cfg.omega>0)
-            R_C0=(1./299792458000.);
             Aoffd=complex(Aoffd,repmat(0.05*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,6));
             Adiag=complex(Adiag,repmat(0.10*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,4));
         end
     else
-        Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff(:),1,6) + repmat(0.05*mua(:).*cfg.evol(:),1,6);
-        Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff(:),1,4) + repmat(0.10*mua(:).*cfg.evol(:),1,4);
+        w1=(1/120)*[2 2 1 1;2 1 2 1; 2 1 1 2;1 2 2 1; 1 2 1 2; 1 1 2 2]';
+        w2=(1/60)*(diag([2 2 2 2])+1);
+        mua_e=reshape(mua(cfg.elem),size(cfg.elem));
+        nref_e=reshape(nref(cfg.elem),size(cfg.elem));
+        dcoeff_e=mean(reshape(dcoeff(cfg.elem),size(cfg.elem)),2);
+        Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff_e,1,6) + (mua_e*w1).*repmat(cfg.evol(:),1,6);
+        Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff_e,1,4) + (mua_e*w2).*repmat(cfg.evol(:),1,4);
         if(cfg.omega>0)
-            R_C0=(1./299792458000.);
-            Aoffd=complex(Aoffd,repmat(0.05*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,6));
-            Adiag=complex(Adiag,repmat(0.10*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,4));
+            Aoffd=complex(Aoffd,(cfg.omega*R_C0)*(nref_e*w1).*repmat(cfg.evol(:),1,6));
+            Adiag=complex(Adiag,(cfg.omega*R_C0)*(nref_e*w2).*repmat(cfg.evol(:),1,4));
         end
     end
     edgebc=sort(meshedge(cfg.face),2);

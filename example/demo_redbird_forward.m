@@ -52,14 +52,14 @@ fprintf('preparing mesh ... \t%f seconds\n',toc);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build LHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-tic
-[Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
-fprintf('build LHS using mex ... \t%f seconds\n',toc);
-
 % tic
-% deldotdel=rbdeldotdel(cfg);
-% Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
-% fprintf('build LHS using native code ... \t%f seconds\n',toc);
+% [Amat,deldotdel]=rbfemlhs(cfg); % use mex function rbfemmatrix, 5x faster
+% fprintf('build LHS using mex ... \t%f seconds\n',toc);
+
+tic
+deldotdel=rbdeldotdel(cfg);
+Amat=rbfemlhs(cfg,deldotdel); % use native matlab code, 1 sec for 50k nodes
+fprintf('build LHS using native code ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS

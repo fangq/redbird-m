@@ -1,4 +1,4 @@
-function [Jmua_node, Jd_node]=rbjnode(Jmua_elem, Jd_elem, elem, nodelen)
+function [Jmua_node, Jd_node]=rbjacnode(Jmua_elem, Jd_elem, elem, nodelen)
 if(nargout>nargin)
     error('output number can not exceed input number')
 end

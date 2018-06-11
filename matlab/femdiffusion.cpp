@@ -315,6 +315,8 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         // do nothing
     }else if(strcmp(name,"nvol")==0){
         // do nothing
+    }else if(strcmp(name,"musp0")==0){
+        // do nothing
     }else{
         printf("WARNING: redundant field '%s'\n",name);
     }

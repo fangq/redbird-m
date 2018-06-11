@@ -1,4 +1,4 @@
-function detval=rbfemgetdet(phi, cfg, optodeloc, optodebary)
+function [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 
 % output:
 %   detval: #det x #src array, denoting the measurement data
