@@ -145,7 +145,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
 	else if(mesh.ntype==mesh.nn)
 	    rb_femmatrix_nodal(&cfg,&mesh,&femdata);
         else
-	    MEXERROR("cfg.elemprop must have a length that matches the length of either cfg.node or cfg.elem");
+	    MEXERROR("cfg.seg must have a length that matches the length of either cfg.node or cfg.elem");
         rb_fem_bc(&cfg,&mesh,&femdata);
     }else{
         rb_femjacobian(&cfg,&mesh,&jac);
@@ -214,17 +214,17 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
           for(i=0;i<mesh->nf;i++)
              ((int *)(&mesh->face[i]))[j]=(int)val[j*mesh->nf+i]-1;
         printf("rbm.nf=%d;\n",mesh->nf);
-    }else if(strcmp(name,"elemprop")==0){
+    }else if(strcmp(name,"seg")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
-            MEXERROR("the 'elemprop' field can not be empty");
+            MEXERROR("the 'seg' field can not be empty");
         double *val=mxGetPr(item);
         mesh->ntype=MAX(arraydim[0],arraydim[1]);
 	if(mesh->type) free(mesh->type);
 	mesh->type=(int  *)malloc(sizeof(int )*mesh->ntype);
         for(i=0;i<mesh->ntype;i++)
            mesh->type[i]=val[i];
-        printf("rbm.elemprop=<%d>;\n",mesh->ntype);
+        printf("rbm.seg=<%d>;\n",mesh->ntype);
     }else if(strcmp(name,"evol")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)

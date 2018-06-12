@@ -3,8 +3,8 @@ function newcfg=rbmeshprep(cfg)
 if(~isfield(cfg,'node') || ~isfield(cfg,'elem'))
     error('cfg.node or cfg.elem is missing');
 end
-if(~isfield(cfg,'elemprop') ||isempty(cfg.elemprop) && size(cfg.elem,2)>4)
-    cfg.elemprop=cfg.elem(:,5);
+if(~isfield(cfg,'seg') ||isempty(cfg.seg) && size(cfg.elem,2)>4)
+    cfg.seg=cfg.elem(:,5);
     cfg.elem(:,5)=[];
 end
 if(~isfield(cfg,'isreoriented') || isempty(cfg.isreoriented) || cfg.isreoriented==0)
@@ -37,13 +37,13 @@ if(~isfield(cfg,'srcdir'))
     error('cfg.srcdir field is missing');
 end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
-    if(length(cfg.elemprop)==size(cfg.elem,1))
+    if(length(cfg.seg)==size(cfg.elem,1))
         ix=find(cfg.elem==cfg.face(1));
-        cfg.reff=rbgetreff(cfg.prop(cfg.elemprop(ix(1))+1,4), cfg.prop(1,4));
-        cfg.musp0=cfg.prop(cfg.elemprop(ix(1))+1,2);
+        cfg.reff=rbgetreff(cfg.prop(cfg.seg(ix(1))+1,4), cfg.prop(1,4));
+        cfg.musp0=cfg.prop(cfg.seg(ix(1))+1,2);
     else
-        cfg.reff=rbgetreff(cfg.prop(cfg.elemprop(cfg.face(1))+1,4), cfg.prop(1,4));
-        cfg.musp0=cfg.prop(cfg.elemprop(cfg.face(1))+1,2);
+        cfg.reff=rbgetreff(cfg.prop(cfg.seg(cfg.face(1))+1,4), cfg.prop(1,4));
+        cfg.musp0=cfg.prop(cfg.seg(cfg.face(1))+1,2);
     end
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))

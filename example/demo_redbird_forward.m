@@ -22,7 +22,7 @@ clear cfg
 
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg.node,1);
-cfg.elemprop=ones(size(cfg.elem,1),1);
+cfg.seg=ones(size(cfg.elem,1),1);
 cfg.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);

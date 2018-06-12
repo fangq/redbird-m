@@ -25,7 +25,7 @@ s0=[70, 50, 20];
 
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg0.node,1);
-cfg0.elemprop=cfg0.elem(:,5);
+cfg0.seg=cfg0.elem(:,5);
 cfg0.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);
@@ -67,7 +67,7 @@ rbsetmesh(cfg,node,elem);
 % [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
 % 
 % [cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
-cfg.elemprop=ones(size(cfg.elem,1),1);
+cfg.seg=ones(size(cfg.elem,1),1);
 cfg=rbmeshprep(cfg);
 
 sd=rbsdmap(cfg);
@@ -79,7 +79,7 @@ sd=rbsdmap(cfg);
 maxiter=10;
 resid=zeros(1,maxiter);
 
-cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.elemprop(1)+1,1);
+cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
 
 tic
 for i=1:maxiter

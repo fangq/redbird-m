@@ -20,7 +20,7 @@ clear cfg
 
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg.node,1);
-cfg.elemprop=ones(size(cfg.elem,1),1);
+cfg.seg=ones(size(cfg.elem,1),1);
 cfg.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);
@@ -93,7 +93,7 @@ detval=rbfemgetdet(phi, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs);
 %%   perturb mua in an element
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cfg.elemprop(perturbeid)=2;
+cfg.seg(perturbeid)=2;
 cfg.prop(3,:)=cfg.prop(2,:);
 cfg.prop(3,1)=cfg.prop(3,1)*1.01;
 
@@ -110,7 +110,7 @@ dmua=(cfg.prop(3,1)-cfg.prop(2,1));
 %%   perturb D in an element
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cfg.elemprop(perturbeid)=2;
+cfg.seg(perturbeid)=2;
 cfg.prop(3,:)=cfg.prop(2,:);
 cfg.prop(3,2)=cfg.prop(3,2)*1.01;
 
@@ -127,8 +127,8 @@ detval_dd=rbfemgetdet(phi3, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, r
 %%   perturb mua at a node
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cfg.elemprop=ones(size(cfg.node,1),1);
-cfg.elemprop(cfg.elem(perturbeid,1))=2;
+cfg.seg=ones(size(cfg.node,1),1);
+cfg.seg(cfg.elem(perturbeid,1))=2;
 cfg.prop(3,:)=cfg.prop(2,:);
 cfg.prop(3,1)=cfg.prop(3,1)*1.01;
 
@@ -143,8 +143,8 @@ detval_dmua_node=rbfemgetdet(phi2_node, cfg, loc, bary); % or detval=rbfemgetdet
 %%   perturb D at a node
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cfg.elemprop=ones(size(cfg.node,1),1);
-cfg.elemprop(cfg.elem(perturbeid,1))=2;
+cfg.seg=ones(size(cfg.node,1),1);
+cfg.seg(cfg.elem(perturbeid,1))=2;
 cfg.prop(3,:)=cfg.prop(2,:);
 cfg.prop(3,2)=cfg.prop(3,2)*1.01;
 

@@ -17,7 +17,7 @@ clear cfg
 
 [cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],6);
 nn=size(cfg.node,1);
-cfg.elemprop=ones(size(cfg.elem,1),1);
+cfg.seg=ones(size(cfg.elem,1),1);
 cfg.srcpos=[30 30 1; 10,20,1];
 cfg.srcdir=[0 0 1];
 

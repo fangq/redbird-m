@@ -9,18 +9,18 @@ R_C0=(1./299792458000.);
 
 if(nargin==2)
     if(~isfield(cfg,'mua') || isempty(cfg.mua))
-        mua=cfg.prop(cfg.elemprop+1,1);
+        mua=cfg.prop(cfg.seg+1,1);
     else
         mua=cfg.mua;
     end
     if(~isfield(cfg,'dcoeff') || isempty(cfg.dcoeff))
-        musp=cfg.prop(cfg.elemprop+1,2).*(1-cfg.prop(cfg.elemprop+1,3));
+        musp=cfg.prop(cfg.seg+1,2).*(1-cfg.prop(cfg.seg+1,3));
         dcoeff=1./(3*(mua+musp));
     else
         dcoeff=cfg.dcoeff;
     end
     if(~isfield(cfg,'nref') || isempty(cfg.nref))
-        nref=cfg.prop(cfg.elemprop+1,4);
+        nref=cfg.prop(cfg.seg+1,4);
     else
         nref=cfg.nref;
     end
