@@ -1,7 +1,7 @@
 function cfg=rbsetmesh(cfg0,node,elem,prop,propidx)
 
 names=fieldnames(cfg0);
-names=intersect(names,{'face','evol','deldotdel','isreoriented','nvol','cols','idxsum','seg','musp0'});
+names=intersect(names,{'face','evol','deldotdel','isreoriented','nvol','cols','idxsum','musp0'});
 
 cfg0.node=node;
 cfg0.elem=elem;

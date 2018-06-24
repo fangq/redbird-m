@@ -3,7 +3,7 @@ function newcfg=rbmeshprep(cfg)
 if(~isfield(cfg,'node') || ~isfield(cfg,'elem'))
     error('cfg.node or cfg.elem is missing');
 end
-if(~isfield(cfg,'seg') ||isempty(cfg.seg) && size(cfg.elem,2)>4)
+if((~isfield(cfg,'seg') ||isempty(cfg.seg)) && size(cfg.elem,2)>4)
     cfg.seg=cfg.elem(:,5);
     cfg.elem(:,5)=[];
 end
