@@ -61,13 +61,13 @@ detphi0=rbrunforward(cfg0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [node,face,elem]=meshabox([40 0 0], [160, 120, 60], 30);
-rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
+cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
 % [nosp,fcsp]=meshasphere(s0, 5, 3);
 % [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
 % 
 % [cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
-cfg=rbmeshprep(cfg);
+% cfg=rbmeshprep(cfg);
 
 sd=rbsdmap(cfg);
 
