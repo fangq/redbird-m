@@ -1,18 +1,24 @@
 #ifndef _REDBIRD_MATLAB_DIFFUSION_H
 #define _REDBIRD_MATLAB_DIFFUSION_H
 
-#define GET_1ST_POINTER(x,y,z)  if(strcmp(name,#y)==0) {x->y=(z*)mxGetData(item);printf("reading rbm.%s\n",#y);}
+#ifdef  RB_DEBUG
+#define PRINTF(x)        printf x             /**< enable debugging in CPU mode */
+#else
+#define PRINTF(x)
+#endif
+
+#define GET_1ST_POINTER(x,y,z)  if(strcmp(name,#y)==0) {x->y=(z*)mxGetData(item);PRINTF(("reading rbm.%s\n",#y));}
 #define GET_ONE_POINTER(x,y,z)  else GET_1ST_POINTER(x,y,z)
 
-#define GET_1ST_FIELD(x,y)  if(strcmp(name,#y)==0) {double *val=mxGetPr(item);x->y=val[0];printf("rbm.%s=%g;\n",#y,(float)(x->y));}
+#define GET_1ST_FIELD(x,y)  if(strcmp(name,#y)==0) {double *val=mxGetPr(item);x->y=val[0];PRINTF(("rbm.%s=%g;\n",#y,(float)(x->y)));}
 #define GET_ONE_FIELD(x,y)  else GET_1ST_FIELD(x,y)
 
 #define GET_VEC3_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];\
-                                 printf("rbm.%s=[%g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z));}
+                                 PRINTF(("rbm.%s=[%g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z)));}
 #define GET_VEC34_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];if(mxGetNumberOfElements(item)==4) u->v.w=val[3];\
-                                 printf("rbm.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w));}
+                                 PRINTF(("rbm.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w)));}
 #define GET_VEC4_FIELD(u,v) else if(strcmp(name,#v)==0) {double *val=mxGetPr(item);u->v.x=val[0];u->v.y=val[1];u->v.z=val[2];u->v.w=val[3];\
-                                 printf("rbm.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w));}
+                                 PRINTF(("rbm.%s=[%g %g %g %g];\n",#v,(float)(u->v.x),(float)(u->v.y),(float)(u->v.z),(float)(u->v.w)));}
 
 #define ABS(a)    ((a)<0?-(a):(a))
 #define MIN(a,b)  ((a)>(b)?(a):(b))

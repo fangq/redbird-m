@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "mex.h"
-#include "femdiffusion.h"
+#include "rbfemmatrix.h"
 
 #define N137_REFF 0.468407140351385
 
@@ -189,7 +189,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<3;j++)
           for(i=0;i<mesh->nn;i++)
              ((double *)(&mesh->node[i]))[j]=val[j*mesh->nn+i];
-        printf("rbm.nn=%d;\n",mesh->nn);
+        PRINTF(("rbm.nn=%d;\n",mesh->nn));
     }else if(strcmp(name,"elem")==0){
         arraydim=mxGetDimensions(item);
 	if(arraydim[0]<=0 || arraydim[1]!=4)
@@ -201,7 +201,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<4;j++)
           for(i=0;i<mesh->ne;i++)
              ((int *)(&mesh->elem[i]))[j]=(int)val[j*mesh->ne+i]-1;
-        printf("rbm.ne=%d;\n",mesh->ne);
+        PRINTF(("rbm.ne=%d;\n",mesh->ne));
     }else if(strcmp(name,"face")==0){
         arraydim=mxGetDimensions(item);
 	if(arraydim[0]<=0 || arraydim[1]!=3)
@@ -213,7 +213,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<3;j++)
           for(i=0;i<mesh->nf;i++)
              ((int *)(&mesh->face[i]))[j]=(int)val[j*mesh->nf+i]-1;
-        printf("rbm.nf=%d;\n",mesh->nf);
+        PRINTF(("rbm.nf=%d;\n",mesh->nf));
     }else if(strcmp(name,"seg")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -224,7 +224,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
 	mesh->type=(int  *)malloc(sizeof(int )*mesh->ntype);
         for(i=0;i<mesh->ntype;i++)
            mesh->type[i]=val[i];
-        printf("rbm.seg=<%d>;\n",mesh->ntype);
+        PRINTF(("rbm.seg=<%d>;\n",mesh->ntype));
     }else if(strcmp(name,"evol")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -235,7 +235,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->evol=(double *)malloc(sizeof(double)*mesh->ne);
         for(i=0;i<mesh->ne;i++)
            mesh->evol[i]=val[i];
-        printf("rbm.evol=%d;\n",mesh->ne);
+        PRINTF(("rbm.evol=%d;\n",mesh->ne));
     }else if(strcmp(name,"area")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -246,7 +246,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->area=(double *)malloc(sizeof(double)*mesh->nf);
         for(i=0;i<mesh->nf;i++)
            mesh->area[i]=val[i];
-        printf("rbm.area=%d;\n",mesh->nf);
+        PRINTF(("rbm.area=%d;\n",mesh->nf));
     }else if(strcmp(name,"idxcount")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -257,7 +257,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->idxcount=(int *)malloc(sizeof(int)*mesh->nn);
         for(i=0;i<mesh->nn;i++)
            mesh->idxcount[i]=val[i];
-        printf("rbm.idxcount=%d;\n",mesh->nn);
+        PRINTF(("rbm.idxcount=%d;\n",mesh->nn));
     }else if(strcmp(name,"idxsum")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -268,7 +268,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->idxsum=(int *)malloc(sizeof(int)*mesh->nn);
         for(i=0;i<mesh->nn;i++)
            mesh->idxsum[i]=val[i];
-        printf("rbm.idxsum=%d;\n",mesh->nn);
+        PRINTF(("rbm.idxsum=%d;\n",mesh->nn));
     }else if(strcmp(name,"rows")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -279,7 +279,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->rows=(int *)malloc(sizeof(int)*mesh->ntot);
         for(i=0;i<mesh->ntot;i++)
            mesh->rows[i]=(int)val[i]-1;
-        printf("rbm.rows=%d;\n",mesh->ntot);
+        PRINTF(("rbm.rows=%d;\n",mesh->ntot));
     }else if(strcmp(name,"cols")==0){
         arraydim=mxGetDimensions(item);
 	if(MAX(arraydim[0],arraydim[1])==0)
@@ -290,7 +290,7 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         mesh->cols=(int *)malloc(sizeof(int)*mesh->ntot);
         for(i=0;i<mesh->ntot;i++)
            mesh->cols[i]=(int)val[i]-1;
-        printf("rbm.cols=%d;\n",mesh->ntot);
+        PRINTF(("rbm.cols=%d;\n",mesh->ntot));
     }else if(strcmp(name,"prop")==0){
         arraydim=mxGetDimensions(item);
         if(arraydim[0]>0 && arraydim[1]!=4)
@@ -302,18 +302,20 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         for(j=0;j<4;j++)
           for(i=0;i<=mesh->prop;i++)
              ((double *)(&mesh->med[i]))[j]=val[j*(mesh->prop+1)+i];
-        printf("rbm.prop=%d;\n",mesh->prop);
+        PRINTF(("rbm.prop=%d;\n",mesh->prop));
     }else if(strcmp(name,"deldotdel")==0){
         if(jac->deldotdel==NULL){
 	    arraydim=mxGetDimensions(item);
 	    if(arraydim[1]!=10)
 	        MEXERROR("deldotphi must have be a 2D array with size: node number x 10");
 	    jac->deldotdel=mxGetPr(item); // phi: [mesh.nn x jac.nsd]
-            printf("rbm.deldotdel=<%d,10>;\n",arraydim[0]);
+            PRINTF(("rbm.deldotdel=<%d,10>;\n",arraydim[0]));
 	}
     }else if(strcmp(name,"detpos")==0){
         // do nothing
     }else if(strcmp(name,"nvol")==0){
+        // do nothing
+    }else if(strcmp(name,"mua")==0){
         // do nothing
     }else if(strcmp(name,"musp0")==0){
         // do nothing

@@ -1,7 +1,7 @@
 mex:
-	mex -output rbfemmatrix femdiffusion.cpp CXXFLAGS='$$CXXFLAGS -g -Wall -pedantic -O3 '
+	mex -output rbfemmatrix rbfemmatrix.cpp CXXFLAGS='$$CXXFLAGS -g -Wall -pedantic -O3 '
 oct:
-	mkoctfile --mex -o rbfemmatrix femdiffusion.cpp
+	mkoctfile --mex -o rbfemmatrix rbfemmatrix.cpp
 clean:
 	rm rbfemmatrix.mex*
 

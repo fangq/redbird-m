@@ -80,16 +80,16 @@ resid=zeros(1,maxiter);
 
 cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
 
-tic
 for i=1:maxiter
+    tic
     [detphi, phi]=rbrunforward(cfg);
-    tic; Jmua=rbfemmatrix(cfg, sd, phi);toc
+    Jmua=rbfemmatrix(cfg, sd, phi);
     %Jmua=rbjacmua(sd, phi, cfg.nvol); % build nodal-based Jacobian for mua
     misfit=detphi0(:)-detphi(:);
     resid(i)=sum(abs(misfit));
-    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
     dmu=rbreginv(Jmua, misfit, 1e-13);
     cfg.mua=cfg.mua + dmu;
+    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 
 plotmesh([cfg.node,cfg.mua],cfg.elem,'z=20','facecolor','interp','linestyle','none')
