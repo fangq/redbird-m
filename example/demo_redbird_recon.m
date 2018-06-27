@@ -88,12 +88,9 @@ for i=1:maxiter
     tic
     [detphi, phi]=rbrunforward(cfg);   % run forward on recon mesh
     Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
+    %Jmua=rbjacmuafast(sd, phi, cfg.nvol);
     %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
     Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
-
-    %Jmua_recon=rbfemmatrix(cfg, sd, phi,cfg.deldotdel,1,f2rid,f2rweight, ...
-    %     size(recon.node,1), recon.elem); % alternatively, use mex to build Jacobian on the recon mesh
-
     misfit=detphi0(:)-detphi(:);       % calculate data-misfit
     [Jmua_recon,misfit]=rbmatreform(Jmua_recon, detphi0(:), detphi(:), 'logphase');
     resid(i)=sum(abs(misfit));         % store the residual
