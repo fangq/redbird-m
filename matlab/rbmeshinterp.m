@@ -1,16 +1,15 @@
-function newval=rbmeshinterp(val,relemid,relembary,fromelem)
+function newval=rbmeshinterp(fromval,elemid,elembary,fromelem)
 
 % interpolate values from one mesh to another
 % author: Qianqian Fang, <q.fang at neu.edu>
 
-if(size(val,1)==1)
-    val=val(:);
+if(size(fromval,1)==1)
+    fromval=fromval(:);
 end
 
-newval=zeros(length(relemid),size(val,2));
+idx=find(~isnan(elemid));
 
-idx=find(~isnan(relemid));
+allval=reshape(fromval(fromelem(elemid(idx),:),:),length(idx),size(elembary,2),size(fromval,2));
+tmp=cellfun(@(x) sum(elembary(idx,:).*x,2), num2cell(allval,[1 2]),'UniformOutput',false);
+newval=cat(3,tmp{:});
 
-for i=1:size(val,2)
-    newval(idx,:)=newval(idx,:) + reshape(val(fromelem(relemid(idx),:),i),1,size(relembary,2)).*relembary(idx,:);
-end

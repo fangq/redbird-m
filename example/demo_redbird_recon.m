@@ -17,7 +17,7 @@ clear cfg cfg0
 
 s0=[70, 50, 20];
 
-[nobbx,fcbbx]=meshabox([40 0 0], [160, 120, 60], 30);
+[nobbx,fcbbx]=meshabox([40 0 0], [160, 120, 60], 10);
 [nosp,fcsp]=meshasphere(s0, 5, 1);
 [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
 
@@ -60,7 +60,7 @@ detphi0=rbrunforward(cfg0);
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 30);
+[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
 cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
 % [nosp,fcsp]=meshasphere(s0, 5, 3);
@@ -70,6 +70,10 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 % cfg=rbmeshprep(cfg);
 
 sd=rbsdmap(cfg);
+
+[recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
+
+[recon.f2r.id, recon.f2r.weight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run 10 iterations to recover mua
@@ -83,12 +87,14 @@ cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
 for i=1:maxiter
     tic
     [detphi, phi]=rbrunforward(cfg);
-    Jmua=rbfemmatrix(cfg, sd, phi);
-    %Jmua=rbjacmua(sd, phi, cfg.nvol); % build nodal-based Jacobian for mua
+    Jmua=rbfemmatrix(cfg, sd, phi); % use mex to build Jacobian, 2x faster
+    %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % build nodal-based Jacobian for mua
+    Jmua_recon=rbmeshremap(Jmua.',recon.f2r.id,recon.f2r.weight,recon.elem,size(recon.node,1)).';
     misfit=detphi0(:)-detphi(:);
     resid(i)=sum(abs(misfit));
-    dmu=rbreginv(Jmua, misfit, 1e-13);
-    cfg.mua=cfg.mua + dmu;
+    dmu_recon=rbreginv(Jmua_recon, misfit, 1e-13);
+    dmu=rbmeshinterp(dmu_recon,recon.f2r.id,recon.f2r.weight,recon.elem);
+    cfg.mua=cfg.mua + dmu(:);
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 

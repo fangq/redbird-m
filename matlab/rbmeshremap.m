@@ -1,21 +1,25 @@
-function newval=rbmeshremap(val,relemid,relembary,toelem,nodeto)
+function newval=rbmeshremap(fromval,elemid,elembary,toelem,nodeto)
 
 % redistribute values from one mesh to another so that the sum is the same
 % author: Qianqian Fang, <q.fang at neu.edu>
 
-if(size(val,1)==1)
-    val=val(:);
+if(size(fromval,1)==1)
+    fromval=fromval(:);
 end
 
-newval=zeros(nodeto,size(val,2));
+if(size(formval,2)==length(elemid))
+    formval=formval.';
+end
 
-idx=~isnan(relemid);
-idx=relemid(idx);
+newval=zeros(nodeto,size(fromval,2));
 
-nodeval=repmat(val,1,1,size(relembary,2)).*repmat(permute(relembary,[1,3,2]),1,size(val,2),1);
+idx=~isnan(elemid);
+idx=elemid(idx);
 
-for i=1:size(relembary,2)
-    [ix,iy]=meshgrid(toelem(idx,i),1:size(val,2));
+nodeval=repmat(fromval,1,1,size(elembary,2)).*repmat(permute(elembary,[1,3,2]),1,size(fromval,2),1);
+
+for i=1:size(elembary,2)
+    [ix,iy]=meshgrid(toelem(idx,i),1:size(fromval,2));
     nval=nodeval(:,:,i).';
     newval=newval + accumarray([ix(:),iy(:)],nval(:), size(newval));
 end
