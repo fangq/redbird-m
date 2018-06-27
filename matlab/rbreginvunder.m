@@ -11,9 +11,12 @@ else
     Hess=Amat*Amat'; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
 end
 
+[Hess,Gdiag]=rbnormalizediag(Hess);
+
 Hess(1:1+size(Hess,1):end)=Hess(1:1+size(Hess,1):end)+lambda;
 
-res=rbfemsolve(Hess, rhs);
+res=Gdiag(:).*rbfemsolve(Hess, Gdiag(:).*rhs);
+
 res=Amat'*res;
 if(nargin>=4)
     res=invLTL*res;

@@ -96,7 +96,7 @@ for i=1:maxiter
 
     misfit=detphi0(:)-detphi(:);       % calculate data-misfit
     resid(i)=sum(abs(misfit));         % store the residual
-    dmu_recon=rbreginv(Jmua_recon, misfit, 1e-13);  % solve the update on the recon mesh
+    dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
     dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
     cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
