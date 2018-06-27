@@ -95,11 +95,12 @@ for i=1:maxiter
     %     size(recon.node,1), recon.elem); % alternatively, use mex to build Jacobian on the recon mesh
 
     misfit=detphi0(:)-detphi(:);       % calculate data-misfit
+    [Jmua_recon,misfit]=rbmatreform(Jmua_recon, detphi0(:), detphi(:), 'logphase');
     resid(i)=sum(abs(misfit));         % store the residual
     dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
     dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
     cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
-    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
+    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 
 plotmesh([cfg.node,cfg.mua],cfg.elem,'z=20','facecolor','interp','linestyle','none')
