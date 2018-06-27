@@ -96,6 +96,7 @@ typedef struct FEMForward{
 typedef struct FEMJacobian{
 	int isnodal;
 	int nsd, nsdcol;
+	int nn, ne;
 	double *Phir;
 	double *Phii;
 	double *Jmuar;
@@ -104,6 +105,9 @@ typedef struct FEMJacobian{
 	double *Jdi;
 	double *sd;
 	double *deldotdel;
+	double *elemid;
+	double *elembary;
+	double *relem;
 } Jacobian;
 
 void rb_femmatrix_nodal(Config *cfg, tetmesh *mesh, Forward *fem);

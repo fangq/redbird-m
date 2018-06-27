@@ -73,7 +73,7 @@ sd=rbsdmap(cfg);
 
 [recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
 
-[recon.f2r.id, recon.f2r.weight]=tsearchn(recon.node,recon.elem,cfg.node);
+[f2rid, f2rweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run 10 iterations to recover mua
@@ -86,15 +86,19 @@ cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
 
 for i=1:maxiter
     tic
-    [detphi, phi]=rbrunforward(cfg);
-    Jmua=rbfemmatrix(cfg, sd, phi); % use mex to build Jacobian, 2x faster
-    %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % build nodal-based Jacobian for mua
-    Jmua_recon=rbmeshremap(Jmua.',recon.f2r.id,recon.f2r.weight,recon.elem,size(recon.node,1)).';
-    misfit=detphi0(:)-detphi(:);
-    resid(i)=sum(abs(misfit));
-    dmu_recon=rbreginv(Jmua_recon, misfit, 1e-13);
-    dmu=rbmeshinterp(dmu_recon,recon.f2r.id,recon.f2r.weight,recon.elem);
-    cfg.mua=cfg.mua + dmu(:);
+    [detphi, phi]=rbrunforward(cfg);   % run forward on recon mesh
+    Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
+    %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
+    Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
+
+    %Jmua_recon=rbfemmatrix(cfg, sd, phi,cfg.deldotdel,1,f2rid,f2rweight, ...
+    %     size(recon.node,1), recon.elem); % alternatively, use mex to build Jacobian on the recon mesh
+
+    misfit=detphi0(:)-detphi(:);       % calculate data-misfit
+    resid(i)=sum(abs(misfit));         % store the residual
+    dmu_recon=rbreginv(Jmua_recon, misfit, 1e-13);  % solve the update on the recon mesh
+    dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
+    cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 

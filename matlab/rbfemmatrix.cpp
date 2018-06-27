@@ -85,6 +85,27 @@ void mexFunction(int nlhs,       mxArray *plhs[],
 	if(nrhs>4){
 	    jac.isnodal=((int)*(mxGetPr(prhs[4])));
 	}
+        if(nrhs>8){
+	    jac.isnodal=1; // build nodal Jmua and Jd on a coarse mesh
+	    arraydim=mxGetDimensions(prhs[5]);
+	    if(arraydim[0]*arraydim[1]!=mesh.nn)
+	        MEXERROR("elemid must have the same lengt has the forward mesh node number");
+	    jac.elemid=mxGetPr(prhs[5]); 
+  
+	    arraydim=mxGetDimensions(prhs[6]);
+	    if(arraydim[0]!=mesh.nn && arraydim[1]!=4)
+	        MEXERROR("elembary must have the same lengt has the forward mesh node number and 4 columns");
+	    jac.elembary=mxGetPr(prhs[6]);
+  	    jac.nn=((int)*(mxGetPr(prhs[7])));
+	    if(jac.nn>mesh.nn)
+	        MEXERROR("reconstruction mesh must be coarser than or at most the same as the forward mesh");
+
+	    arraydim=mxGetDimensions(prhs[8]);
+	    if(arraydim[1]!=4)
+	        MEXERROR("relem must have 4 columns");
+	    jac.ne=arraydim[0];
+	    jac.relem=mxGetPr(prhs[8]);
+	}
     }
 
     /* Assign a pointer to the output. */  
@@ -94,7 +115,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
                 plhs[0] = mxCreateDoubleMatrix(1,mesh.nn, mxCOMPLEX);
                 femdata.Di= mxGetPi(plhs[0]);
 	    }else{
-                plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxCOMPLEX);
+                plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.nn? jac.nn : (jac.isnodal ? mesh.nn: mesh.ne)), mxCOMPLEX);
                 jac.Jmuai = mxGetPi(plhs[0]);
 	    }
 	}
@@ -103,7 +124,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
                 plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxCOMPLEX);
                 femdata.Ai= mxGetPi(plhs[1]);
 	    }else{
-                plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxCOMPLEX);
+                plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.nn? jac.nn : (jac.isnodal ? mesh.nn: mesh.ne)), mxCOMPLEX);
                 jac.Jdi = mxGetPi(plhs[1]);
 	    }
 	}
@@ -115,9 +136,9 @@ void mexFunction(int nlhs,       mxArray *plhs[],
             plhs[1] = mxCreateDoubleMatrix(1,mesh.ntot, mxREAL);
 	}else{
           if(nlhs>=1)
-            plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxREAL);
+            plhs[0] = mxCreateDoubleMatrix(jac.nsd, (jac.nn? jac.nn : (jac.isnodal ? mesh.nn: mesh.ne)), mxREAL);
 	  if(nlhs>=2)
-            plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.isnodal ? mesh.nn: mesh.ne), mxREAL);
+            plhs[1] = mxCreateDoubleMatrix(jac.nsd, (jac.nn? jac.nn : (jac.isnodal ? mesh.nn: mesh.ne)), mxREAL);
 	}
     }
     if(isjacobian==0){
@@ -348,6 +369,7 @@ void jacobian_init(Jacobian *jac){
 	jac->isnodal=1;
 	jac->nsd=0;
 	jac->nsdcol=0;
+	jac->nn=0;
 	jac->Jmuar=NULL;
 	jac->Jmuai=NULL;
 	jac->Jdr=NULL;
@@ -356,6 +378,9 @@ void jacobian_init(Jacobian *jac){
 	jac->Phii=NULL;
 	jac->sd=NULL;
 	jac->deldotdel=NULL;
+	jac->elemid=NULL;
+	jac->elembary=NULL;
+	jac->relem=NULL;
 }
 
 void mesh_init(tetmesh *mesh){
@@ -431,18 +456,18 @@ void mesh_clear(tetmesh *mesh){
 }
 
 void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
-    int t, sd, sid, rid, i;
+    int t, sd, sid, rid, i, j;
     int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,2,3,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
     int inode[4]={0,4,7,9}; // position in deldotdel for diagonal
 
     if(jac->Jmuar)
-       memset(jac->Jmuar,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+       memset(jac->Jmuar,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
     if(jac->Jmuai)
-       memset(jac->Jmuai,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+       memset(jac->Jmuai,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
     if(jac->Jdr)
-       memset(jac->Jdr,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+       memset(jac->Jdr,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
     if(jac->Jdi)
-       memset(jac->Jdi,0,jac->nsd*(jac->isnodal?mesh->nn:mesh->ne)*sizeof(double));
+       memset(jac->Jdi,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
 
     // loop over all elements
     for(t=0;t<mesh->ne;t++){
@@ -474,14 +499,30 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	    }
 	    jmuar*=-0.1;
 	    jdr=-jdr;
-	    if(jac->isnodal){
+	    if(jac->nn && jac->nn<mesh->nn){
+	        jmuar*=0.25*mesh->evol[t];
+	        for(i=0;i<4;i++){
+	           int eid=(int)(jac->elemid[ee[i]]-0.5);
+		   for(j=0;j<4;j++){
+		     jac->Jmuar[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jmuar*jac->elembary[j*mesh->nn+ee[i]];
+		   }
+		}
+	    }else if(jac->isnodal){
 	        for(i=0;i<4;i++)
 		    jac->Jmuar[ee[i]*jac->nsd+sd]+=jmuar*0.25*mesh->evol[t];
 	    }else{ // element-based jacobian
 		jac->Jmuar[t*jac->nsd+sd]+=jmuar*mesh->evol[t];
 	    }
 	    if(jac->Jdr){
-	        if(jac->isnodal){
+	        if(jac->nn && jac->nn<mesh->nn){ // support dual-mesh
+	          jdr*=0.25;
+	          for(i=0;i<4;i++){
+	             int eid=(int)(jac->elemid[ee[i]]-0.5);
+		     for(j=0;j<4;j++){
+		       jac->Jdr[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jdr*jac->elembary[j*mesh->nn+ee[i]];
+		     }
+		  }
+	        }else if(jac->isnodal){
 	            for(i=0;i<4;i++)
 	                jac->Jdr[ee[i]*jac->nsd+sd]+=jdr*0.25;
 		}else{ // element-based jacobian
@@ -522,14 +563,30 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	    }
 	    jmuai*=-0.1;
 	    jdi=-jdi;
-	    if(jac->isnodal){ // nodal-based Jacobian
+	    if(jac->nn && jac->nn<mesh->nn){
+	        jmuai*=0.25*mesh->evol[t];
+	        for(i=0;i<4;i++){
+	           int eid=(int)(jac->elemid[ee[i]]-0.5);
+		   for(j=0;j<4;j++){
+		     jac->Jmuai[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jmuai*jac->elembary[j*mesh->nn+ee[i]];
+		   }
+		}
+	    }else if(jac->isnodal){ // nodal-based Jacobian
 	        for(i=0;i<4;i++)
 		    jac->Jmuai[ee[i]*jac->nsd+sd]+=jmuai*0.25*mesh->evol[t];
 	    }else{ // element-based jacobian
 		jac->Jmuai[t*jac->nsd+sd]+=jmuai*mesh->evol[t];
 	    }
 	    if(jac->Jdi){
-	        if(jac->isnodal){
+	        if(jac->nn && jac->nn<mesh->nn){ // support dual-mesh
+	          jdi*=0.25;
+	          for(i=0;i<4;i++){
+	             int eid=(int)(jac->elemid[ee[i]]-0.5);
+		     for(j=0;j<4;j++){
+		       jac->Jdi[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jdi*jac->elembary[j*mesh->nn+ee[i]];
+		     }
+		  }
+	        }else if(jac->isnodal){
 	            for(i=0;i<4;i++)
 	                jac->Jdi[ee[i]*jac->nsd+sd]+=jdi*0.25;
 		}else{ // element-based jacobian

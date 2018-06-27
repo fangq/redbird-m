@@ -38,7 +38,7 @@ if(~isfield(cfg,'srcdir'))
 end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
     if(length(cfg.seg)==size(cfg.elem,1))
-        ix=find(cfg.elem==cfg.face(1));
+        [ix, iy]=find(cfg.elem==cfg.face(1));
         cfg.reff=rbgetreff(cfg.prop(cfg.seg(ix(1))+1,4), cfg.prop(1,4));
         cfg.musp0=cfg.prop(cfg.seg(ix(1))+1,2);
     else
