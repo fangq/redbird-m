@@ -132,3 +132,12 @@ colorbar;
 
 subplot(224);plotmesh([cfg.node,dd],cfg.elem,'y=30','facecolor','interp','linestyle','none')
 hist(dd(:),100);
+
+%% test add-noise function
+
+dist=rbgetdistance(cfg.srcpos, cfg.detpos);
+plot(dist(:),log10(abs(detval(:))),'.');
+newdata=rbaddnoise(detval, 110,40);
+hold on;
+plot(dist(:),log10(abs(newdata(:))),'r.');
+hold off;
