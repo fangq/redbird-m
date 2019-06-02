@@ -39,11 +39,31 @@ end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
     if(length(cfg.seg)==size(cfg.elem,1))
         [ix, iy]=find(cfg.elem==cfg.face(1));
-        cfg.reff=rbgetreff(cfg.prop(cfg.seg(ix(1))+1,4), cfg.prop(1,4));
-        cfg.musp0=cfg.prop(cfg.seg(ix(1))+1,2);
+	if(isa(cfg.prop,'containers.Map'))
+	    cfg.reff=containers.Map();
+	    cfg.musp0=containers.Map();
+	    for wv=cfg.prop.keys
+	        prop=cfg.prop(wv);
+	        cfg.reff(wv)=rbgetreff(prop(cfg.seg(ix(1))+1,4), prop(1,4));
+                cfg.musp0(wv)=prop(cfg.seg(ix(1))+1,2);
+	    end
+	else
+            cfg.reff=rbgetreff(cfg.prop(cfg.seg(ix(1))+1,4), cfg.prop(1,4));
+            cfg.musp0=cfg.prop(cfg.seg(ix(1))+1,2);
+	end
     else
-        cfg.reff=rbgetreff(cfg.prop(cfg.seg(cfg.face(1))+1,4), cfg.prop(1,4));
-        cfg.musp0=cfg.prop(cfg.seg(cfg.face(1))+1,2);
+	if(isa(cfg.prop,'containers.Map'))
+	    cfg.reff=containers.Map();
+	    cfg.musp0=containers.Map();
+	    for wv=cfg.prop.keys
+	        prop=cfg.prop(wv);
+		cfg.reff(wv)=rbgetreff(prop(cfg.seg(cfg.face(1))+1,4), prop(1,4));
+		cfg.musp0(wv)=prop(cfg.seg(cfg.face(1))+1,2);	    
+	    end
+	else
+            cfg.reff=rbgetreff(cfg.prop(cfg.seg(cfg.face(1))+1,4), cfg.prop(1,4));
+            cfg.musp0=cfg.prop(cfg.seg(cfg.face(1))+1,2);
+	end
     end
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))

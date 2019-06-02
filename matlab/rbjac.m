@@ -6,6 +6,11 @@ end
 
 nelem=size(felem,1);
 
+if(isa(phi,'containers.Map'))
+    Jmua_n=containers.Map();
+    Jmua_e=containers.Map();
+end
+
 Jmua_node=zeros(size(sd,1),size(phi,1));
 Jmua_elem=zeros(size(sd,1),nelem);
 if(nargout>2)

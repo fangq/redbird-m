@@ -1,13 +1,17 @@
 function [detval, phi, Amat, rhs]=rbrunforward(cfg)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build LHS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if(isfield(cfg,'deldotdel'))
+if(~isfield(cfg,'deldotdel'))
     cfg.deldotdel=rbdeldotdel(cfg);
 end
-Amat=rbfemlhs(cfg,cfg.deldotdel); % use native matlab code, 1 sec for 50k nodes
+
+wavelengths={''};
+if(isa(cfg.prop,'containers.Map'))
+   wavelengths=cfg.prop.keys;
+end
+
+Amat=containers.Map();
+phi=containers.Map();
+detval=containers.Map();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS
@@ -15,15 +19,31 @@ Amat=rbfemlhs(cfg,cfg.deldotdel); % use native matlab code, 1 sec for 50k nodes
 
 [rhs,loc,bary]=rbfemrhs(cfg);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Solve for solutions at all freenodes: Afree*sol=rhs
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for wv=wavelengths
 
-%phi=rbfemsolve(Amat,rhs,'symmlq',1e-20,100);
-phi=rbfemsolve(Amat,rhs);
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%   Build LHS
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Extract detector readings from the solutions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	Amat(wv)=rbfemlhs(cfg,cfg.deldotdel,wv); % use native matlab code, 1 sec for 50k nodes
 
-detval=rbfemgetdet(phi, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs); 
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%   Solve for solutions at all nodes: Amat*res=rhs
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	%phi(wv)=rbfemsolve(Amat(wv),rhs,'symmlq',1e-20,100);
+	phi(wv)=rbfemsolve(Amat(wv),rhs);
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%   Extract detector readings from the solutions
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	detval(wv)=rbfemgetdet(phi(wv), cfg, loc, bary); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
+end
+
+% if only a single wavelength is required, return regular arrays instead of a map
+if(length(wavelengths)==1)
+    Amat=Amat(wavelengths{1});
+    phi=phi(wavelengths{1});
+    detval=detval(wavelengths{1});
+end

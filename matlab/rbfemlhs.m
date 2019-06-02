@@ -1,4 +1,4 @@
-function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel)
+function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
 
 % create the FEM stiffness matrix (left-hand-side) for solving the diffusion equation
 
@@ -7,24 +7,38 @@ ne=size(cfg.elem,1);
 
 R_C0=(1./299792458000.);
 
+prop=cfg.prop;
+if(isa(cfg.prop,'containers.Map'))
+    if(nargin<3)
+        error('you must specify wavelength');
+    end
+    if(~ischar(wavelength))
+       wavelength=sprintf('%g',wavelength);
+    end
+    prop=cfg.prop(wavelength);
+    cfgreff=cfg.reff(wavelength);
+    cfgmua=cfg.mua(wavelength);
+    cfgdcoeff=cfg.dcoeff(wavelength);
+end
+
 if(nargin==2)
     if(~isfield(cfg,'mua') || isempty(cfg.mua))
-        mua=cfg.prop(cfg.seg+1,1);
+        mua=prop(cfg.seg+1,1);
     else
-        mua=cfg.mua;
+        mua=cfgmua;
     end
     if(~isfield(cfg,'dcoeff') || isempty(cfg.dcoeff))
-        musp=cfg.prop(cfg.seg+1,2).*(1-cfg.prop(cfg.seg+1,3));
+        musp=prop(cfg.seg+1,2).*(1-prop(cfg.seg+1,3));
         dcoeff=1./(3*(mua+musp));
     else
-        dcoeff=cfg.dcoeff;
+        dcoeff=cfgdcoeff;
     end
     if(~isfield(cfg,'nref') || isempty(cfg.nref))
-        nref=cfg.prop(cfg.seg+1,4);
+        nref=prop(cfg.seg+1,4);
     else
-        nref=cfg.nref;
+        nref=cfgreff;
     end
-    Reff=cfg.reff;
+    Reff=cfgreff;
 
     edges=sort(meshedge(cfg.elem),2);
     

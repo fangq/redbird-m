@@ -32,21 +32,23 @@ cfg0.srcdir=[0 0 1];
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 
-cfg0.prop.w690=[
+cfg0.prop = containers.Map();
+cfg0.prop('690')=[
     0 0 1 1
     0.008 1 0 1.37
     0.016 1 0 1.37
 ];
-cfg0.prop.w830=[
+cfg0.prop('830')=[
     0 0 1 1
     0.008 1 0 1.37
     0.016 1 0 1.37
 ];
 
-z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
+wavelengths=cfg0.prop.keys;
 
-cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
-cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
+%z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
+%cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
+%cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
 
 cfg0.omega=2*pi*70e6;
 cfg0.omega=0;
@@ -87,7 +89,12 @@ sd=rbsdmap(cfg);
 maxiter=10;
 resid=zeros(1,maxiter);
 
-cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
+cfg.mua=containers.Map();
+
+for wv=wavelengths
+   prop=cfg.prop(wv);
+   cfg.mua(wv)=ones(size(cfg.node,1),1)*prop(cfg.seg(1)+1,1);
+end
 
 for i=1:maxiter
     tic
