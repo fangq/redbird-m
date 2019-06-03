@@ -7,39 +7,59 @@ if(nargin<4)
     output='complex';
 end
 
-rhs=ymeas-ymodel;
+wavelengths={''};
+
+if(isa(Amat,'containers.Map'))
+    wavelengths=Amat.keys;
+else
+    Amat=containers.Map({''},{Amat});
+    ymeas=containers.Map({''},{ymeas});
+    ymodel=containers.Map({''},{ymodel});
+end
+
+newA=containers.Map();
+newrhs=containers.Map();
 
 nblock=1;
 
 if(strcmp(output,'complex'))
     newA=Amat;
-    newrhs=rhs;
-    return;
+    for wv=wavelengths
+        newrhs(wv)=ymeas(wv)-ymodel(wv);
+    end
+else
+    for wv=wavelengths
+        rhs=ymeas(wv)-ymodel(wv);
+        if(strcmp(output,'real'))
+            newA(wv)=real(Amat(wv));
+            newrhs(wv)=real(rhs);
+
+            if(~isreal(rhs) && ~isreal(Amat(wv)))
+                newA(wv)=[real(Amat(wv)) -imag(Amat(wv)); 
+                      imag(Amat(wv)) real(Amat(wv))];
+                newrhs(wv)=[real(rhs); imag(rhs)];
+                nblock=2;
+            end
+        elseif(strcmp(output,'logphase'))
+            temp=repmat(conj(ymodel(wv))./abs(ymodel(wv).*ymodel(wv)),1,size(Amat(wv),2)).*Amat(wv);
+            if(isreal(ymodel(wv)))
+                newA(wv)=real(temp);
+                newrhs(wv)=log(abs(ymeas(wv)))-log(abs(ymodel(wv)));
+            else
+                newA(wv)=[real(temp) ; imag(temp)];
+                newrhs(wv)=[log(abs(ymeas(wv)))-log(abs(ymodel(wv))); 
+                            angle(ymeas(wv))   -angle(ymodel(wv))];
+                nblock=2;
+            end
+        end
+    end
 end
 
-if(strcmp(output,'real'))
-    newA=real(Amat);
-    newrhs=real(rhs);
 
-    if(~isreal(rhs) && ~isreal(Amat))
-        newA=[real(Amat) -imag(Amat); 
-              imag(Amat) real(Amat)];
-	    newrhs=[newrhs; imag(rhs)];
-        nblock=2;
+% if only a single wavelength is required, return regular arrays instead of a map
+if(length(wavelengths)==1)
+    newA=newA(wavelengths{1});
+    if(nargout>1)
+        newrhs=newrhs(wavelengths{1});
     end
-    return;
-end
-
-if(strcmp(output,'logphase'))
-    temp=repmat(conj(ymodel)./abs(ymodel.*ymodel),1,size(Amat,2)).*Amat;
-    if(isreal(ymodel))
-        newA=real(temp);
-        newrhs=log(abs(ymeas))-log(abs(ymodel));
-    else
-        newA=[real(temp) ; imag(temp)];
-	    newrhs=[log(abs(ymeas))-log(abs(ymodel)); 
-                angle(ymeas)   -angle(ymodel)];
-        nblock=2;
-    end
-    return;
 end
