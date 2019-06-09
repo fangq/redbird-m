@@ -12,7 +12,6 @@ if(isa(phi,'containers.Map'))
     wavelengths=phi.keys;
 else
     phi=containers.Map({''},{phi});
-    sd=containers.Map({''},{sd});
 end
 
 Jmua_n=containers.Map();
@@ -26,9 +25,14 @@ idx=[1 1 1 2 2 3 2 3 4 3 4 4
      2 3 4 3 4 4 1 1 1 2 2 3
      2 3 4 6 7 9 2 3 4 6 7 9];
 
-for wv=wavelengths
+for waveid=wavelengths
+    wv=waveid{1};
     phiwv=phi(wv);
-    sdwv=sd(wv);
+    if(isa(sd,'containers.Map'))
+        sdwv=sd(wv);
+    else
+        sdwv=sd;
+    end
     Jmua_node=zeros(size(sdwv,1),size(phiwv,1));
     Jmua_elem=zeros(size(sdwv,1),nelem);
     if(nargout>2)

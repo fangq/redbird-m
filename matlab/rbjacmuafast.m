@@ -10,14 +10,18 @@ if(isa(phi,'containers.Map'))
     wavelengths=phi.keys;
 else
     phi=containers.Map({''},{phi});
-    sd=containers.Map({''},{sd});
 end
 
 Jmua=containers.Map();
 
-for wv=wavelengths
+for waveid=wavelengths
+    wv=waveid{1};
     phiwv=phi(wv);
-    sdwv=sd(wv);
+    if(isa(sd,'containers.Map'))
+        sdwv=sd(wv);
+    else
+        sdwv=sd;
+    end
     if(size(phiwv,1)==length(nvol))
         Ja=zeros(size(sdwv,1),size(phiwv,1));
         for i=1:size(sdwv,1)
@@ -34,7 +38,7 @@ for wv=wavelengths
     else
         error('the row number of phi must be the same as the length of nvol or elem is needed');
     end
-    Jmua(mw)=-Ja; % increasing mua, decreasing phi
+    Jmua(wv)=-Ja; % increasing mua, decreasing phi
 end
 
 % if only a single wavelength is required, return regular arrays instead of a map

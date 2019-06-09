@@ -1,2 +1,2 @@
 all:
-	pdflatex redbird_manual.tex
+	pdflatex Redbird_Complete_Manual.tex

@@ -91,14 +91,16 @@ resid=zeros(1,maxiter);
 
 cfg.mua=containers.Map();
 
-for wv=wavelengths
+for waveid=wavelengths
+   wv=waveid{1};
    prop=cfg.prop(wv);
    cfg.mua(wv)=ones(size(cfg.node,1),1)*prop(cfg.seg(1)+1,1);
 end
 
 for i=1:maxiter
     tic
-    [dmu, misfit]=rbreconstep(cfg,sd,recon,f2rid,f2rweight);
+    [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight);
+    resid(i)=sum(abs(misfit));         % store the residual
     cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end

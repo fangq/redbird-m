@@ -8,6 +8,14 @@ ne=size(cfg.elem,1);
 R_C0=(1./299792458000.);
 
 prop=cfg.prop;
+cfgreff=cfg.reff;
+if(isfield(cfg,'mua') && ~isempty(cfg.mua))
+    cfgmua=cfg.mua;
+end
+if(isfield(cfg,'dcoeff') && ~isempty(cfg.dcoeff))
+    cfgdcoeff=cfg.dcoeff;
+end
+
 if(isa(cfg.prop,'containers.Map'))
     if(nargin<3)
         error('you must specify wavelength');
@@ -17,11 +25,15 @@ if(isa(cfg.prop,'containers.Map'))
     end
     prop=cfg.prop(wavelength);
     cfgreff=cfg.reff(wavelength);
-    cfgmua=cfg.mua(wavelength);
-    cfgdcoeff=cfg.dcoeff(wavelength);
+    if(isfield(cfg,'mua') && ~isempty(cfg.mua))
+        cfgmua=cfg.mua(wavelength);
+    end
+    if(isfield(cfg,'dcoeff') && ~isempty(cfg.dcoeff))
+        cfgdcoeff=cfg.dcoeff(wavelength);
+    end
 end
 
-if(nargin==2)
+if(nargin>=2)
     if(~isfield(cfg,'mua') || isempty(cfg.mua))
         mua=prop(cfg.seg+1,1);
     else

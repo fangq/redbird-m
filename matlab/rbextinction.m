@@ -392,11 +392,11 @@ chrome.hb=[
 1000	1024	206.784
 ];
 
-chrome.hb(:,2:3)=chrome.hb(:,2:3)*2.303*1e-5;
-chrome.hbo=chrome.hb(:,1:2);
-chrome.hbr=chrome.hb(:,[1 3]);
+chrome.hb(:,2:3)=chrome.hb(:,[3 2])*2.303*1e-5;
+chrome.hbo=chrome.hb(:,[1 3]);
+chrome.hbr=chrome.hb(:,[1 2]);
 
-chrome.h2o=[
+chrome.water=[
 200.00	0.069000
 225.00	0.027400
 250.00	0.016800
@@ -2075,13 +2075,26 @@ chrome.aa3 = [
 9.4950000e+002	2.6754607e-001
 9.5000000e+002	2.6555173e-001];
 
+if(iscell(wavelen) && ~isempty(wavelen))
+    if(isempty(wavelen{1}))
+        error('you must provide non-empty wavelength list');
+    end
+    wavelen=cellfun(@str2num, wavelen);
+end
+
 if(ischar(type))
-    spectrum=chrome.(type);
-    extin=interp1(spectrum(:,1),spectrum(:,2),wavelen,varargin{:});
+    extin=zeros(length(wavelen),1);
+    spectrum=chrome.(lower(type));
+    for i=1:length(wavelen)
+       extin(i)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
+    end
 elseif(iscell(type))
-    for i=1:length(type)
-        spectrum=chrome.(type{i});
-        extin.(type{i})=interp1(spectrum(:,1),spectrum(:,2),wavelen,varargin{:});
+    extin=zeros(length(wavelen),length(type));
+    for i=1:length(wavelen)
+        for j=1:length(type)
+            spectrum=chrome.(lower(type{j}));
+            extin(i,j)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
+        end
     end
 else
     error('type must be a string or a cell');

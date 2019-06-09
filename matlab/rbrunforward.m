@@ -19,9 +19,10 @@ detval=containers.Map();
 
 [rhs,loc,bary]=rbfemrhs(cfg);
 
-for wv=wavelengths
+for waveid=wavelengths
+    wv=waveid{1};
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%   Build LHS
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
