@@ -1,5 +1,5 @@
-function [Jscatamp,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
+function [Jscatpow,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
 
 dDdscatpow=dcoeff*log(wavelen);
 
-Jscatamp=Jd.*dDdscatpow;
+Jscatpow=Jd.*dDdscatpow;

@@ -5,6 +5,9 @@ function Jchrome=rbjacchrome(Jmua, extin)
 
 extin=extin';
 extin=extin(:)';
+if(~ismatrix(Jmua))
+    Jmua=rbmatflat(Jmua); %J=[J(wavelen1); J(wavelen2) ;...; J(wavelenN)]
+end
 Jchrome=kron(extin, Jmua);
 
-% J=[J(wavelen1,chrom1),J(wavelen1,chrom2),...,J(wavelen2,chrom1)...]
+% J=[J(chrom1),J(chrom2),...,J(chromM)]
