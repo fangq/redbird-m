@@ -1,4 +1,25 @@
 function res=rbreginvunder(Amat, rhs, lambda, invLTL)
+%
+% res=rbreginvunder(Amat, rhs, lambda, invLTL)
+%
+% Perform forward simulations at all sources and all wavelengths based on the input structure
+
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths 
+%     rhs: the right-hand-side vectors for all sources (independent of wavelengths)
+%     lambda: the Tikhonov regularization parameter
+%     invLTL: the inversion of the L-matrix used as regularization inv(L^TL)
+%
+% output:
+%     res: the least-square solution of the matrix equation
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 % solve an overdetermined Gauss-Newton normal equation
 %  delta_mu=inv(L'L)*J'*inv(J*J' + lambda*I)*(y-phi)

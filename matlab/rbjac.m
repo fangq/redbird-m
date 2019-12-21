@@ -1,4 +1,29 @@
 function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
+%
+% [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
+%
+% Building the Jacobian matrices using adjoint method and native matlab code
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     sd: the source-detector mapping table
+%     phi: the forward solutions at all sources
+%     deldotdel: grad*phi dot product with grad phi, computed as part of the computation
+%     felem: forward mesh element list
+%     evol: forward mesh element volume
+
+% output:
+%     Jmua_n: the nodal Jacobian for absorption coeff. mua
+%     Jmua_e: the element-wise Jacobian for absorption coeff. mua
+%     Jd_n: (optional) the nodal Jacobian for diffusion coeff D
+%     Jd_e: (optional) the element-wise Jacobian for diffusion coeff D
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 if(nargin<5 || isempty(sd) || isempty(phi) || isempty(deldotdel)|| isempty(evol))
     error('you must give at least 5 inputs and they must not be empty');

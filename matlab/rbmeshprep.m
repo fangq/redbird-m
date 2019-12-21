@@ -1,4 +1,23 @@
 function newcfg=rbmeshprep(cfg)
+%
+% newcfg=rbmeshprep(cfg)
+%
+% Compute all missing fields from the cfg input sturcture to get 
+% ready for forward and inverse modeling
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     cfg: the initial simulation data structure
+%
+% output:
+%     newcfg: the updated simulation data structure after adding all missing fields
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 if(~isfield(cfg,'node') || ~isfield(cfg,'elem'))
     error('cfg.node or cfg.elem is missing');

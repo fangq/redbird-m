@@ -1,7 +1,28 @@
 function [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, output)
-
-% convert an inverse problem to the log-amplitude and unwrapped phase form
-%  
+%
+% [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, output)
+%
+% Reformat the matrix equation A*x=(ymeas-ymodel) to choose between the log-amplitude/phase
+% form or the complex form
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     Amat: the LHS of the matrix equation
+%     ymeas: the vector that stores the measured data for the model to fit 
+%     ymodel: the model predicted measurements at all source detector pairs, 
+%           with a length matching that of ymeas
+%
+% output:
+%     newA: the reformed LHS matrix 
+%     newrhs: the reformed RHS matrix
+%     nblock: nblock=length(newrhs)/size(Amat,1)
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 if(nargin<4)
     output='complex';

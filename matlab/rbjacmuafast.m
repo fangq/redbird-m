@@ -1,4 +1,26 @@
 function Jmua=rbjacmuafast(sd, phi, nvol, elem)
+%
+% Jmua=rbjacmuafast(sd, phi, nvol, elem)
+%
+% computing the nodal Jacobian matrix for mua using an approximated 
+% method as shownn in Qianqian's Thesis (nodal-adjoint formulation)
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     sd: the source-detector mapping table
+%     phi: the forward solutions at all sources
+%     nvol: the nodal volume computed by nodevolume from iso2mesh
+%     elem: the mesh element list
+%
+% output:
+%     Jmua: the approximated Jacobian for mua using nodal-adjoint formulation
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 if(nargin<3 || isempty(sd) || isempty(phi) || isempty(nvol))
     error('you must give at least the first 3 inputs and they must not be empty');
