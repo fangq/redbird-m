@@ -12,15 +12,14 @@ if(isfield(cfg,'srcpos') && (size(cfg.srcpos,2) == size(cfg.face,1)))
     bary=[];
     Reff=cfg.reff;
     maxbcnode=max(cfg.face(:));
-    srcsum=sum(cfg.srcpos,2);
-    srcsum(srcsum==0)=1;
 
     Adiagbc=cfg.area(:)*((1-Reff)/(9*(1+Reff)));
     Adiagbc=repmat(Adiagbc,1,size(cfg.srcpos,1)).*(cfg.srcpos');
 
     rhs=sparse(size(cfg.node,1),size(cfg.srcpos,1));
     for i=1:size(cfg.srcpos,1)
-        rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3)/srcsum(i));
+        rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
+        rhs(:,i)=rhs(:,i)./sum(rhs(:,i));
     end
     return;
 end

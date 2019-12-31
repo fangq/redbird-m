@@ -59,6 +59,7 @@ save config.mat
 tic;fprintf(1,'solving for the solution ...\n');
 %phi=rbfemsolve(Amat,rhs,'qmr',1e-6,100);
 phi=rbfemsolve(Amat,rhs);
+phi(phi<0)=0;
 toc 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,7 +115,7 @@ end
 
 cl=get(subplot(211),'clim');
 subplot(212);
-plotmesh([cfg.node 1+full(log10(phi(:)))],cfg.elem,'x>30')
+plotmesh([cfg.node full(log10(phi(:)))],cfg.elem,'x>30')
 view([-1 0 0]);
 shading interp;
 set(gca,'clim',cl);
