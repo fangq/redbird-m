@@ -9,10 +9,10 @@ end
 % block solvers can handle multiple RHSs
 switch method
     case 'blqmr'
-        [varargout{:}]=blqmr(Amat,rhs,varargin{:});
+        [varargout{:}]=blqmr(Amat,full(rhs),varargin{:});
         return;
     case 'mldivide'
-        varargout{1}=Amat\rhs;
+        varargout{1}=full(Amat\rhs);
         return;
 end
 
@@ -48,7 +48,7 @@ for i=1:size(rhs,2)
             error(['method "',method,'" is not supported']);
     end
     for j=1:nargout
-        res{j}=[res{j},sol{j}];
+        res{j}=[res{j},full(sol{j})];
     end
 end
 varargout=res;
