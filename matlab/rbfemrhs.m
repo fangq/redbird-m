@@ -4,35 +4,42 @@ function [rhs,loc,bary,optode]=rbfemrhs(cfg)
 % forward systems for both source and detector locations in order to use
 % the adjoint method to create Jacobians.
 
-optode=rbgetoptodes(cfg);
+[optode,widesrc]=rbgetoptodes(cfg);
 
+if(size(optode,1)<1 && size(widesrc,1)<1)
+    error('you must provide at least one source or detector');
+end
 
-if(isfield(cfg,'srcpos') && (size(cfg.srcpos,2) == size(cfg.face,1)))
-    loc=[];
-    bary=[];
+loc=[];
+bary=[];
+rhs=sparse(size(cfg.node,1),size(widesrc,1)+size(optode,1));
+
+if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.face,1)))
     Reff=cfg.reff;
     maxbcnode=max(cfg.face(:));
 
     Adiagbc=cfg.area(:)*((1-Reff)/(9*(1+Reff)));
-    Adiagbc=repmat(Adiagbc,1,size(cfg.srcpos,1)).*(cfg.srcpos');
+    Adiagbc=repmat(Adiagbc,1,size(widesrc,1)).*(widesrc');
 
-    rhs=sparse(size(cfg.node,1),size(cfg.srcpos,1));
-    for i=1:size(cfg.srcpos,1)
+    for i=1:size(widesrc,1)
         rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
-        rhs(:,i)=rhs(:,i)./sum(rhs(:,i));
+        rhs(:,i)=rhs(:,i)/sum(rhs(:,i));
     end
+    loc=nan*ones(1,size(widesrc,1));
+    bary=nan*ones(size(widesrc,1),4);
+end
+
+if(isempty(optode))
     return;
 end
 
-if(size(optode,1)<1)
-    error('you must provide at least one source or detector');
-end
+[newloc, newbary]=tsearchn(cfg.node,cfg.elem,optode);
 
-[loc, bary]=tsearchn(cfg.node,cfg.elem,optode);
+loc=[loc; newloc];
+bary=[bary; newbary];
 
-rhs=sparse(size(cfg.node,1),size(optode,1));
 for i=1:size(optode,1)
-    if(~isnan(loc(i)))
-        rhs(cfg.elem(loc(i),:),i)=bary(i,:)';
+    if(~isnan(newloc(i)))
+        rhs(cfg.elem(newloc(i),:),i+size(widesrc,1))=newbary(i,:)';
     end
 end
