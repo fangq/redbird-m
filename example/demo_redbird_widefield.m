@@ -70,10 +70,8 @@ detval=rbfemgetdet(phi, cfg, rhs); % or detval=rbfemgetdet(phi, cfg, loc, bary);
 %%   Build Jacobians
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% nvol=nodevolume(cfg.node,cfg.elem);
-% sd=rbsdmap(cfg);
-% Jmua=rbjacmua(sd, phi, nvol);
-% Jd=rbjacdcoef(sd, phi, deldotdel, cfg.elem);
+sd=rbsdmap(cfg);
+[Jmua, Jmua_e, Jd]=rbjac(sd, phi, deldotdel, cfg.elem, cfg.evol);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Analytical solution
