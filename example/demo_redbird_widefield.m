@@ -15,20 +15,24 @@ addpath(fullfile(pwd, '../matlab'));
 
 clear cfg xcfg
 
-[cfg.node, cfg.elem]=meshgrid5(0:2:60,0:2:60,0:2:30);
+[cfg.node, cfg.elem]=meshgrid6(0:2:60,0:2:60,0:2:30);
+cfg.elem(:,1:4)=meshreorient(cfg.node(:,1:3),cfg.elem(:,1:4));
 cfg.face=volface(cfg.elem);
 
 nn=size(cfg.node,1);
 cfg.seg=ones(size(cfg.elem,1),1);
-c0=meshcentroid(cfg.node,cfg.face);
 
-cfg.srcpos=zeros(1,size(cfg.face,1));
-cfg.srcpos(c0(:,3)==0 & c0(:,1)>10 & c0(:,1)<50 & c0(:,2)>10 & c0(:,2)<50)=1;
-
+cfg.srctype='planar';
+cfg.srcpos=[10 10 0];
+cfg.srcparam1=[40 0 0 0];
+cfg.srcparam2=[0 40 0 0];
 cfg.srcdir=[0 0 1];
 
-cfg.detpos=zeros(1,size(cfg.face,1));
-cfg.detpos(c0(:,3)==30 & c0(:,1)>10 & c0(:,1)<50 & c0(:,2)>10 & c0(:,2)<50)=1;
+cfg.dettype='planar';
+cfg.detpos=[10 10 30];
+cfg.detparam1=[40 0 0 0];
+cfg.detparam2=[0 40 0 0];
+cfg.detdir=[0 0 -1];
 
 cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;

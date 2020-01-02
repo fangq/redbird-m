@@ -22,6 +22,9 @@ function newcfg=rbmeshprep(cfg)
 if(~isfield(cfg,'node') || ~isfield(cfg,'elem'))
     error('cfg.node or cfg.elem is missing');
 end
+
+cfg.elem(:,1:4)=meshreorient(cfg.node(:,1:3),cfg.elem(:,1:4));
+
 if((~isfield(cfg,'seg') ||isempty(cfg.seg)) && size(cfg.elem,2)>4)
     cfg.seg=cfg.elem(:,5);
     cfg.elem(:,5)=[];
@@ -55,6 +58,14 @@ end
 if(~isfield(cfg,'srcdir'))
     error('cfg.srcdir field is missing');
 end
+if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
+    cfg.srcpos0=cfg.srcpos;
+    cfg.srcpos=rbsrc2bc(cfg);
+end
+if(isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
+    cfg.detpos0=cfg.detpos;
+    cfg.detpos=rbsrc2bc(cfg,1);
+end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
     if(length(cfg.seg)==size(cfg.elem,1))
         [ix, iy]=find(cfg.elem==cfg.face(1));
@@ -62,7 +73,7 @@ if(~isfield(cfg,'reff') || isempty(cfg.reff))
 	    cfg.reff=containers.Map();
 	    cfg.musp0=containers.Map();
 	    for waveid=cfg.prop.keys
-            wv=waveid{1};
+	        wv=waveid{1};
 	        prop=cfg.prop(wv);
 	        cfg.reff(wv)=rbgetreff(prop(cfg.seg(ix(1))+1,4), prop(1,4));
                 cfg.musp0(wv)=prop(cfg.seg(ix(1))+1,2);
@@ -76,10 +87,10 @@ if(~isfield(cfg,'reff') || isempty(cfg.reff))
 	    cfg.reff=containers.Map();
 	    cfg.musp0=containers.Map();
 	    for waveid=cfg.prop.keys
-            wv=waveid{1};
+	        wv=waveid{1};
 	        prop=cfg.prop(wv);
-		    cfg.reff(wv)=rbgetreff(prop(cfg.seg(cfg.face(1))+1,4), prop(1,4));
-		    cfg.musp0(wv)=prop(cfg.seg(cfg.face(1))+1,2);	    
+		cfg.reff(wv)=rbgetreff(prop(cfg.seg(cfg.face(1))+1,4), prop(1,4));
+		cfg.musp0(wv)=prop(cfg.seg(cfg.face(1))+1,2);	    
 	    end
 	else
             cfg.reff=rbgetreff(cfg.prop(cfg.seg(cfg.face(1))+1,4), cfg.prop(1,4));
