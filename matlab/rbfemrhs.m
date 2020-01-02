@@ -18,7 +18,7 @@ if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.face,1)))
     Reff=cfg.reff;
     maxbcnode=max(cfg.face(:));
 
-    Adiagbc=cfg.area(:)*((1-Reff)/(9*(1+Reff)));
+    Adiagbc=cfg.area(:)*((1-Reff)/(18*(1+Reff)));
     Adiagbc=repmat(Adiagbc,1,size(widesrc,1)).*(widesrc');
 
     for i=1:size(widesrc,1)
