@@ -1,8 +1,8 @@
 function [rows,cols,connnum]=rbfemnz(elem,nn)
 %
-% newdata=rbaddnoise(data, snrshot, snrthermal,randseed)
+% [rows,cols,connnum]=rbfemnz(elem,nn)
 %
-% Store the indices of all off-diagonal entries of FEM matrix
+% Return the indices of all non-zero elements in a sparse matrix (for FEM) 
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
