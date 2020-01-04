@@ -12,7 +12,7 @@ function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
 %     deldotdel: grad*phi dot product with grad phi, computed as part of the computation
 %     felem: forward mesh element list
 %     evol: forward mesh element volume
-
+%
 % output:
 %     Jmua_n: the nodal Jacobian for absorption coeff. mua
 %     Jmua_e: the element-wise Jacobian for absorption coeff. mua

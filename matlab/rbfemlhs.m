@@ -1,6 +1,30 @@
 function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
-
+%
+% [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
+%
 % create the FEM stiffness matrix (left-hand-side) for solving the diffusion equation
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     cfg: the initial simulation data structure
+%     deldotdel (optional): precomputed operator on the mesh (del_phi dot del_phi)
+%         where del represents the gradient; see help rbdeldotdel
+%     wavelength (optional): a string or number denoting the wavelength
+%
+% output:
+%     Amat: the left-hand-side matrix of the FEM equation - a sparse matrix
+%          of dimension Nn x Nn, where Nn is the number of nodes of the
+%          forward mesh
+%     deldotdel: if the 2nd input is not given, this function compute
+%          deldotdel and return as the 2nd output
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
+
 
 nn=size(cfg.node,1);
 ne=size(cfg.elem,1);

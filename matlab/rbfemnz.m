@@ -1,14 +1,27 @@
 function [rows,cols,connnum]=rbfemnz(elem,nn)
-% rbfemnz: store the indices of all off-diagonal entries of FEM matrix
-% author: fangq (fangq<at> nmr.mgh.harvard.edu)
-% date: 2007/11/21
 %
-% parameters:
-%    elem:  element table of a mesh
-%    nn:    number of all nodes
-%    rows: output, the row index of the non-zero off-diagonal elements
-%    cols: output, the column index of the non-zero off-diagonal elements
-%    connnum: output, total non-zero off-diagonal element number
+% newdata=rbaddnoise(data, snrshot, snrthermal,randseed)
+%
+% Store the indices of all off-diagonal entries of FEM matrix
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     elem:  element table of a mesh
+%     nn:    number of all nodes
+%
+% output:
+%     rows: output, the row index of the non-zero off-diagonal elements
+%     cols: output, the column index of the non-zero off-diagonal elements
+%     connnum: output, total non-zero off-diagonal element number
+%
+%     newdata: noise contaminated data
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 [conn,connnum,count]=meshconn(elem,nn);
 

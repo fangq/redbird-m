@@ -1,14 +1,39 @@
 function [extin, chrome]=rbextinction(wavelen, type, varargin)
 %
-% [extin, chrome]=rbextinction(wavelen, type)
+% [extin, chrome]=rbextinction(wavelen, type, interp1opt)
 %
-% get the extinction coefficients for selected chromophores and wavelengths
+% Get the molar extinction coefficients for selected chromophores and
+% wavelengths
 %
-
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     wavelen: containing 1 or multiple wavelengths, as either string or
+%         numbers
+%     type: a string cell array, specifying the chromophore species, including
+%          'hbo' - oxy-hemoglobin
+%          'hbr' - deoxyhemoglobin
+%          'water' - water (return volume fraction)
+%          'lipids' - lipids (return volume fraction)
+%          'aa3' - aa3
+%     interp1opt: optional parameters to be used with interp1 for
+%          interpolating at given wavelength values
+%
+% output:
+%     extin: the extinction coefficients of the selected chromorphores
+%     chrome: full look-up table of the extincition coefficients
+%
 % These values for the molar extinction coefficient e in [cm-1/(moles/liter)] 
 % were compiled by Scott Prahl (scott.prahl@oit.edu) using data from
-
+%
 % https://omlc.org/spectra/hemoglobin/summary.html
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
+
 
 %lambda	Hb02	Hb
 %nm	cm-1/M	cm-1/M

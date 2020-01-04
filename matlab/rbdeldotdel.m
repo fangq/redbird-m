@@ -1,14 +1,34 @@
 function [deldotdel, delphi]=rbdeldotdel(cfg)
-% Format:
-%   [deldotdel, delphi]=rbdeldotdel(cfg)
+%
+% [deldotdel, delphi]=rbdeldotdel(cfg)
 %
 % Compute deldotdel=<grad(phi_i).grad(phi_j)>, where <> means spatial integration
 % inside elements, "." means dot-product, grad() means gradience, phi means
 % linear basis function in a tetrahedron. For a linear function phi,
 % grad(phi) is a constant across the element.
 %
-% Author:
-%   Qianqian Fang <q.fang at neu.edu>
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     cfg: the redbird data structure
+%
+% output:
+%     deldotdel: precomputed deldotdel=<grad(phi_i).grad(phi_j)>. For each
+%         element, deldotdel is a 4x4 symmetric matrix - to store this data
+%         efficiently; we only store the upper triangule of the matrix per
+%         element - this gives a Ne x 10 matrix (Ne is the number of tets);
+%         for each row: [d11, d12, d13, d14, d22, d23, d24, d33, d34, d44]
+%     delphi: gradient of the basis functions (grad(phi_i)) in each
+%         tetrahedral element; a 3x4 matrix for each element with a total
+%         dimension is 3 x 4 x Ne, where 
+%            3 - gradient direction, for x, y and z
+%            4 - which basis functions - for node 1, 2, 3 and 4
+%            Ne - number of element
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
 %
 
 no=cfg.node;

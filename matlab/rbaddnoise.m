@@ -1,4 +1,25 @@
 function newdata=rbaddnoise(data, snrshot, snrthermal,randseed)
+%
+% newdata=rbaddnoise(data, snrshot, snrthermal,randseed)
+%
+% Adding simulated shot-noise and thermal noise to the simulated data
+%
+% author: Qianqian Fang (q.fang <at> neu.edu)
+%
+% input:
+%     data: noise-less data
+%     snrshot: the desired SNR of the shot-noise (amplitude-proportional)
+%     snrthermal: the desired SNR of the thermal-noise (noise floor)
+%     randseed (optional): specify a seed for reproducible noise
+%
+% output:
+%     newdata: noise contaminated data
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+% -- this function is part of Redbird-m toolbox
+%
 
 if(nargin<4)
     randseed=123456789;

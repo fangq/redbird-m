@@ -1,12 +1,26 @@
 function Reff = rbgetreff(n_in,n_out)
-
+%
+% Reff = rbgetreff(n_in,n_out)
+%
 % given refractive index of the diffuse medium, calculate the effective
-% refractive index, defined as in Haskell.
-
-% original file name calcExtBnd
+% refractive index, defined as in Haskell 1994 paper.
+%
 % author: David Boas <dboas at bu.edu>
-% this file was modified from the PMI toolbox
-% License: BSD 3-clause license.
+%
+% input:
+%     n_in: the refractive index n of the interior of the domain
+%     n_out: the refractive index n of the outside space
+%
+% output:
+%     Reff: effective reflection coefficient, see 
+%
+% license:
+%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%
+%    original file name calcExtBnd
+%    this file was modified from the PMI toolbox
+% -- this function is part of Redbird-m toolbox
+%
 
 if(nargin==1)
     n_out=1;

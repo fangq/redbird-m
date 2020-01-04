@@ -3,7 +3,7 @@ function [detval, phi, Amat, rhs]=rbrunforward(cfg)
 % [detval, phi, Amat, rhs]=rbrunforward(cfg)
 %
 % Perform forward simulations at all sources and all wavelengths based on the input structure
-
+%
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
