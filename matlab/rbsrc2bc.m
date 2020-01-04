@@ -95,10 +95,14 @@ switch srctype
                     bary(bary>=1)=1-1e-6;
                     
                     if(exist('srcpattern','var'))
+                            if(ismatrix(srcpattern))
+                                    srcpattern=permute(srcpattern,[3 1 2]);
+                            end
                             pdim=size(srcpattern);
-                            srcbc=repmat(srcbc,pdim(3),1);
-                            for i=1:size(srcpattern,3)
-                                    srcbc(idx(dir<0),i)=srcpattern(sub2ind(pdim, floor(bary(:,1)*pdim(1)), floor(bary(:,2)*pdim(2)), i*ones(size(bary,1),1)));
+                            patsize=pdim(1);
+                            srcbc=repmat(srcbc,patsize,1);
+                            for i=1:patsize
+                                    srcbc(idx(dir<0),i)=srcpattern(sub2ind(pdim, i*ones(size(bary,1),1), floor(bary(:,1)*pdim(1)), floor(bary(:,2)*pdim(2))));
                             end
                     elseif(strcmp(srctype,'fourier'))
                             kx=floor(srcparam1(4));
