@@ -32,6 +32,8 @@ cfg0.srcdir=[0 0 1];
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 
+cfg0.param=struct('hbo',[],'hbr',[]);
+
 cfg0.prop = containers.Map();
 cfg0.prop('690')=[
     0 0 1 1

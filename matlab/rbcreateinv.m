@@ -41,6 +41,10 @@ if(nargin<5)
     output='complex';
 end
 
+if(nargin<4)
+    param=[];
+end
+
 wavelengths={''};
 
 if(isa(Amat,'containers.Map'))
@@ -97,8 +101,12 @@ end
 finalAmat=[];
 finalrhs=[];
 
-if(isa(params,'struct') && isfield())
+if(isa(params,'struct'))
     paramlist=fieldnames(params);
+    paramlist=intersect(params,{'hbo','hbr','water','lipids','aa3'});
+    if(isempty(paramlist))
+        error('specified parameters are not supported');
+    end
     extins=rbextinction(wavelengths,paramlist);
     for i=1:length(wavelengths)
         wv=waveid{i};

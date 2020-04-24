@@ -31,7 +31,12 @@ ne=size(cfg.elem,1);
 
 R_C0=(1./299792458000.);
 
+if(isfield(cfg,'param') && isstruct(cfg.param))
+    cfg.prop=rbupdateprop(cfg);
+end
+
 prop=cfg.prop;
+
 cfgreff=cfg.reff;
 if(isfield(cfg,'mua') && ~isempty(cfg.mua))
     cfgmua=cfg.mua;
