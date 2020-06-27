@@ -36,7 +36,7 @@ end
 % block solvers can handle multiple RHSs
 switch method
     case 'blqmr'
-        [varargout{:}]=blqmr(Amat,full(rhs),varargin{:});
+        [varargout{1:nargout}]=blqmr(Amat,full(rhs),varargin{:});
         return;
     case 'mldivide'
         varargout{1}=full(Amat\rhs);
