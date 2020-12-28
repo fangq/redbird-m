@@ -40,7 +40,7 @@ if(~isdet)
         srcparam1=cfg.srcparam1;
         srcparam2=cfg.srcparam2;
         if(strcmp(srctype,'pattern'))
-                srcpattern=cfg.srcpatten;
+                srcpattern=cfg.srcpattern;
         end
 else
         if(~isfield(cfg,'dettype') || strcmp(cfg.dettype,'pencil') || strcmp(cfg.dettype,'isotropic'))
@@ -52,7 +52,7 @@ else
         srcparam1=cfg.detparam1;
         srcparam2=cfg.detparam2;
         if(strcmp(srctype,'pattern'))
-                srcpattern=cfg.detpatten;
+                srcpattern=cfg.detpattern;
         end
 end
 
@@ -95,14 +95,12 @@ switch srctype
                     bary(bary>=1)=1-1e-6;
                     
                     if(exist('srcpattern','var'))
-                            if(ismatrix(srcpattern))
-                                    srcpattern=permute(srcpattern,[3 1 2]);
-                            end
+                            srcpattern=permute(srcpattern,[3 1 2]);     %test edit ex 200916
                             pdim=size(srcpattern);
                             patsize=pdim(1);
                             srcbc=repmat(srcbc,patsize,1);
                             for i=1:patsize
-                                    srcbc(idx(dir<0),i)=srcpattern(sub2ind(pdim, i*ones(size(bary,1),1), floor(bary(:,1)*pdim(1)), floor(bary(:,2)*pdim(2))));
+                                    srcbc(i,idx(dir<0))=srcpattern(sub2ind(pdim, i*ones(size(bary,1),1), floor(bary(:,1)*pdim(2))+1, floor(bary(:,2)*pdim(3))+1));
                             end
                     elseif(strcmp(srctype,'fourier'))
                             kx=floor(srcparam1(4));
