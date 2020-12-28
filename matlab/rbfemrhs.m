@@ -45,6 +45,9 @@ if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.face,1)))
     Reff=cfg.reff;
     maxbcnode=max(cfg.face(:));
 
+    % 1/18 = 1/2*1/9, where 2 comes from the 1/2 in ls=(1+Reff)/(1-Reff)/2*D,
+    % and 1/9 = (1/6+1/12+1/12)/3, where A/6 is <phi_i,phi_j> when i=j, and
+    % A/12 is i!=j
     Adiagbc=cfg.area(:)*((1-Reff)/(18*(1+Reff)));
     Adiagbc=repmat(Adiagbc,1,size(widesrc,1)).*(widesrc');
 
