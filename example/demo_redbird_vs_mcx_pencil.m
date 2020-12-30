@@ -22,22 +22,18 @@ cfg.face=volface(cfg.elem);
 nn=size(cfg.node,1);
 cfg.seg=ones(size(cfg.elem,1),1);
 
-cfg.srctype='planar';
-cfg.srcpos=[9.5 9.5 0];
-cfg.srcparam1=[40 0 0 0];
-cfg.srcparam2=[0 40 0 0];
+cfg.srcpos=[29.5 29.5 0];
 cfg.srcdir=[0 0 1];
-
-cfg.dettype='planar';
-cfg.detpos=[10 10 30];
-cfg.detparam1=[40 0 0 0];
-cfg.detparam2=[0 40 0 0];
-cfg.detdir=[0 0 -1];
 
 cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;
 
+cfg.detpos=[40 30 0];
+cfg.detdir=[0 0 -1];
+
 z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
+
+cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
 
 cfg=rbmeshprep(cfg);
 
@@ -97,10 +93,8 @@ if(exist('mcxlab','file'))
         xcfg.issrcfrom0=0;
 
         % a uniform planar source outside the volume
-        xcfg.srctype='planar';
-        xcfg.srcpos=[10 10 0];
-        xcfg.srcparam1=[40 0 0 0];
-        xcfg.srcparam2=[0 40 0 0];
+        xcfg.srctype='pencil';
+        xcfg.srcpos=[30 30 0];
 
         flux=mcxlab(xcfg);
         fcw=flux.data*xcfg.tstep;
@@ -130,7 +124,7 @@ title('Redbird solution');
 clines = 0:-0.5:-5;
 [xi,yi] = meshgrid(0.5:59.5,0.5:29.5);
 [cutpos,cutvalue,facedata] = qmeshcut(cfg.elem,cfg.node,phi(:,1),'x=29.5');
-vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+1,yi-2*z0);
+vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+0.5,yi);
 
 figure,[c,h] = contour(xi,yi,log10(vphi),clines,'r-','LineWidth',2);
 
