@@ -41,7 +41,7 @@ loc=[];
 bary=[];
 
 if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.node,1)))
-    rhs=widesrc;
+    rhs=widesrc.';
     loc=nan*ones(1,size(widesrc,1));
     bary=nan*ones(size(widesrc,1),4);
 end

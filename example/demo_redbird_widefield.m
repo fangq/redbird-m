@@ -127,10 +127,10 @@ title('Redbird solution');
 %%   Comparison
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clines = 0:-0.5:-5;
+clines = 0.5:-0.5:-5;
 [xi,yi] = meshgrid(0.5:59.5,0.5:29.5);
 [cutpos,cutvalue,facedata] = qmeshcut(cfg.elem,cfg.node,phi(:,1),'x=29.5');
-vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+1,yi-2*z0);
+vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+0.5,yi);
 
 figure,[c,h] = contour(xi,yi,log10(vphi),clines,'r-','LineWidth',2);
 

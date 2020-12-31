@@ -74,8 +74,8 @@ switch srctype
             
             % if src is colimated (default), sink it by 1/mus'
             if(~isfield(cfg,'iscolimated') || cfg.iscolimated) 
-                sinkplane=cfg.srcdir; % the plane where sinked planar source is located as [A,B,C,D] where A*x+B*y+C*z+D=0
-                sinkplane(4)=-sum(cfg.srcdir.*(cfg.srcpos+cfg.srcdir*z0));
+                sinkplane=srcdir; % the plane where sinked planar source is located as [A,B,C,D] where A*x+B*y+C*z+D=0
+                sinkplane(4)=-sum(srcdir.*(srcpos+srcdir*z0));
                 [cutpos,cutvalue,facedata,elemid,nodeid]=qmeshcut(cfg.elem,cfg.node,zeros(size(cfg.node,1),1),sinkplane);
                 pnode=cutpos;
                 idx=find(facedata(:,3)~=facedata(:,4));
@@ -163,10 +163,10 @@ rhs=sparse(size(cfg.node,1),size(srcbc,1));
 for i=1:size(srcbc,1)
     if(exist('nodeid','var'))
         allnodes=nodeid(pface,:);
-        rhs(1:maxbcnode,i)=sparse(allnodes(:), 1, [Adiagbc(:,i).*nodeweight;Adiagbc(:,i).*(1-nodeweight)]);
+        rhs(1:maxbcnode,i)=sparse(allnodes(:), 1, [repmat(Adiagbc(:,i),3,1).*nodeweight(pface(:));repmat(Adiagbc(:,i),3,1).*(1-nodeweight(pface(:)))]);
     else
         rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
     end
     rhs(:,i)=rhs(:,i)/sum(rhs(:,i));
 end
-srcbc=rhs;
+srcbc=rhs.';
