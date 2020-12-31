@@ -62,25 +62,44 @@ if(size(srcpos,2)==size(cfg.face,1))
         return;
 end
 
+z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
+
 switch srctype
     case {'planar','pattern','fourier'}
             ps=[srcpos; srcpos+srcparam1(1:3); ...
                 srcpos+srcparam1(1:3)+srcparam2(1:3); srcpos+srcparam2(1:3); srcpos];
-            c0=meshcentroid(cfg.node,cfg.face);
+            
+            pnode=cfg.node;
+            pface=cfg.face;
+            
+            % if src is colimated (default), sink it by 1/mus'
+            if(~isfield(cfg,'iscolimated') || cfg.iscolimated) 
+                sinkplane=cfg.srcdir; % the plane where sinked planar source is located as [A,B,C,D] where A*x+B*y+C*z+D=0
+                sinkplane(4)=-sum(cfg.srcdir.*(cfg.srcpos+cfg.srcdir*z0));
+                [cutpos,cutvalue,facedata,elemid,nodeid]=qmeshcut(cfg.elem,cfg.node,zeros(size(cfg.node,1),1),sinkplane);
+                pnode=cutpos;
+                idx=find(facedata(:,3)~=facedata(:,4));
+                pface=facedata(facedata(:,3)==facedata(:,4),1:3);
+                pface=[pface;facedata(idx,[1 2 3]);facedata(idx,[1 3 4])];
+            end
+            c0=meshcentroid(pnode,pface);
             newnode=rotatevec3d([c0; ps],srcdir(1:3));
             srcpoly=newnode(end-4:end, 1:2);
             [isin,ison]=inpolygon(newnode(1:end-5,1),newnode(1:end-5,2),srcpoly(:,1),srcpoly(:,2));
             isin=isin | ison;
             idx=find(isin);
             if(~isempty(idx)) % the below test only works for convex shapes
-                    AB=cfg.node(cfg.face(idx,2),1:3)-cfg.node(cfg.face(idx,1),1:3);
-                    AC=cfg.node(cfg.face(idx,3),1:3)-cfg.node(cfg.face(idx,1),1:3);
+                    AB=pnode(pface(idx,2),1:3)-pnode(pface(idx,1),1:3);
+                    AC=pnode(pface(idx,3),1:3)-pnode(pface(idx,1),1:3);
                     N=cross(AB',AC')';
                     dir=sum(N.*repmat(srcdir(:)',size(N,1),1),2);
+                    if(exist('sinkplane','var'))
+                        dir(dir>0)=-dir(dir>0);
+                    end
                     if(all(dir>=0))
                             error('please reorient the surface triangles');
                     end
-                    srcbc=zeros(1,size(cfg.face,1));
+                    srcbc=zeros(1,size(pface,1));
                     srcbc(idx(dir<0))=1;
                     pbc=newnode(idx(dir<0),1:2);
                     
@@ -95,7 +114,7 @@ switch srctype
                     bary(bary>=1)=1-1e-6;
                     
                     if(exist('srcpattern','var'))
-                            srcpattern=permute(srcpattern,[3 1 2]);     %test edit ex 200916
+                            srcpattern=permute(srcpattern,[3 1 2]);
                             pdim=size(srcpattern);
                             patsize=pdim(1);
                             srcbc=repmat(srcbc,patsize,1);
@@ -120,3 +139,34 @@ switch srctype
     otherwise
             error('this source type is not supported');
 end
+
+% at this point, srcbc stores the J- at each surface triangle (or sinked triangles)
+
+Reff=cfg.reff;
+maxbcnode=max(pface(:));
+if(exist('nodeid','var'))
+    nodeweight=nodeid(:,3);
+    nodeid=nodeid(:,1:2);
+    maxbcnode=max(max(nodeid(pface,:)));
+    parea=elemvolume(pnode,pface);
+else
+    parea=cfg.area;
+end
+
+% 1/18 = 1/2*1/9, where 2 comes from the 1/2 in ls=(1+Reff)/(1-Reff)/2*D,
+% and 1/9 = (1/6+1/12+1/12)/3, where A/6 is <phi_i,phi_j> when i=j, and
+% A/12 is i!=j
+Adiagbc=parea(:)*((1-Reff)/(18*(1+Reff)));
+Adiagbc=repmat(Adiagbc,1,size(srcbc,1)).*(srcbc');
+rhs=sparse(size(cfg.node,1),size(srcbc,1));
+
+for i=1:size(srcbc,1)
+    if(exist('nodeid','var'))
+        allnodes=nodeid(pface,:);
+        rhs(1:maxbcnode,i)=sparse(allnodes(:), 1, [Adiagbc(:,i).*nodeweight;Adiagbc(:,i).*(1-nodeweight)]);
+    else
+        rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
+    end
+    rhs(:,i)=rhs(:,i)/sum(rhs(:,i));
+end
+srcbc=rhs;

@@ -58,14 +58,6 @@ end
 if(~isfield(cfg,'srcdir'))
     error('cfg.srcdir field is missing');
 end
-if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
-    cfg.srcpos0=cfg.srcpos;
-    cfg.srcpos=rbsrc2bc(cfg);
-end
-if(isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
-    cfg.detpos0=cfg.detpos;
-    cfg.detpos=rbsrc2bc(cfg,1);
-end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
     if(length(cfg.seg)==size(cfg.elem,1))
         [ix, iy]=find(cfg.elem==cfg.face(1));
@@ -97,6 +89,14 @@ if(~isfield(cfg,'reff') || isempty(cfg.reff))
             cfg.musp0=cfg.prop(cfg.seg(cfg.face(1))+1,2);
 	end
     end
+end
+if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
+    cfg.srcpos0=cfg.srcpos;
+    cfg.srcpos=rbsrc2bc(cfg);
+end
+if(isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
+    cfg.detpos0=cfg.detpos;
+    cfg.detpos=rbsrc2bc(cfg,1);
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))
     [cfg.rows,cfg.cols,cfg.idxcount]=rbfemnz(cfg.elem,size(cfg.node,1));

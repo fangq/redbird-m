@@ -39,22 +39,9 @@ end
 
 loc=[];
 bary=[];
-rhs=sparse(size(cfg.node,1),size(widesrc,1)+size(optode,1));
 
-if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.face,1)))
-    Reff=cfg.reff;
-    maxbcnode=max(cfg.face(:));
-
-    % 1/18 = 1/2*1/9, where 2 comes from the 1/2 in ls=(1+Reff)/(1-Reff)/2*D,
-    % and 1/9 = (1/6+1/12+1/12)/3, where A/6 is <phi_i,phi_j> when i=j, and
-    % A/12 is i!=j
-    Adiagbc=cfg.area(:)*((1-Reff)/(18*(1+Reff)));
-    Adiagbc=repmat(Adiagbc,1,size(widesrc,1)).*(widesrc');
-
-    for i=1:size(widesrc,1)
-        rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
-        rhs(:,i)=rhs(:,i)/sum(rhs(:,i));
-    end
+if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.node,1)))
+    rhs=widesrc;
     loc=nan*ones(1,size(widesrc,1));
     bary=nan*ones(size(widesrc,1),4);
 end
@@ -63,6 +50,7 @@ if(isempty(optode))
     return;
 end
 
+rhs=sparse(size(cfg.node,1),size(widesrc,1)+size(optode,1));
 [newloc, newbary]=tsearchn(cfg.node,cfg.elem,optode);
 
 loc=[loc; newloc];
