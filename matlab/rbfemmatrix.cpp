@@ -334,6 +334,26 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
 	}
     }else if(strcmp(name,"detpos")==0){
         // do nothing
+    }else if(strcmp(name,"srctype")==0){
+        // do nothing
+    }else if(strcmp(name,"srcparam1")==0){
+        // do nothing
+    }else if(strcmp(name,"srcparam2")==0){
+        // do nothing
+    }else if(strcmp(name,"srcpattern")==0){
+        // do nothing
+    }else if(strcmp(name,"dettype")==0){
+        // do nothing
+    }else if(strcmp(name,"detparam1")==0){
+        // do nothing
+    }else if(strcmp(name,"detparam2")==0){
+        // do nothing
+    }else if(strcmp(name,"detpattern")==0){
+        // do nothing
+    }else if(strcmp(name,"srcpos0")==0){
+        // do nothing
+    }else if(strcmp(name,"detpos0")==0){
+        // do nothing
     }else if(strcmp(name,"nvol")==0){
         // do nothing
     }else if(strcmp(name,"mua")==0){
