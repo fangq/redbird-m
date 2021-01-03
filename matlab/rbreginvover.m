@@ -24,6 +24,20 @@ function res=rbreginvover(Amat, rhs, lambda, Lqr, varargin)
 % solve an overdetermined Gauss-Newton normal equation
 %  delta_mu=inv(J'J + lambda*L'L)*J'*(y-phi)
 
+% if any node has no sensitivity, remove them from inversion
+len=size(Amat,2);
+idx=find(sum(Amat)~=0);
+if(length(idx)<len)
+    Amat=Amat(:,idx);
+    %TODO: need to shrink Lqr as well
+end
+
+emptydata=find(sum(Amat')~=0);
+if(length(emptydata)<size(Amat,1))
+    Amat=Amat(emptydata,:);
+    rhs=rhs(emptydata);
+end
+
 rhs=Amat'*rhs(:);
 
 Hess=Amat'*Amat; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
@@ -37,3 +51,9 @@ else
 end
 
 res=Gdiag(:).*rbfemsolve(Hess, Gdiag(:).*rhs, varargin{:});
+
+if(length(idx)<len)
+    res0=zeros(len,size(res,2));
+    res0(idx,:)=res;
+    res=res0;
+end

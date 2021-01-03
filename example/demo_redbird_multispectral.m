@@ -38,19 +38,19 @@ cfg0.prop = containers.Map();
 cfg0.prop('690')=[
     0 0 1 1
     0.008 1 0 1.37
-    0.016 1 0 1.37
+    0.016 0.7 0 1.37
 ];
 cfg0.prop('830')=[
     0 0 1 1
-    0.008 1 0 1.37
-    0.016 1 0 1.37
+    0.006 0.9 0 1.37
+    0.012 0.6 0 1.37
 ];
 
 wavelengths=cfg0.prop.keys;
 
-%z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
-%cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
-%cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
+z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
+cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
+cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
 
 cfg0.omega=2*pi*70e6;
 cfg0.omega=0;
@@ -103,7 +103,10 @@ for i=1:maxiter
     tic
     [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight);
     resid(i)=sum(abs(misfit));         % store the residual
-    cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
+    for waveid=wavelengths
+        wv=waveid{1};
+        cfg.mua(wv)=cfg.mua(wv) + dmu(:);          % update forward mesh mua vector
+    end
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 

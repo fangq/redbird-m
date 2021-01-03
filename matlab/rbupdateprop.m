@@ -20,7 +20,7 @@ function prop=rbupdateprop(cfg)
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~isfield(cfg,'prop') || ~isa(cfg.prop,'containers.Map') ||  ~isfield(cfg,'param')))
+if(~isfield(cfg,'prop') || ~isa(cfg.prop,'containers.Map') ||  ~isfield(cfg,'param'))
     error('input cfg must be a struct and must have subfield names "prop" and "param"');
 end
 
@@ -30,19 +30,24 @@ if(~isa(cfg.prop,'containers.Map'))
 end
 
 wv=keys(cfg.prop);
+prop=containers.Map();
 
 for i=1:length(wv)
     wavelen=wv{i};
-    types=fieldnames(cfg.param);
-    types=intersect(cfg.param,{'hbo','hbr','water','lipids','aa3'});
+    types=intersect(fieldnames(cfg.param),{'hbo','hbr','water','lipids','aa3'});
     if(isempty(types))
         error('specified parameters are not supported');
     end
-    extin=rbextinction(str2num(wv{i}), types);
-    mua=zeros(size(cfg.param(types{1})));
+    extin=rbextinction(str2double(wv{i}), types);
+    mua=zeros(size(cfg.param.(types{1})));
     for j=1:length(types)
-        mua=mua+extin.(types{i})*cfg,param(types{i});
+        mua=mua+extin(i)*cfg.param.(types{i});
     end
-    musp=cfg.param('scatamp').*exp(-cfg.wavelen(i).*cfg.param('scatpower'));
-    prop(wavelen)=[mua musp];
+    if(isfield(cfg.param,'scatamp') && isfield(cfg.param,'scatpower'))
+        musp=cfg.param.('scatamp').*exp(-cfg.wavelen(i).*cfg.param.('scatpower'));
+        prop(wavelen)=[mua musp];
+    else
+        prop(wavelen)=mua;
+    end
+    
 end

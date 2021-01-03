@@ -12,10 +12,7 @@ function Jchrome=rbjacchrome(Jmua, extin)
 %     extin: the extinction coeff as a matrix: rows: wavelengths; columns: chromorphores
 %
 % output:
-%     Jmua_n: the nodal Jacobian for absorption coeff. mua
-%     Jmua_e: the element-wise Jacobian for absorption coeff. mua
-%     Jd_n: (optional) the nodal Jacobian for diffusion coeff D
-%     Jd_e: (optional) the element-wise Jacobian for diffusion coeff D
+%     Jchrome: the Jacobian for 
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details 

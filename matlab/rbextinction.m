@@ -2104,7 +2104,7 @@ if(iscell(wavelen) && ~isempty(wavelen))
     if(isempty(wavelen{1}))
         error('you must provide non-empty wavelength list');
     end
-    wavelen=cellfun(@str2num, wavelen);
+    wavelen=cellfun(@str2double, wavelen);
 end
 
 if(ischar(type))

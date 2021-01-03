@@ -24,6 +24,19 @@ function res=rbreginvunder(Amat, rhs, lambda, invLTL)
 % solve an overdetermined Gauss-Newton normal equation
 %  delta_mu=inv(L'L)*J'*inv(J*J' + lambda*I)*(y-phi)
 
+len=size(Amat,2);
+idx=find(sum(Amat)~=0);
+if(length(idx)<size(Amat,2))
+    Amat=Amat(:,idx);
+    %TODO: need to shrink invLTL as well
+end
+
+emptydata=find(sum(Amat')~=0);
+if(length(emptydata)<size(Amat,1))
+    Amat=Amat(emptydata,:);
+    rhs=rhs(emptydata);
+end
+
 rhs=rhs(:);
 
 if(nargin>=4)
@@ -41,4 +54,10 @@ res=Gdiag(:).*rbfemsolve(Hess, Gdiag(:).*rhs);
 res=Amat'*res;
 if(nargin>=4)
     res=invLTL*res;
+end
+
+if(length(idx)<len)
+    res0=zeros(len,size(res,2));
+    res0(idx,:)=res;
+    res=res0;
 end

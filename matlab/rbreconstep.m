@@ -1,4 +1,4 @@
-function [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight, reform)
+function [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight,reform)
 %
 % [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight, reform)
 %
@@ -33,13 +33,25 @@ Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
 %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
 
 if(isa(Jmua,'containers.Map'))
-    [Jmua,detphi0,detphi]=rbinvmatrix(Jmua, detphi0, detphi);
+    [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi);
 end
 if(nargin>=7)
     [Jmua,misfit]=rbmatreform(Jmua, detphi0(:), detphi(:),reform);
 else
-    misfit=detphi(:)-detphi0(:)
+    misfit=detphi(:)-detphi0(:);
 end
-Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
-dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
-dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
+if(isfield(recon,'elem') && isfield(recon,'node') && nargin>5) % dual-mesh reconstruction
+    Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
+else % single mesh reconstruction
+    Jmua_recon=Jmua;
+end
+lambda=0.1;
+if(isfield(recon,'lambda'))
+    lambda=recon.lambda;
+end
+dmu_recon=rbreginv(Jmua_recon, misfit, lambda);  % solve the update on the recon mesh
+if(nargin>5)
+    dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
+else
+    dmu=dmu_recon;
+end
