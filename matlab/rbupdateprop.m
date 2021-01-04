@@ -1,9 +1,9 @@
-function prop=rbupdateprop(cfg)
+function prop=rbupdateprop(cfg,wv)
 %
 % prop=rbupdateprop(cfg)
 %
 % Update the direct material properties (cfg.prop - optical or EM 
-% properties used by the forward solver) using drived properties 
+% properties used by the forward solver) using derived properties 
 % (cfg.param - physiological parameters) at give wavelengths (cfg.wavelen)
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -20,16 +20,18 @@ function prop=rbupdateprop(cfg)
 % -- this function is part of Redbird-m toolbox
 %
 
+% keys(cfg.param) provides chromorphore species, 2nd input wv or 
+% keys(cfg.prop) provides the wavelength list, thus, both must be
+% containers.Map
+
 if(~isfield(cfg,'prop') || ~isa(cfg.prop,'containers.Map') ||  ~isfield(cfg,'param'))
     error('input cfg must be a struct and must have subfield names "prop" and "param"');
 end
 
-if(~isa(cfg.prop,'containers.Map'))
-    prop=cfg.prop;
-    return;
+if(nargin<2)
+    wv=keys(cfg.prop);
 end
 
-wv=keys(cfg.prop);
 prop=containers.Map();
 
 for i=1:length(wv)
@@ -48,6 +50,5 @@ for i=1:length(wv)
         prop(wavelen)=[mua musp];
     else
         prop(wavelen)=mua;
-    end
-    
+    end 
 end

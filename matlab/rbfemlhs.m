@@ -32,7 +32,9 @@ ne=size(cfg.elem,1);
 R_C0=(1./299792458000.);
 
 if(isfield(cfg,'param') && isstruct(cfg.param) && all(structfun(@isempty,cfg.param)==0))
-    cfg.prop=rbupdateprop(cfg);
+    if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map') && ~isempty(keys(cfg.prop)))
+        cfg.prop=rbupdateprop(cfg);
+    end
 end
 
 prop=cfg.prop;

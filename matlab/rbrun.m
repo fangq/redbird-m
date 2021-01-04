@@ -1,12 +1,12 @@
 function varargout=rbrun(cfg,recon,varargin)
 %
-% phi=rbrecon(cfg)
-% prop=rbrecon(cfg,recon)
+% phi=rbrun(cfg)
+% prop=rbrun(cfg,recon)
 %   or
-% prop=rbrecon(cfg,recon,mode)
+% prop=rbrun(cfg,recon,mode)
 %
-% Perform reconstruction by fitting optical properties with the data vector
-% provided recon or recon.data
+% Master script to run streamlined forward, inversion with various
+% reconstruction modes.
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -41,7 +41,8 @@ function varargout=rbrun(cfg,recon,varargin)
 %                    roi/non-roi probabalistic map
 %
 % output:
-%     prop: reconstructed optical properties or parameters
+%     phi or prop: forward solution or reconstructed optical properties or
+%           parameters
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details 
@@ -69,7 +70,9 @@ end
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cfg=rbsetmesh(cfg,recon.node,recon.elem,recon.prop,ones(size(node,1),1));
+if(isfield(recon,'node') && isfield(recon,'elem'))
+    cfg=rbsetmesh(cfg,recon.node,recon.elem,recon.prop,ones(size(node,1),1));
+end
 
 if(isfield(recon,'sdmap'))
     sd=recon.sdmap;
@@ -77,6 +80,7 @@ else
     sd=rbsdmap(cfg);
 end
 
+% at this point, recon.{node,elem} are required
 [f2rid, f2rweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
