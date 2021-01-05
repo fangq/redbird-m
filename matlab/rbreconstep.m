@@ -33,7 +33,7 @@ Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
 %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
 
 if(isa(Jmua,'containers.Map'))
-    [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi);
+    [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, keys(cfg.param));
 end
 if(nargin>=7)
     [Jmua,misfit]=rbmatreform(Jmua, detphi0(:), detphi(:),reform);

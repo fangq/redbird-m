@@ -1,4 +1,4 @@
-function [newJ, newy0, newphi]=rbmultispectral(Jacob, y0, phi)
+function [newJ, newy0, newphi]=rbmultispectral(Jacob, y0, phi, chromophores)
 %
 % [newJ, newy0, newphi]=rbmultispectral(Jacob, y0, phi)
 %
@@ -12,6 +12,7 @@ function [newJ, newy0, newphi]=rbmultispectral(Jacob, y0, phi)
 %         wavelength is a key
 %     y0: the multispectral measurement data 
 %     phi: the forward solution at multiple wavelengths
+%     chromophores: list of chormophores
 %
 % output:
 %     newJ: the contatenated Jacobian - dimension (Nw*Ns*Nd) x (Nn*Np), where
@@ -38,8 +39,8 @@ if(isa(Jacob,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'container
     if(~all(ismember(wv,keys(y0))) || ~all(ismember(keys(phi),keys(y0))))
         error('Jacob, y0 and phi must share the same key');
     end
+    newJ=rbjacchrome(Jmua,rbextinction(wv, chromophores));
     for i=1:length(wv)
-        newJ=[newJ; Jacob(wv{i})];
         newy0=[newy0; reshape(y0(wv{i}),[],1)];
         newphi=[newphi; reshape(phi(wv{i}),[],1)];
     end
