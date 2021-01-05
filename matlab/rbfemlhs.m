@@ -64,14 +64,22 @@ if(isa(cfg.prop,'containers.Map'))
     end
 end
 
+% 
+
 if(nargin>=2)
+    % get mua from prop(:,1) if cfg.prop has wavelengths, or cfg.mua (map)
     if(~isfield(cfg,'mua') || isempty(cfg.mua))
         mua=prop(cfg.seg+1,1);
     else
         mua=cfgmua;
     end
+    % get dcoeff from prop(:,2) if cfg.prop has wavelengths, or cfg.dcoeff(map)
     if(~isfield(cfg,'dcoeff') || isempty(cfg.dcoeff))
-        musp=prop(cfg.seg+1,2).*(1-prop(cfg.seg+1,3));
+        if(size(prop,2)<3)
+            musp=prop(cfg.seg+1,2); % assume g is 0
+        else
+            musp=prop(cfg.seg+1,2).*(1-prop(cfg.seg+1,3));
+        end
         dcoeff=1./(3*(mua+musp));
     else
         dcoeff=cfgdcoeff;
@@ -85,6 +93,7 @@ if(nargin>=2)
 
     edges=sort(meshedge(cfg.elem),2);
     
+    % what LHS matrix needs is dcoeff and mua
     if(length(mua)==size(cfg.elem,1))
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff(:),1,6) + repmat(0.05*mua(:).*cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff(:),1,4) + repmat(0.10*mua(:).*cfg.evol(:),1,4);
