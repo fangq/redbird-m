@@ -28,15 +28,37 @@ function [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight,reform)
 %
 
 [detphi, phi]=rbrunforward(cfg);   % run forward on recon mesh
-%Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
-Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
-%Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
-
-if(isa(Jmua,'containers.Map'))
-    [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, keys(cfg.param));
+isrf=0;
+if(isfield(cfg,'omega') && cfg.omega>0)
+    [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
+    isrf=1;
+else
+    Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
+    %Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
+    %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
 end
+
+if(isa(Jmua,'containers.Map')) % keys are wavelengths, same for Jd
+    if(exist('Jd','var'))
+        [Jmua,detphi0,detphi,blocks]=rbmultispectral(Jmua, detphi0, detphi, cfg.param, Jd);
+    else
+        [Jmua,detphi0,detphi,blocks]=rbmultispectral(Jmua, detphi0, detphi, cfg.param);
+    end
+else
+    if(exist('Jd','var'))
+        Jmua=[Jmua, Jd];
+        blocks=struct('mua',size(Jmua,2),'dcoeff',size(Jd,2)};
+    else
+        blocks=struct('mua',size(Jmua,2));
+    end
+    
+end
+
+% from this point on, Jmua is a matrix of the combined Jacobian, unknown
+% blocks are in 
+
 if(nargin>=7)
-    [Jmua,misfit]=rbmatreform(Jmua, detphi0(:), detphi(:),reform);
+    [Jmua,misfit]=rbmatreform(Jmua, detphi0(:), detphi(:), reform);
 else
     misfit=detphi(:)-detphi0(:);
 end
