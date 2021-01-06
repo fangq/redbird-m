@@ -36,6 +36,7 @@ function [newJ, newy0, newphi, blocks]=rbmultispectral(Jmua, y0, phi, params, Jd
 newJ=[];
 newy0=[];
 newphi=[];
+blocks=struct;
 
 if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers.Map'))
     wv=keys(Jmua);
@@ -47,13 +48,14 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
         for i=1:length(wv)
             newJ=rbjacscat(Jd, dcoeff, params.scatpow, wv);
         end
-        blocknames=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
+        blocks=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
     end
     chromophores=intersect(paramlist,{'hbo','hbr','water','lipids','aa3'});
 
     newJ=[rbjacchrome(Jmua,rbextinction(wv, chromophores)) , newJ];
-    blocknames=[chromophores,blocknames];
-    blocknames=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
+    blocks=[chromophores,blocknames];
+    
+    blocks=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
 
     for i=1:length(wv)
         newy0=[newy0; reshape(y0(wv{i}),[],1)];
@@ -62,11 +64,11 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
 else
     if(~isa(Jmua,'containers.Map'))
         newJ=Jmua;
-        blocknames=struct('mua',size(Jmua,2));
+        blocks=struct('mua',size(Jmua,2));
     end
     if(nargin>4 && ~isa(Jd,'containers.Map'))
         newJ=[Jmua Jd];
-        blocknames=struct('mua',size(Jmua,2),'dcoeff',size(Jd,2));
+        blocks=struct('mua',size(Jmua,2),'dcoeff',size(Jd,2));
     end
     if(~isa(y0,'containers.Map'))
         newy0=y0;

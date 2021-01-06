@@ -1,6 +1,6 @@
 function [dmu, misfit, blocks]=rbrunrecon(niter,cfg,sd,recon,detphi0,f2rid,f2rweight,reform)
 %
-% [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight, reform)
+% [dmu, misfit, blocks]=rbrunrecon(cfg,sd,recon,detphi0,f2rid,f2rweight, reform)
 %
 % Perform a single iteration of a Gauss-Newton reconstruction
 %
