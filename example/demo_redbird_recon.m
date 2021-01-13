@@ -82,7 +82,8 @@ sd=rbsdmap(cfg);
 maxiter=10;
 resid=zeros(1,maxiter);
 
-cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
+% initialize reconstruction to homogeneous
+recon.prop=cfg.prop(ones(size(recon.node,1),1),:);
 
 for i=1:maxiter
     tic
@@ -96,7 +97,8 @@ for i=1:maxiter
     resid(i)=sum(abs(misfit));         % store the residual
     dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
     dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
-    cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
+    recon.prop(:,1)=recon.prop(:,1) + dmu_recon(:);          % update forward mesh mua vector
+    cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 

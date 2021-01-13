@@ -13,6 +13,7 @@ function [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, params, Jd, prop)
 %     y0: the multispectral measurement data 
 %     phi: the forward solution at multiple wavelengths
 %     params: must be a struct as cfg.param
+%     prop: must be a struct as cfg.prop
 %
 % output:
 %     newJ: the contatenated Jacobian - dimension (Nw*Ns*Nd) x ((Nn*Np)+Nn*2), where
@@ -44,7 +45,9 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
     if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         for i=1:length(wv)
             dcoeff=prop(wv);
-            if()
+            if(size(dcoeff,1)<min([size(cfg.node,1),size(cfg.elem,1)])) % label based
+                dcoeff=dcoeff(2:end,:);
+            end
             dcoeff=1/(3*(dcoeff(:,1)+dcoeff(:,2)));
             Jscat=rbjacscat(Jd, dcoeff, params.scatpow, wv);
         end

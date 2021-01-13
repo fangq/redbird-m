@@ -82,8 +82,7 @@ for iter=1:maxiter
     % TODO: need to handle Jmua is a map but cfg.param is not defined
     if(isa(Jmua,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
         if(exist('Jd','var'))
-            dcoeff=cfg.prop(:,2);
-            [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, cfg.param, Jd, dcoeff);
+            [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
         else
             [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, cfg.param);
         end
