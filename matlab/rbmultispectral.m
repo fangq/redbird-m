@@ -1,4 +1,4 @@
-function [newJ, newy0, newphi, blocks]=rbmultispectral(Jmua, y0, phi, params, Jd)
+function [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, params, Jd, prop)
 %
 % [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, paramlist, Jd)
 %
@@ -24,8 +24,6 @@ function [newJ, newy0, newphi, blocks]=rbmultispectral(Jmua, y0, phi, params, Jd
 %          Nn*2 stores the scat-amplitude and scat-power if Jd is given
 %     newy0: the contatenated measurement data vector
 %     newphi: the contatenated forward simulation of measurements
-%     blocks: a struct recording the names and lengths of the unknown
-%          blocks
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details 
@@ -33,10 +31,9 @@ function [newJ, newy0, newphi, blocks]=rbmultispectral(Jmua, y0, phi, params, Jd
 % -- this function is part of Redbird-m toolbox
 %
 
-newJ=[];
+newJ=struct;
 newy0=[];
 newphi=[];
-blocks=struct;
 
 if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers.Map'))
     wv=keys(Jmua);
@@ -44,31 +41,35 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
         error('Jacob, y0 and phi must share the same key');
     end
     paramlist=fieldnames(params);
-    if(nargin>4 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
+    if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         for i=1:length(wv)
-            newJ=rbjacscat(Jd, dcoeff, params.scatpow, wv);
+            dcoeff=prop(wv);
+            if()
+            dcoeff=1/(3*(dcoeff(:,1)+dcoeff(:,2)));
+            Jscat=rbjacscat(Jd, dcoeff, params.scatpow, wv);
         end
-        blocks=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
     end
     chromophores=intersect(paramlist,{'hbo','hbr','water','lipids','aa3'});
 
-    newJ=[rbjacchrome(Jmua,rbextinction(wv, chromophores)) , newJ];
-    blocks=[chromophores,blocknames];
-    
-    blocks=struct('scatamp',size(Jd,2),'scatpow',size(Jd,2));
-
+    newJ=rbjacchrome(Jmua,str2double(wv),chromophores);
+    if(exist('Jscat','var') && isstruct(Jscat))
+        allkeys=fieldnames(Jscat);
+        for i=1:length(allkeys)
+            newJ.(allkeys{i})=Jscat.(allkeys{i});
+        end
+        clear Jscat;
+    end
     for i=1:length(wv)
         newy0=[newy0; reshape(y0(wv{i}),[],1)];
         newphi=[newphi; reshape(phi(wv{i}),[],1)];
     end
 else
     if(~isa(Jmua,'containers.Map'))
-        newJ=Jmua;
-        blocks=struct('mua',size(Jmua,2));
+        newJ.mua=Jmua;
     end
     if(nargin>4 && ~isa(Jd,'containers.Map'))
-        newJ=[Jmua Jd];
-        blocks=struct('mua',size(Jmua,2),'dcoeff',size(Jd,2));
+        newJ.mua=Jmua;
+        newJ.dcoeff=Jd;
     end
     if(~isa(y0,'containers.Map'))
         newy0=y0;

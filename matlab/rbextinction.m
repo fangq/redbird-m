@@ -2,8 +2,8 @@ function [extin, chrome]=rbextinction(wavelen, type, varargin)
 %
 % [extin, chrome]=rbextinction(wavelen, type, interp1opt)
 %
-% Get the molar extinction coefficients for selected chromophores and
-% wavelengths
+% Get the molar extinction coefficients for selected chromophores (columns)
+% and wavelengths (rows)
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -20,7 +20,7 @@ function [extin, chrome]=rbextinction(wavelen, type, varargin)
 %          interpolating at given wavelength values
 %
 % output:
-%     extin: the extinction coefficients of the selected chromorphores
+%     extin: the extinction coeff as a matrix: rows: wavelengths; columns: chromorphores
 %     chrome: full look-up table of the extincition coefficients
 %
 % These values for the molar extinction coefficient e in [cm-1/(moles/liter)] 

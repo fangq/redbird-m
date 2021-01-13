@@ -1,13 +1,15 @@
-function [Anew, allkeys]=rbmatflat(Amat)
+function [Anew, allkeys]=rbmatflat(Amat, weight)
 %
 % [Anew, allkeys]=rbmatflat(Amat)
 %
-% Flatten a containers.Map object (in the case of multi-wavelength cases) into a rectangular 2D matrix
+% Flatten a containers.Map object (in the case of multi-wavelength cases)
+% into a rectangular 2D matrix
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
 %     Amat: the LHS of the matrix equation
+%     weight: the weight mutiplying to each sub block before concatenation
 %
 % output:
 %     Anew: the flattened LHS matrix 
@@ -27,14 +29,18 @@ end
 
 if(isa(Amat,'containers.Map'))
     allkeys=Amat.keys;
-    for key=allkeys
-        id=key{1};
-        Anew=[Anew; Amat(id)];
+    if(nargin<2)
+        weight=ones(length(allkeys),1);
+    end
+    for i=1:length(allkeys)
+        Anew=[Anew; Amat(allkeys{i})*weight(i)];
     end
 elseif(isstruct(Amat))
     allkeys=fieldnames(Amat);
-    for key=allkeys
-        id=key{1};
-        Anew=[Anew; Amat.(id)];
+    if(nargin<2)
+        weight=ones(length(allkeys),1);
+    end
+    for i=1:length(allkeys)
+        Anew=[Anew; Amat.(allkeys{i})*weight(i)];
     end
 end

@@ -101,7 +101,7 @@ end
 
 for i=1:maxiter
     tic
-    [dmu, misfit]=rbreconstep(cfg,sd,recon,detphi0,f2rid,f2rweight);
+    [dmu, misfit]=rbrunrecon(1,cfg,sd,recon,detphi0,f2rid,f2rweight);
     resid(i)=sum(abs(misfit));         % store the residual
     for waveid=wavelengths
         wv=waveid{1};

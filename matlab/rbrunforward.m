@@ -53,7 +53,7 @@ for waveid=wavelengths
 	%%   Solve for solutions at all nodes: Amat*res=rhs
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	%phi(wv)=rbfemsolve(Amat(wv),rhs,'symmlq',1e-20,100);
+	%phi(wv)=rbfemsolve(Amat(wv),rhs,'pcg',1e-8,200);
 	phi(wv)=rbfemsolve(Amat(wv),rhs);
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

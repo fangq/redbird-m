@@ -1,8 +1,12 @@
 function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
 %
+% [Amat,deldotdel]=rbfemlhs(cfg)
+%   or
+% [Amat,deldotdel]=rbfemlhs(cfg, wavelength)
 % [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
 %
-% create the FEM stiffness matrix (left-hand-side) for solving the diffusion equation
+% create the FEM stiffness matrix (left-hand-side) for solving the
+% diffusion equation at a given wavelength
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -37,17 +41,20 @@ if(isfield(cfg,'param') && isstruct(cfg.param) && all(structfun(@isempty,cfg.par
     end
 end
 
+% cfg.prop is updated from cfg.param and contains the updated mua musp.
+% if cfg.param is node/elem based, cfg.prop is updated to have 4 columns
+% with mua/musp being the first two columns
+% if cfg.param is segmentation based, cfg.prop has the same format as mcx's
+% prop, where the first row is label 0, and total length is Nseg+1
+
 prop=cfg.prop;
-
 cfgreff=cfg.reff;
-if(isfield(cfg,'mua') && ~isempty(cfg.mua))
-    cfgmua=cfg.mua;
-end
-if(isfield(cfg,'dcoeff') && ~isempty(cfg.dcoeff))
-    cfgdcoeff=cfg.dcoeff;
+
+if(nargin==2 && numel(deldotdel)==1)
+    wavelength=deldotdel;
 end
 
-if(isa(cfg.prop,'containers.Map'))
+if(isa(cfg.prop,'containers.Map')) % if multiple wavelengths, take current
     if(nargin<3)
         error('you must specify wavelength');
     end
@@ -56,34 +63,29 @@ if(isa(cfg.prop,'containers.Map'))
     end
     prop=cfg.prop(wavelength);
     cfgreff=cfg.reff(wavelength);
-    if(isfield(cfg,'mua') && ~isempty(cfg.mua))
-        cfgmua=cfg.mua(wavelength);
-    end
-    if(isfield(cfg,'dcoeff') && ~isempty(cfg.dcoeff))
-        cfgdcoeff=cfg.dcoeff(wavelength);
-    end
 end
 
-% 
+% if deldotdel is provided, call native code; otherwise, call mex
 
-if(nargin>=2)
-    % get mua from prop(:,1) if cfg.prop has wavelengths, or cfg.mua (map)
-    if(~isfield(cfg,'mua') || isempty(cfg.mua))
+if(nargin>=2 && numel(deldotdel)>1)
+    % get mua from prop(:,1) if cfg.prop has wavelengths
+    if(size(prop,1)==nn || size(prop,1)==ne)
+        mua=prop(:,1);
+        if(size(prop,2)<3)
+            musp=prop(:,2);
+        else
+            musp=prop(:,2).*(1-prop(:,3));
+        end
+    elseif(size(prop,1)<min([nn ne])) % use segmentation based prop list
         mua=prop(cfg.seg+1,1);
-    else
-        mua=cfgmua;
-    end
-    % get dcoeff from prop(:,2) if cfg.prop has wavelengths, or cfg.dcoeff(map)
-    if(~isfield(cfg,'dcoeff') || isempty(cfg.dcoeff))
         if(size(prop,2)<3)
             musp=prop(cfg.seg+1,2); % assume g is 0
         else
             musp=prop(cfg.seg+1,2).*(1-prop(cfg.seg+1,3));
         end
-        dcoeff=1./(3*(mua+musp));
-    else
-        dcoeff=cfgdcoeff;
     end
+    dcoeff=1./(3*(mua+musp));
+
     if(~isfield(cfg,'nref') || isempty(cfg.nref))
         nref=prop(cfg.seg+1,4);
     else
@@ -93,15 +95,15 @@ if(nargin>=2)
 
     edges=sort(meshedge(cfg.elem),2);
     
-    % what LHS matrix needs is dcoeff and mua
-    if(length(mua)==size(cfg.elem,1))
+    % what LHS matrix needs is dcoeff and mua, must be node or elem long
+    if(length(mua)==size(cfg.elem,1))  % element based property
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff(:),1,6) + repmat(0.05*mua(:).*cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff(:),1,4) + repmat(0.10*mua(:).*cfg.evol(:),1,4);
         if(cfg.omega>0)
             Aoffd=complex(Aoffd,repmat(0.05*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,6));
             Adiag=complex(Adiag,repmat(0.10*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,4));
         end
-    else
+    else  % node based properties
         w1=(1/120)*[2 2 1 1;2 1 2 1; 2 1 1 2;1 2 2 1; 1 2 1 2; 1 1 2 2]';
         w2=(1/60)*(diag([2 2 2 2])+1);
         mua_e=reshape(mua(cfg.elem),size(cfg.elem));
@@ -114,6 +116,7 @@ if(nargin>=2)
             Adiag=complex(Adiag,(cfg.omega*R_C0)*(nref_e*w2).*repmat(cfg.evol(:),1,4));
         end
     end
+    % add partial current boundary condition
     edgebc=sort(meshedge(cfg.face),2);
     Adiagbc=cfg.area(:)*((1-Reff)/(12*(1+Reff)));
     Adiagbc=repmat(Adiagbc,1,3);
@@ -126,6 +129,7 @@ else
     if(size(cfg.elem,2)>4)
         cfg.elem(:,5:end)=[];
     end
+    cfg.prop=prop; % use property of the current wavelength
     [Adiag, Aoffd, deldotdel]=rbfemmatrix(cfg);
     Amat = sparse([cfg.rows,cfg.cols,(1:nn)],[cfg.cols,cfg.rows,(1:nn)],[Aoffd,Aoffd,Adiag],nn,nn);
     deldotdel=deldotdel';
