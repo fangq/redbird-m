@@ -58,6 +58,13 @@ end
 if(~isfield(cfg,'srcdir'))
     error('cfg.srcdir field is missing');
 end
+if(isfield(cfg,'prop') && isfield(cfg,'param') && ...
+        isa(cfg.prop,'containers.Map'))
+    wv=cfg.prop.keys;
+    if(~isempty(wv))
+        cfg.prop=rbupdateprop(cfg);
+    end
+end
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
     if(length(cfg.seg)==size(cfg.elem,1))
         [ix, iy]=find(cfg.elem==cfg.face(1));

@@ -22,11 +22,12 @@ function [Anew, allkeys]=rbmatflat(Amat, weight)
 %
 
 allkeys=[];
-if(ismatrix(Amat))
+if(~isstruct(Amat) && ~isa(Amat,'containers.Map'))
     Anew=Amat;
     return;
 end
 
+Anew=[];
 if(isa(Amat,'containers.Map'))
     allkeys=Amat.keys;
     if(nargin<2)

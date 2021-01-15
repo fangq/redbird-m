@@ -1,6 +1,6 @@
-function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,f2rid,f2rweight,reform)
+function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight,reform)
 %
-% [cfg, recon, resid, Jmua]=rbrunrecon(maxiter,cfg,recon,detphi0,f2rid,f2rweight, reform)
+% [cfg, recon, resid, Jmua]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight, reform)
 %
 % Perform a single iteration of a Gauss-Newton reconstruction
 %
@@ -9,7 +9,6 @@ function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 % input:
 %     maxiter: number of iterations
 %     cfg: simulation settings stored as a redbird data structure
-%     sd: source detector mapping table
 %     recon: reconstruction data structure, recon may have
 %         node: reconstruction mesh node list
 %         elem: reconstruction mesh elem list
@@ -17,6 +16,7 @@ function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %         prop: wavelength-dependent optical properties on the recon mesh
 %         lambda: Tikhonov regularization parameter
 %     detphi0: measurement data vector or matrix
+%     sd: source detector mapping table
 %     f2rid: the list of element indices of the reconstruction mesh where each forward mesh
 %           node is enclosed
 %     f2rweight: the barycentric coordinates of the forward mesh nodes inside the
@@ -42,15 +42,21 @@ function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 if(maxiter==0 && nargin<3)
     % return detphi as cfg and phi as recon
     [cfg,recon]=rbrunforward(cfg);
+    return;
 end
 
 resid=zeros(1,maxiter);
 updates=repmat(struct,1,maxiter);
 
+lambda=0.05;
+if(isfield(recon,'lambda'))
+    lambda=recon.lambda;
+end
+
 % start iterative Gauss-Newton based reconstruction
 
 for iter=1:maxiter
-
+    tic
     % update forward mesh prop/param using recon mesh prop/param if given
     if(isfield(recon,'node') && isfield(recon,'elem'))
         if(isfield(recon,'param')) % map recon.param to cfg.param
@@ -59,7 +65,7 @@ for iter=1:maxiter
             if(size(recon.prop,1)<min(size(recon.node,1),size(recon.elem,1))) % if label-based, copy
                 cfg.prop=recon.prop;
             else % if node/elem based, interpolate
-                cfg.prop=structfun(@(x) meshinterp(x,f2rid, f2rweight,recon.elem), recon.prop, 'UniformOutput', false);
+                cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem,cfg.prop);
             end
         end
     end
@@ -100,7 +106,7 @@ for iter=1:maxiter
 
     % mapping jacobians from forward mesh to reconstruction mesh
     if(isfield(recon,'elem') && isfield(recon,'node') && nargin>6) % dual-mesh reconstruction
-        Jmua=structfun(@(x) transpose(meshremap(x.',f2rid, f2rweight,recon.elem,size(recon.node,1))), Jmua); 
+        Jmua=structfun(@(x) transpose(meshremap(x.',f2rid, f2rweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
     end
 
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
@@ -113,23 +119,18 @@ for iter=1:maxiter
         [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0(:), detphi(:), reform);
     else
         Jflat=rbmatflat(Jmua);
-        misfit=detphi(:)-detphi0(:);
+        misfit=detphi0(:)-detphi(:);
     end
 
     % store the residual
     resid(iter)=sum(abs(misfit));
-
-    lambda=0.1;
-    if(isfield(recon,'lambda'))
-        lambda=recon.lambda;
-    end
-    
+   
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
     dmu_recon=rbreginv(Jflat, misfit, lambda);  % solve the update on the recon mesh
    
     % obtain linear index of each output species
-    len=cumsum(structfun(@(x) x(2), blocks));
+    len=cumsum([1 structfun(@(x) x(2), blocks)]);
     output=fieldnames(blocks);
     for i=1:length(output)
         dx=dmu_recon(len(i):len(i+1)-1);
@@ -147,7 +148,7 @@ for iter=1:maxiter
                     else % nodal or element based prop
                         recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
                         cfg.prop(:,propidx)=...
-                            meshinterp(recon.prop(:,propidx),f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
+                            meshinterp(recon.prop(:,propidx),f2rid, f2rweight,recon.elem,cfg.prop(:,propidx)); % interpolate the update to the forward mesh
                     end
                 else % update forward mesh prop if single mesh
                     startid=(length(dx)==size(cfg.prop,1)-1)+1;
@@ -160,7 +161,8 @@ for iter=1:maxiter
                     cfg.param.(output{i})=cfg.param.(output{i})+dx;
                 end
             otherwise
-                error(sprintf('unknown type %s is not supported',))
+                error('unknown type %s is not supported',output{i});
         end
     end
+    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',iter, resid(iter), resid(iter)/resid(1), toc);
 end

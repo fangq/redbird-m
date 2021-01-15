@@ -2110,15 +2110,17 @@ end
 if(ischar(type))
     extin=zeros(length(wavelen),1);
     spectrum=chrome.(lower(type));
+    % 0.1 multiplier converts from 1/cm to 1/mm
     for i=1:length(wavelen)
-       extin(i)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
+       extin(i)=interp1(spectrum(:,1),spectrum(:,2)*0.1,wavelen(i),varargin{:});
     end
 elseif(iscell(type))
     extin=zeros(length(wavelen),length(type));
     for i=1:length(wavelen)
         for j=1:length(type)
             spectrum=chrome.(lower(type{j}));
-            extin(i,j)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
+            % 0.1 multiplier converts from 1/cm to 1/mm
+            extin(i,j)=interp1(spectrum(:,1),spectrum(:,2)*0.1,wavelen(i),varargin{:});
         end
     end
 else

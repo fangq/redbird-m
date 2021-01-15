@@ -82,27 +82,33 @@ sd=rbsdmap(cfg);
 maxiter=10;
 resid=zeros(1,maxiter);
 
-% initialize reconstruction to homogeneous
-recon.prop=cfg.prop(ones(size(recon.node,1),1),:);
+% initialize reconstruction to homogeneous (label=1)
+recon.prop=cfg.prop(ones(size(recon.node,1),1)+1,:);
+cfg.prop=cfg.prop(ones(size(cfg.node,1),1)+1,:);
+
+% calling rbrunrecon is equivalent to calling the for-loop below
+% [cfg,recon]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight);
 
 for i=1:maxiter
     tic
     [detphi, phi]=rbrunforward(cfg);   % run forward on recon mesh
-    Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
+    Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, only support single wavelength
     %Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
     %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
     Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
-    misfit=detphi0(:)-detphi(:);       % calculate data-misfit
     [Jmua_recon,misfit]=rbcreateinv(Jmua_recon, detphi0(:), detphi(:), 'logphase');
     resid(i)=sum(abs(misfit));         % store the residual
     dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
-    dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
     recon.prop(:,1)=recon.prop(:,1) + dmu_recon(:);          % update forward mesh mua vector
-    cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
+    cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem,cfg.prop); % interpolate the update to the forward mesh
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 
-plotmesh([cfg.node,cfg.mua],cfg.elem,'z=20','facecolor','interp','linestyle','none')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Plotting results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+plotmesh([cfg.node,cfg.prop(:,1)],cfg.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
-plotmesh([cfg.node,cfg.mua],cfg.elem,'x=70','facecolor','interp','linestyle','none')
+plotmesh([cfg.node,cfg.prop(:,1)],cfg.elem,'x=70','facecolor','interp','linestyle','none')
 view(3);
