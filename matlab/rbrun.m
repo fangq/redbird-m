@@ -81,7 +81,7 @@ else
 end
 
 % at this point, recon.{node,elem} are required
-[f2rid, f2rweight]=tsearchn(recon.node,recon.elem,cfg.node);
+[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run 10 iterations to recover mua

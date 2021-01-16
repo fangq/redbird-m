@@ -73,7 +73,7 @@ sd=rbsdmap(cfg);
 
 [recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
 
-[f2rid, f2rweight]=tsearchn(recon.node,recon.elem,cfg.node);
+[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run 10 iterations to recover mua
@@ -86,8 +86,8 @@ resid=zeros(1,maxiter);
 recon.prop=cfg.prop(ones(size(recon.node,1),1)+1,:);
 cfg.prop=cfg.prop(ones(size(cfg.node,1),1)+1,:);
 
-% calling rbrunrecon is equivalent to calling the for-loop below
-% [cfg,recon]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight);
+% calling rbrunrecon is equivalent to calling the below for-loop
+% [cfg,recon]=rbrunrecon(maxiter,cfg,recon,detphi0);
 
 for i=1:maxiter
     tic
@@ -95,12 +95,12 @@ for i=1:maxiter
     Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, only support single wavelength
     %Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
     %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
-    Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
+    Jmua_recon=meshremap(Jmua.',recon.mapid,recon.mapweight,recon.elem,size(recon.node,1)).'; 
     [Jmua_recon,misfit]=rbcreateinv(Jmua_recon, detphi0(:), detphi(:), 'logphase');
     resid(i)=sum(abs(misfit));         % store the residual
     dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
     recon.prop(:,1)=recon.prop(:,1) + dmu_recon(:);          % update forward mesh mua vector
-    cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem,cfg.prop); % interpolate the update to the forward mesh
+    cfg.prop=meshinterp(recon.prop,recon.mapid, recon.mapweight,recon.elem,cfg.prop); % interpolate the update to the forward mesh
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
 end
 

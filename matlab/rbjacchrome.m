@@ -1,4 +1,4 @@
-function Jchrome=rbjacchrome(Jmua, chmorphores)
+function Jchrome=rbjacchrome(Jmua, chromorphores)
 %
 % Jchrome=rbjacchrome(Jmua, extin)
 %
@@ -9,7 +9,7 @@ function Jchrome=rbjacchrome(Jmua, chmorphores)
 %
 % input:
 %     Jmua: the Jacobian for absorption mua, must be a containers.Map
-%     chmorphores: list of chmorphores supported by rbextinction
+%     chromorphores: list of chmorphores supported by rbextinction
 %
 % output:
 %     Jchrome: the Jacobian for all chmorphores, in a struct Jchrome.{hbo,hbr,...} 
@@ -25,11 +25,11 @@ if(~ismatrix(Jmua)) % if a containers.Map, flatten it
 end
 
 wavelengths=keys(Jmua);
-extin=rbextinction(wavelengths, chmorphores);
+extin=rbextinction(wavelengths, chromorphores);
 
 Jchrome=struct;
-for i=1:length(chmorphores)
-    Jchrome.(chmorphores{i})=rbmatflat(Jmua,extin(:,i));
+for i=1:length(chromorphores)
+    Jchrome.(chromorphores{i})=rbmatflat(Jmua,extin(:,i));
 end
 
 % J=[J(chrom1),J(chrom2),...,J(chromM)]

@@ -36,11 +36,8 @@ newJ=struct;
 newy0=[];
 newphi=[];
 
-if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers.Map'))
+if(isa(Jmua,'containers.Map'))
     wv=keys(Jmua);
-    if(~all(ismember(wv,keys(y0))) || ~all(ismember(keys(phi),keys(y0))))
-        error('Jacob, y0 and phi must share the same key');
-    end
     paramlist=fieldnames(params);
     if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         for i=1:length(wv)
@@ -54,7 +51,7 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
     end
     chromophores=intersect(paramlist,{'hbo','hbr','water','lipids','aa3'});
 
-    newJ=rbjacchrome(Jmua,str2double(wv),chromophores);
+    newJ=rbjacchrome(Jmua,chromophores);
     if(exist('Jscat','var') && isstruct(Jscat))
         allkeys=fieldnames(Jscat);
         for i=1:length(allkeys)
@@ -62,22 +59,29 @@ if(isa(Jmua,'containers.Map') && isa(y0,'containers.Map') && isa(phi,'containers
         end
         clear Jscat;
     end
-    for i=1:length(wv)
-        newy0=[newy0; reshape(y0(wv{i}),[],1)];
-        newphi=[newphi; reshape(phi(wv{i}),[],1)];
-    end
 else
-    if(~isa(Jmua,'containers.Map'))
-        newJ.mua=Jmua;
-    end
+    newJ.mua=Jmua;
     if(nargin>4 && ~isa(Jd,'containers.Map'))
-        newJ.mua=Jmua;
         newJ.dcoeff=Jd;
     end
-    if(~isa(y0,'containers.Map'))
-        newy0=y0;
+end
+
+if(nargin>4 && ~isa(Jd,'containers.Map'))
+    newJ.dcoeff=Jd;
+end
+if(~isa(y0,'containers.Map'))
+    newy0=y0;
+else
+    wv=keys(y0);
+    for i=1:length(wv)
+        newy0=[newy0; reshape(y0(wv{i}),[],1)];
     end
-    if(~isa(phi,'containers.Map'))
-        newphi=phi;
+end
+if(~isa(phi,'containers.Map'))
+    newphi=phi;
+else
+    wv=keys(phi);
+    for i=1:length(wv)
+        newphi=[newphi; reshape(phi(wv{i}),[],1)];
     end
 end

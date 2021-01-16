@@ -68,6 +68,14 @@ clear face
 recon.param=struct;
 recon.param.hbo=15*ones(size(recon.node,1),1);
 recon.param.hbr=4*ones(size(recon.node,1),1);
-[f2rid, f2rweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),f2rid,f2rweight);
+cfg.param=struct;
+cfg.param.hbo=15*ones(size(cfg.node,1),1);
+cfg.param.hbr=4*ones(size(cfg.node,1),1);
+
+[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
+
+%% run reconstruction by calling rbrunrecon
+
+[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg));
+

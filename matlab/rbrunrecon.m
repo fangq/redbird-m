@@ -1,6 +1,6 @@
-function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight,reform)
+function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,reform)
 %
-% [cfg, recon, resid, Jmua]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,f2rid,f2rweight, reform)
+% [cfg, recon, resid, Jmua]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,reform)
 %
 % Perform a single iteration of a Gauss-Newton reconstruction
 %
@@ -15,12 +15,14 @@ function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %         param: wavelength-independent parameter on the recon mesh
 %         prop: wavelength-dependent optical properties on the recon mesh
 %         lambda: Tikhonov regularization parameter
-%     detphi0: measurement data vector or matrix
-%     sd: source detector mapping table
-%     f2rid: the list of element indices of the reconstruction mesh where each forward mesh
+%         mapid: the list of element indices of the reconstruction mesh where each forward mesh
 %           node is enclosed
-%     f2rweight: the barycentric coordinates of the forward mesh nodes inside the
+%         mapweight: the barycentric coordinates of the forward mesh nodes inside the
 %           reconstruction mesh elements
+%     detphi0: measurement data vector or matrix
+%     sd (optional): source detector mapping table, if not provided, call
+%         rbsdmap(cfg) to compute
+%     reform (optional): set to 'complex' (default),'logphase',or 'real'
 %
 % output:
 %     cfg: the updated cfg structure, containing forward mesh and
@@ -53,21 +55,20 @@ if(isfield(recon,'lambda'))
     lambda=recon.lambda;
 end
 
+if(nargin<5)
+    sd=rbsdmap(cfg);
+end
+
 % start iterative Gauss-Newton based reconstruction
 
 for iter=1:maxiter
     tic
+
     % update forward mesh prop/param using recon mesh prop/param if given
+    % for rbsyncprop to work, one must provide initial values of cfg.prop
+    % (or cfg.param) if recon.prop (or recon.param) is specified
     if(isfield(recon,'node') && isfield(recon,'elem'))
-        if(isfield(recon,'param')) % map recon.param to cfg.param
-            cfg.param=structfun(@(x) meshinterp(x,f2rid, f2rweight,recon.elem), recon.param, 'UniformOutput', false);
-        elseif(isfield(recon,'prop')) % map recon.prop to cfg.prop if param does not exist
-            if(size(recon.prop,1)<min(size(recon.node,1),size(recon.elem,1))) % if label-based, copy
-                cfg.prop=recon.prop;
-            else % if node/elem based, interpolate
-                cfg.prop=meshinterp(recon.prop,f2rid, f2rweight,recon.elem,cfg.prop);
-            end
-        end
+        [cfg,recon]=rbsyncprop(cfg,recon);
     end
 
     % run forward on forward mesh, cfg.param, if present, is propagated to 
@@ -83,7 +84,7 @@ for iter=1:maxiter
         Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
     end
     % Jmua/Jd are either containers.Map(wavelength) or single matrix
-    
+
     % build Jacobians for chromophores in the form of a struct
     % TODO: need to handle Jmua is a map but cfg.param is not defined
     if(isa(Jmua,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
@@ -105,8 +106,8 @@ for iter=1:maxiter
     % concatenated model and measurement RHS vectors
 
     % mapping jacobians from forward mesh to reconstruction mesh
-    if(isfield(recon,'elem') && isfield(recon,'node') && nargin>6) % dual-mesh reconstruction
-        Jmua=structfun(@(x) transpose(meshremap(x.',f2rid, f2rweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+    if(isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
+        Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
     end
 
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
@@ -115,7 +116,7 @@ for iter=1:maxiter
     blocks=structfun(@size, Jmua, 'UniformOutput', false);
     
     % flatten Jmua into a horizontally/column contatenated matrix
-    if(nargin>=8)
+    if(nargin>=6)
         [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0(:), detphi(:), reform);
     else
         Jflat=rbmatflat(Jmua);
@@ -130,7 +131,7 @@ for iter=1:maxiter
     dmu_recon=rbreginv(Jflat, misfit, lambda);  % solve the update on the recon mesh
    
     % obtain linear index of each output species
-    len=cumsum([1 structfun(@(x) x(2), blocks)]);
+    len=cumsum([1; structfun(@(x) x(2), blocks)]);
     output=fieldnames(blocks);
     for i=1:length(output)
         dx=dmu_recon(len(i):len(i+1)-1);
@@ -148,7 +149,7 @@ for iter=1:maxiter
                     else % nodal or element based prop
                         recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
                         cfg.prop(:,propidx)=...
-                            meshinterp(recon.prop(:,propidx),f2rid, f2rweight,recon.elem,cfg.prop(:,propidx)); % interpolate the update to the forward mesh
+                            meshinterp(recon.prop(:,propidx),recon.mapid, recon.mapweight,recon.elem,cfg.prop(:,propidx)); % interpolate the update to the forward mesh
                     end
                 else % update forward mesh prop if single mesh
                     startid=(length(dx)==size(cfg.prop,1)-1)+1;
@@ -165,4 +166,9 @@ for iter=1:maxiter
         end
     end
     fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',iter, resid(iter), resid(iter)/resid(1), toc);
+end
+
+if(isfield(recon,'node') && isfield(recon,'elem'))
+    [cfg,recon]=rbsyncprop(cfg,recon);
+    cfg.prop=rbupdateprop(cfg);
 end

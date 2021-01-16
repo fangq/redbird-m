@@ -28,7 +28,7 @@ if(~isstruct(Amat) && ~isa(Amat,'containers.Map'))
 end
 
 Anew=[];
-if(isa(Amat,'containers.Map'))
+if(isa(Amat,'containers.Map')) % maps are vertically concatenated (wavelength)
     allkeys=Amat.keys;
     if(nargin<2)
         weight=ones(length(allkeys),1);
@@ -36,12 +36,14 @@ if(isa(Amat,'containers.Map'))
     for i=1:length(allkeys)
         Anew=[Anew; Amat(allkeys{i})*weight(i)];
     end
-elseif(isstruct(Amat))
+elseif(isstruct(Amat)) % structs are horizontally concatenated (chromorphores)
     allkeys=fieldnames(Amat);
     if(nargin<2)
         weight=ones(length(allkeys),1);
     end
     for i=1:length(allkeys)
-        Anew=[Anew; Amat.(allkeys{i})*weight(i)];
+        Anew=[Anew, Amat.(allkeys{i})*weight(i)];
     end
+elseif(iscell(Amat)) % cells are combined via cell2mat
+    Anew=cell2mat(Amat);
 end
