@@ -74,11 +74,13 @@ cfg.param=struct;
 cfg.param.hbo=15*ones(size(cfg.node,1),1);
 cfg.param.hbr=4*ones(size(cfg.node,1),1);
 
+recon.lambda=0.01;
+
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %% run reconstruction by calling rbrunrecon
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg));
+[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.002,'tol',0.03,'report',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

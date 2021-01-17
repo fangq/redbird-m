@@ -1,6 +1,8 @@
-function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,reform)
+function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,varargin)
 %
-% [cfg, recon, resid, Jmua]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,reform)
+% [cfg, recon, resid]=rbrunrecon(maxiter,cfg,recon,detphi0,sd)
+%   or
+% [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,'param1',value1,'param2',value2,...)
 %
 % Perform a single iteration of a Gauss-Newton reconstruction
 %
@@ -22,7 +24,13 @@ function [cfg, recon, resid, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %     detphi0: measurement data vector or matrix
 %     sd (optional): source detector mapping table, if not provided, call
 %         rbsdmap(cfg) to compute
-%     reform (optional): set to 'complex' (default),'logphase',or 'real'
+%     param/value: acceptable optional parameters include
+%         'reform': 'complex' (default),'logphase',or 'real'
+%         'lambda': Tikhonov regularization parameter (0.05), overwrite recon.lambda
+%         'report': 1 (default) to print residual and timing; 0 silent mode
+%         'tol': convergence tolerance, if relative residual is less than
+%                this value, stop, default is 0, which runs maxiter
+%                iterations
 %
 % output:
 %     cfg: the updated cfg structure, containing forward mesh and
@@ -50,10 +58,17 @@ end
 resid=zeros(1,maxiter);
 updates=repmat(struct,1,maxiter);
 
+opt=varargin2struct(varargin{:});
+
 lambda=0.05;
 if(isfield(recon,'lambda'))
     lambda=recon.lambda;
 end
+lambda=jsonopt('lambda',lambda,opt);
+
+doreport=jsonopt('report',1,opt);
+convergetol=jsonopt('tol',0,opt);
+reform=jsonopt('reform','complex',opt);
 
 if(nargin<5)
     sd=rbsdmap(cfg);
@@ -116,7 +131,7 @@ for iter=1:maxiter
     blocks=structfun(@size, Jmua, 'UniformOutput', false);
     
     % flatten Jmua into a horizontally/column contatenated matrix
-    if(nargin>=6)
+    if(strcmp(reform,'complex')==0)
         [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0(:), detphi(:), reform);
     else
         Jflat=rbmatflat(Jmua);
@@ -125,6 +140,7 @@ for iter=1:maxiter
 
     % store the residual
     resid(iter)=sum(abs(misfit));
+    updates(iter).detphi=detphi;
    
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
@@ -165,7 +181,14 @@ for iter=1:maxiter
                 error('unknown type %s is not supported',output{i});
         end
     end
-    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',iter, resid(iter), resid(iter)/resid(1), toc);
+    if(doreport)
+        fprintf(1,'iter [%4d]: residual=%e, relres=%e lambda=%e (time=%f s)\n',iter, resid(iter), resid(iter)/resid(1), lambda, toc);
+    end
+    if(iter>1 && abs((resid(iter)-resid(iter-1))/resid(1))<convergetol)
+        resid=resid(1:iter);
+        updates=updates(1:iter);
+        break;
+    end
 end
 
 if(isfield(recon,'node') && isfield(recon,'elem'))
