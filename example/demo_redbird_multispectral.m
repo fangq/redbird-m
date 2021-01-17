@@ -31,6 +31,7 @@ cfg0.srcdir=[0 0 1];
 [xi,yi]=meshgrid(60:20:140,20:20:100);
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
+cfg0.detdir=[0 0 -1];
 
 cfg0.param=struct;
 cfg0.param.hbo=[0 15 30];
@@ -79,3 +80,11 @@ cfg.param.hbr=4*ones(size(cfg.node,1),1);
 
 [newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg));
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Plotting results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
+hold on;
+plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'x=70','facecolor','interp','linestyle','none')
+view(3);

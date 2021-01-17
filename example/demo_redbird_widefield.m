@@ -48,7 +48,6 @@ save config.mat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [Amat,deldotdel]=rbfemlhs(cfg);
-%[deldotdel2]=rbdeldotdel(cfg);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS

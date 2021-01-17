@@ -26,11 +26,13 @@ function [pointsrc, widesrc]=rbgetoptodes(cfg)
 pointsrc=[];
 widesrc=[];
 
+ltr=rbgetltr(cfg);
+
 if(isfield(cfg,'srcpos') && ~isempty(cfg.srcpos))
     if(size(cfg.srcpos,2) == size(cfg.node,1))
         widesrc=cfg.srcpos;
     else
-        pointsrc=cfg.srcpos;
+        pointsrc=cfg.srcpos+cfg.srcdir*ltr;
     end
 end
 
@@ -38,6 +40,6 @@ if(isfield(cfg,'detpos') && ~isempty(cfg.detpos))
     if(size(cfg.detpos,2) == size(cfg.node,1))
         widesrc=[widesrc; cfg.detpos];
     else
-        pointsrc=[pointsrc; cfg.detpos];
+        pointsrc=[pointsrc; cfg.detpos+cfg.detdir*ltr];
     end
 end

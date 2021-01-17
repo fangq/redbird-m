@@ -354,6 +354,8 @@ void mcx_set_field(const mxArray *root,const mxArray *item,int idx, Config *cfg,
         // do nothing
     }else if(strcmp(name,"detpos0")==0){
         // do nothing
+    }else if(strcmp(name,"detdir")==0){
+        // do nothing
     }else if(strcmp(name,"nvol")==0){
         // do nothing
     }else if(strcmp(name,"mua")==0){

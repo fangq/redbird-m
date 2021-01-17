@@ -31,9 +31,9 @@ cfg.omega=0;
 cfg.detpos=[40 30 0];
 cfg.detdir=[0 0 -1];
 
-z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
-
-cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
+% z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
+% 
+% cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
 
 cfg=rbmeshprep(cfg);
 

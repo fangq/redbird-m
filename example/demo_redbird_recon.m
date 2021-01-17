@@ -31,6 +31,7 @@ cfg0.srcdir=[0 0 1];
 [xi,yi]=meshgrid(60:20:140,20:20:100);
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
+cfg0.detdir=[0 0 -1];
 
 cfg0.prop=[
     0 0 1 1
@@ -38,10 +39,10 @@ cfg0.prop=[
     0.016 1 0 1.37
 ];
 
-z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
-
-cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
-cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
+% z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
+% 
+% cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
+% cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
 
 cfg0.omega=2*pi*70e6;
 cfg0.omega=0;

@@ -13,8 +13,8 @@ function [extin, chrome]=rbextinction(wavelen, type, varargin)
 %     type: a string cell array, specifying the chromophore species, including
 %          'hbo' - oxy-hemoglobin
 %          'hbr' - deoxyhemoglobin
-%          'water' - water (return volume fraction)
-%          'lipids' - lipids (return volume fraction)
+%          'water' - water (per volume fraction)
+%          'lipids' - lipids (per volume fraction)
 %          'aa3' - aa3
 %     interp1opt: optional parameters to be used with interp1 for
 %          interpolating at given wavelength values
@@ -416,10 +416,6 @@ chrome.hb=[
 998	1035.2	222.072
 1000	1024	206.784
 ];
-
-chrome.hb(:,2:3)=chrome.hb(:,[3 2])*2.303*1e-5;
-chrome.hbo=chrome.hb(:,[1 3]);
-chrome.hbr=chrome.hb(:,[1 2]);
 
 chrome.water=[
 200.00	0.069000
@@ -2100,6 +2096,14 @@ chrome.aa3 = [
 9.4950000e+002	2.6754607e-001
 9.5000000e+002	2.6555173e-001];
 
+% 2.303 converts extin to mua; 1e-7 converts from 1/(cm*M) to 1/(mm*uM)
+chrome.hb(:,2:3)=chrome.hb(:,[3 2])*2.303*1e-7;
+chrome.hbo=chrome.hb(:,[1 3]);
+chrome.hbr=chrome.hb(:,[1 2]);
+
+chrome.water(:,2)=chrome.water(:,2)*0.1;
+chrome.lipids(:,2)=chrome.lipids(:,2);
+
 if(iscell(wavelen) && ~isempty(wavelen))
     if(isempty(wavelen{1}))
         error('you must provide non-empty wavelength list');
@@ -2110,17 +2114,15 @@ end
 if(ischar(type))
     extin=zeros(length(wavelen),1);
     spectrum=chrome.(lower(type));
-    % 0.1 multiplier converts from 1/cm to 1/mm
     for i=1:length(wavelen)
-       extin(i)=interp1(spectrum(:,1),spectrum(:,2)*0.1,wavelen(i),varargin{:});
+       extin(i)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
     end
 elseif(iscell(type))
     extin=zeros(length(wavelen),length(type));
     for i=1:length(wavelen)
         for j=1:length(type)
             spectrum=chrome.(lower(type{j}));
-            % 0.1 multiplier converts from 1/cm to 1/mm
-            extin(i,j)=interp1(spectrum(:,1),spectrum(:,2)*0.1,wavelen(i),varargin{:});
+            extin(i,j)=interp1(spectrum(:,1),spectrum(:,2),wavelen(i),varargin{:});
         end
     end
 else
