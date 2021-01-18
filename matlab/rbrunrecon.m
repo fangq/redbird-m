@@ -94,11 +94,28 @@ for iter=1:maxiter
     if(isfield(cfg,'omega') && cfg.omega>0) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
-        [Jmua, ~, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+        if((isfield(cfg.seg) && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
+            % element based properties
+            [Jmua_n, Jmua, Jd_n, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+            clear Jmua_n Jd_n % do not use ~ because older Octave does not support
+        else
+            % node based properties
+            [Jmua, Jmua_e, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+            clear Jmua_e
+        end
     else % CW only
-        Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+        if((isfield(cfg.seg) && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
+            [Jmua_n, Jmua]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+            clear Jmua_n;
+        else
+            Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+        end
     end
     % Jmua/Jd are either containers.Map(wavelength) or single matrix
+    
+    if(isfield(recon,'seg') && isfield(cfg,'seg')) % reconstruction of segmented domains
+        % sum Jacobians based on seg
+    end
 
     % build Jacobians for chromophores in the form of a struct
     % TODO: need to handle Jmua is a map but cfg.param is not defined

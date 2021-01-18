@@ -22,6 +22,6 @@ function [Jscatpow,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
 % -- this function is part of Redbird-m toolbox
 %
 
-dDdscatpow=dcoeff*log(wavelen);
+dDdscatpow=dcoeff*log(wavelen/500);
 
 Jscatpow=Jd.*dDdscatpow;

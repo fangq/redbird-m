@@ -23,6 +23,6 @@ function [Jscatamp,dDdscatamp]=rbjacscatamp(Jd, dcoeff, wavelen, scatpow)
 % -- this function is part of Redbird-m toolbox
 %
 
-dDdscatamp=-3*dcoeff.*dcoeff*wavelen^(-scatpow);
+dDdscatamp=-3*dcoeff.*dcoeff*(wavelen/500)^(-scatpow);
 
 Jscatamp=Jd.*dDdscatamp;
