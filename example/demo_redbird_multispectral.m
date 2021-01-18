@@ -58,7 +58,7 @@ cfg0=rbmeshprep(cfg0);
 detphi0=rbrunrecon(0,cfg0);
 
 %% run reconstruction using the forward data
-[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
+[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 20);
 clear face
 
 cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
@@ -66,13 +66,18 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 [recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
 clear face
 
-recon.param=struct;
-recon.param.hbo=15*ones(size(recon.node,1),1);
-recon.param.hbr=4*ones(size(recon.node,1),1);
+% recon.param=struct;
+% recon.param.hbo=15*ones(size(recon.node,1),1);
+% recon.param.hbr=4*ones(size(recon.node,1),1);
+% 
+% cfg.param=struct;
+% cfg.param.hbo=15*ones(size(cfg.node,1),1);
+% cfg.param.hbr=4*ones(size(cfg.node,1),1);
 
-cfg.param=struct;
-cfg.param.hbo=15*ones(size(cfg.node,1),1);
-cfg.param.hbr=4*ones(size(cfg.node,1),1);
+recon.param=struct;
+recon.param.hbo=[0 10];
+recon.param.hbr=[0 6];
+recon.seg=ones(size(recon.node,1),1);
 
 recon.lambda=0.01;
 
@@ -80,7 +85,7 @@ recon.lambda=0.01;
 
 %% run reconstruction by calling rbrunrecon
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.002,'tol',0.03,'report',1);
+[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.03,'report',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

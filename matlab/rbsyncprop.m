@@ -10,7 +10,6 @@ if(isfield(recon,'param')) % map recon.param to cfg.param
             error('label-based param found in recon mesh, but recon.seg not defined');
         end
         cfg.param=recon.param; % need to be followed by rbupdateprop to propagate to cfg.prop
-        cfg.seg=recon.seg;
     else % node or element based param
         for i=1:length(allkeys)
             cfg.param.(allkeys{i})=meshinterp(recon.param.(allkeys{i}),recon.mapid,recon.mapweight,recon.elem,cfg.param.(allkeys{i}));
@@ -24,7 +23,6 @@ elseif(isfield(recon,'prop')) % map recon.prop to cfg.prop if param does not exi
                 error('label-based prop found in recon mesh, but recon.seg not defined');
             end
             cfg.prop=recon.prop;
-            cfg.seg=recon.seg;
         else % if node/elem based, interpolate
             cfg.prop=meshinterp(recon.prop,recon.mapid,recon.mapweight,recon.elem,cfg.prop);
         end
@@ -35,7 +33,6 @@ elseif(isfield(recon,'prop')) % map recon.prop to cfg.prop if param does not exi
                 error('label-based param found in recon mesh, but recon.seg not defined');
             end
             cfg.prop=recon.prop;
-            cfg.seg=recon.seg;
         else % node/elem based
             for i=1:length(allkeys)
                 cfg.prop(allkeys{i})=meshinterp(recon.prop(allkeys{i}),recon.mapid,recon.mapweight,recon.elem,cfg.prop(allkeys{i}));
