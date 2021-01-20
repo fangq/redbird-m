@@ -49,7 +49,8 @@ for i=1:length(wv)
         musp=cfg.param.('scatamp').*exp(-str2double(wavelen)*1e-9.*cfg.param.('scatpower'));
     end
     segprop=cfg.prop(wavelen);
-    if(length(mua)==size(cfg.prop(wavelen),1)-1) % label-based properties
+    if(length(mua)<min([size(cfg.node,1),size(cfg.elem,1)])) % label-based properties
+        segprop(length(mua)+2:end,:)=[];
         segprop(2:end,1)=mua(:);
         if(exist('musp','var'))
             segprop(2:end,2)=musp(:);

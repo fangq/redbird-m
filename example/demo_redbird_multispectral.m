@@ -34,12 +34,12 @@ cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg0.detdir=[0 0 -1];
 
 cfg0.param=struct;
-cfg0.param.hbo=[0 15 30];
-cfg0.param.hbr=[0 4  8];
+cfg0.param.hbo=[15 30];
+cfg0.param.hbr=[4  8];
 
 cfg0.prop = containers.Map();  % if both prop and param are defined, param will ovewrite prop
-cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37];
-cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37];
+cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
+cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
 wavelengths=cfg0.prop.keys;
 
@@ -75,17 +75,32 @@ clear face
 % cfg.param.hbr=4*ones(size(cfg.node,1),1);
 
 recon.param=struct;
-recon.param.hbo=[0 10];
-recon.param.hbr=[0 6];
+recon.param.hbo=10;
+recon.param.hbr=6;
 recon.seg=ones(size(recon.node,1),1);
 
 recon.lambda=0.01;
 
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
-%% run reconstruction by calling rbrunrecon
+%% run bulk fitting
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.03,'report',1);
+[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.01,'report',1);
+
+%% run image reconstruction
+
+recon.param=struct;
+recon.param.hbo=15*ones(size(recon.node,1),1);
+recon.param.hbr=4*ones(size(recon.node,1),1);
+if(isfield(recon,'seg'))
+    recon=rmfield(recon,'seg');
+end
+
+cfg.param=struct;
+cfg.param.hbo=15*ones(size(cfg.node,1),1);
+cfg.param.hbr=4*ones(size(cfg.node,1),1);
+
+[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.05,'tol',0.01,'report',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
