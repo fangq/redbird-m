@@ -35,12 +35,6 @@ ne=size(cfg.elem,1);
 
 R_C0=(1./299792458000.);
 
-if(isfield(cfg,'param') && isstruct(cfg.param) && all(structfun(@isempty,cfg.param)==0))
-    if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map') && ~isempty(keys(cfg.prop)))
-        cfg.prop=rbupdateprop(cfg);
-    end
-end
-
 % cfg.prop is updated from cfg.param and contains the updated mua musp.
 % if cfg.param is node/elem based, cfg.prop is updated to have 4 columns
 % with mua/musp being the first two columns

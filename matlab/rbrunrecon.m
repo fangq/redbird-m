@@ -86,8 +86,12 @@ for iter=1:maxiter
         [cfg,recon]=rbsyncprop(cfg,recon);
     end
 
-    % run forward on forward mesh, cfg.param, if present, is propagated to 
-    % cfg.prop when calling rbfemlhs inside rbrunforward
+    if(isfield(cfg,'param') && isstruct(cfg.param) && all(structfun(@isempty,cfg.param)==0))
+        if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map') && ~isempty(keys(cfg.prop)))
+            cfg.prop=rbupdateprop(cfg);
+        end
+    end
+    % run forward on forward mesh
     [detphi, phi]=rbrunforward(cfg);
     
     % build Jacobians on forward mesh
