@@ -72,7 +72,7 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
 sd=rbsdmap(cfg);
 
-[recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
+[recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 20);
 
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
@@ -86,9 +86,27 @@ resid=zeros(1,maxiter);
 % initialize reconstruction to homogeneous (label=1)
 recon.prop=cfg.prop(ones(size(recon.node,1),1)+1,:);
 cfg.prop=cfg.prop(ones(size(cfg.node,1),1)+1,:);
+cfg=rmfield(cfg,'seg');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Streamlined reconstruction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % calling rbrunrecon is equivalent to calling the below for-loop
-% [cfg,recon]=rbrunrecon(maxiter,cfg,recon,detphi0);
+[newcfg,newrecon]=rbrunrecon(maxiter,cfg,recon,detphi0);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Plotting results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+plotmesh([newcfg.node,newcfg.prop(:,1)],newcfg.elem,'z=20','facecolor','interp','linestyle','none')
+hold on;
+plotmesh([newcfg.node,newcfg.prop(:,1)],newcfg.elem,'x=70','facecolor','interp','linestyle','none')
+view(3);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Explicit iterative reconstruction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for i=1:maxiter
     tic
@@ -109,6 +127,7 @@ end
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+figure
 plotmesh([cfg.node,cfg.prop(:,1)],cfg.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
 plotmesh([cfg.node,cfg.prop(:,1)],cfg.elem,'x=70','facecolor','interp','linestyle','none')

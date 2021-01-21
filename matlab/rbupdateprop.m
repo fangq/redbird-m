@@ -20,11 +20,17 @@ function prop=rbupdateprop(cfg,wv)
 % -- this function is part of Redbird-m toolbox
 %
 
+% for single-wavelength
+if(~isfield(cfg,'param') && (~isa(cfg.prop,'containers.Map') || length(cfg.prop)==1 ))
+    prop=cfg.prop;
+    return;
+end
+
 % fieldnames(cfg.param) provides chromorphore species, 2nd input wv or 
 % keys(cfg.prop) provides the wavelength list; cfg.prop is a containers.Map
 % object and cfg.param is a struct.
 
-if(~isfield(cfg,'prop') || ~isa(cfg.prop,'containers.Map') ||  ~isfield(cfg,'param'))
+if(~isfield(cfg,'prop') || ~isa(cfg.prop,'containers.Map'))
     error('input cfg must be a struct and must have subfield names "prop" and "param"');
 end
 

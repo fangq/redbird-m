@@ -80,7 +80,7 @@ if(nargin>=2 && numel(deldotdel)>1)
     end
     dcoeff=1./(3*(mua+musp));
 
-    if(~isfield(cfg,'nref') || isempty(cfg.nref))
+    if((~isfield(cfg,'nref') || isempty(cfg.nref)) && isfield(cfg,'seg'))
         nref=prop(cfg.seg+1,4);
     else
         nref=cfgreff;
@@ -101,7 +101,11 @@ if(nargin>=2 && numel(deldotdel)>1)
         w1=(1/120)*[2 2 1 1;2 1 2 1; 2 1 1 2;1 2 2 1; 1 2 1 2; 1 1 2 2]';
         w2=(1/60)*(diag([2 2 2 2])+1);
         mua_e=reshape(mua(cfg.elem),size(cfg.elem));
-        nref_e=reshape(nref(cfg.elem),size(cfg.elem));
+        if(length(nref)==1)
+            nref_e=nref;
+        else
+            nref_e=reshape(nref(cfg.elem),size(cfg.elem));
+        end
         dcoeff_e=mean(reshape(dcoeff(cfg.elem),size(cfg.elem)),2);
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff_e,1,6) + (mua_e*w1).*repmat(cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff_e,1,4) + (mua_e*w2).*repmat(cfg.evol(:),1,4);
