@@ -61,19 +61,18 @@ detphi0=rbrunforward(cfg0);
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% create forward mesh for reconstruction - if it has a different density
+% compared to the forward mesh used for generating data, it may introduce
+% numerical error - so, set density to 10 gives the best result, need
+% to debug this further
+
 [node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
 cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
-% [nosp,fcsp]=meshasphere(s0, 5, 3);
-% [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
-% 
-% [cfg.node, cfg.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
-% cfg=rbmeshprep(cfg);
-
 sd=rbsdmap(cfg);
 
+% create coarse reconstruction mesh
 [recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 20);
-
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
