@@ -21,12 +21,13 @@ clear cfg
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg.node,1);
 cfg.seg=ones(size(cfg.elem,1),1);
-cfg.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);
 cfg.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg.detpos(1:5,:)=[];
+cfg.srcdir=[0 0 1];
+cfg.detdir=[0 0 -1];
 
 cfg.prop=[
     0 0 1 1
@@ -41,11 +42,6 @@ c0=meshcentroid(cfg.node,cfg.elem);
 
 perturbeid=find(abs(c0(:,1)-cfg.srcpos(sid,1))<srad & abs(c0(:,2)-cfg.srcpos(sid,1))<srad & abs(c0(:,3)-zdepth)<srad);
 perturbeid=perturbeid(1);
-
-z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
-
-cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
-cfg.detpos(:,3)=cfg.detpos(:,3)-z0;
 
 %cfg.omega=2*pi*70e6;
 cfg.omega=0;
@@ -198,9 +194,9 @@ plot(1:len,dphi_dmua_node,'r-o',1:len,dphi_mua_node_c,'b-+');
 legend('direct measurement change','predicted from node J_{\mua} c');
 
 dd_mua_node_c=dphi_mua_node_c./dphi_dmua_node;
-fprintf(1,'node-based c Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_node_c(:)), median(dd_mua_node_c(:)));
+fprintf(1,'node-based c Jmua: sum=\t%e\tratio=\t%f\n',sum(Jmua_node_c(:)), median(dd_mua_node_c(:)));
 dd_mua_elem_c=dphi_mua_elem_c./dphi_dmua;
-fprintf(1,'elem-based c Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_elem_c(:)), median(dd_mua_elem_c(:)));
+fprintf(1,'elem-based c Jmua: sum=\t%e\tratio=\t%f\n',sum(Jmua_elem_c(:)), median(dd_mua_elem_c(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Compare mua Jacobian with direct measurement change - matlab
@@ -222,9 +218,9 @@ plot(1:len,dphi_dmua_node,'r-o',1:len,dphi_mua_node_m,'b-+');
 legend('direct measurement change','predicted from node J_{\mua} m');
 
 dd_mua_node_m=dphi_mua_node_m./dphi_dmua_node;
-fprintf(1,'node-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_node_m(:)), median(dd_mua_node_m(:)));
+fprintf(1,'node-based m Jmua: sum=\t%e\tratio=\t%f\n',sum(Jmua_node_m(:)), median(dd_mua_node_m(:)));
 dd_mua_elem_m=dphi_mua_elem_m./dphi_dmua;
-fprintf(1,'elem-based m Jmua: sum=\t%f\tratio=\t%f\n',sum(Jmua_elem_m(:)), median(dd_mua_elem_m(:)));
+fprintf(1,'elem-based m Jmua: sum=\t%e\tratio=\t%f\n',sum(Jmua_elem_m(:)), median(dd_mua_elem_m(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Compare D Jacobian with direct measurement change
@@ -253,9 +249,9 @@ plot(1:len,dphi_dd_node,'r-o',1:len,dphi_d_node_c,'b-+');
 legend('direct measurement change','predicted from node J_{D} c');
 
 dd_d_node_c=dphi_d_node_c./dphi_dd_node;
-fprintf(1,'node-based c Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_node_c(:)), median(dd_d_node_c(:)));
+fprintf(1,'node-based c Jd: sum=\t%e\tratio=\t%f\n',sum(Jd_node_c(:)), median(dd_d_node_c(:)));
 dd_d_elem_c=dphi_d_elem_c./dphi_dd;
-fprintf(1,'elem-based c Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_elem_c(:)), median(dd_d_elem_c(:)));
+fprintf(1,'elem-based c Jd: sum=\t%e\tratio=\t%f\n',sum(Jd_elem_c(:)), median(dd_d_elem_c(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Compare D Jacobian with direct measurement change
@@ -276,6 +272,6 @@ plot(1:len,dphi_dd_node,'r-o',1:len,dphi_d_node_m,'b-+');
 legend('direct measurement change','predicted from node J_{D} m');
 
 dd_d_node_m=dphi_d_node_m./dphi_dd_node;
-fprintf(1,'node-based m Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_node_m(:)), median(dd_d_node_m(:)));
+fprintf(1,'node-based m Jd: sum=\t%e\tratio=\t%f\n',sum(Jd_node_m(:)), median(dd_d_node_m(:)));
 dd_d_elem_m=dphi_d_elem_m./dphi_dd;
-fprintf(1,'elem-based m Jd: sum=\t%f\tratio=\t%f\n',sum(Jd_elem_m(:)), median(dd_d_elem_m(:)));
+fprintf(1,'elem-based m Jd: sum=\t%e\tratio=\t%f\n',sum(Jd_elem_m(:)), median(dd_d_elem_m(:)));

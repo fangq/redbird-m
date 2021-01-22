@@ -23,6 +23,7 @@ cfg.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(10:10:50,20:10:40);
 cfg.detpos=[xi(:),yi(:),30*ones(numel(yi),1)];
+cfg.detdir=[0 0 -1];
 
 cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;

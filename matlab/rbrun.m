@@ -42,13 +42,21 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 
 mode='image';
 opt=struct;
-if(nargin==4 || ~ischar(varargin{1}) || bitand(length(varargin),1)==1)
+if(nargin==4 || ~ischar(varargin{1}) || bitand(length(varargin),1)==1 && ~ischar(varargin{1}))
     sd=varargin{1};
+    if(length(varargin)==2 && ~ischar(varargin{1}) && ischar(varargin{2}))
+        mode=varargin{2};
+    end
     if(length(varargin)>=3)
         opt=varargin2struct(varargin{2:end});
     end
 else
-    opt=varargin2struct(varargin{:});
+    if(length(varargin)==2 && ~ischar(varargin{1}) && ischar(varargin{2}))
+        sd=varargin{1};
+        mode=varargin{2};
+    else
+        opt=varargin2struct(varargin{:});
+    end
 end
 
 mode=jsonopt('mode',mode,opt);
@@ -92,10 +100,14 @@ switch mode
             maxseg=max(recon.seg);
         end
         if(isfield(recon,'param') && isstruct(recon.param) && isfield(recon,'bulk'))
-            recon.param=structfun(@(x) recon.bulk.(x)*ones(maxseg,1), recon.param);
+            types=fieldnames(recon.param);
+            for ch=1:length(types)
+               recon.param.(types{ch})=recon.bulk.(types{ch})*ones(maxseg,1);
+            end
             % cfg.prop will be updated inside rbrunrecon;
         end
-        if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) || ~isfield(recon,'prop'))
+        if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) ...
+            || (~isfield(recon,'param') && ~isfield(recon,'prop')))
             nref=1.37;
             if(isfield(recon.bulk,'n'))
                 nref=recon.bulk.n;
@@ -114,16 +126,16 @@ end
 if(isfield(recon,'seg') && ~isempty(recon.seg))
     if(numel(recon.seg)==1 || length(unique(recon.seg))==1)
         recon.seg=ones(size(recon.node,1),1);
-        fprintf('rbrun: run bulk estimation ...\n');
+        fprintf('[rbrun]: run bulk estimation ...\n');
     elseif(isvector(recon.seg))
-        fprintf('rbrun: run segmented tissue property estimation ...\n');
+        fprintf('[rbrun]: run segmented tissue property estimation ...\n');
     elseif(min(size(recon.seg))>=2)
         if(strcmp(mode,'fuzzy'))
-            fprintf('rbrun: run fuzzy-segmentation based property estimation ...\n');
+            fprintf('[rbrun]: run fuzzy-segmentation based property estimation ...\n');
         elseif(strcmp(mode,'prior'))
-            fprintf('rbrun: run composition-prior guided reconstruction ...\n');
+            fprintf('[rbrun]: run compositional-prior guided reconstruction ...\n');
         elseif(strcmp(mode,'roi'))
-            fprintf('rbrun: run roi-based composition-prior guided reconstruction ...\n');
+            fprintf('[rbrun]: run roi-based compositional-prior guided reconstruction ...\n');
         end
     end
 end

@@ -13,12 +13,13 @@ addpath(fullfile(pwd, '../matlab'));
 %%   prepare simulation input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear cfg cfg0
+clear cfg cfg0 recon
 
-s0=[70, 50, 20];
+s0=[70, 50, 20]; % center of the inclusion (in mm)
+rs=5;            % radius of the sphere (in mm)
 
 [nobbx,fcbbx]=meshabox([40 0 0], [160, 120, 60], 10);
-[nosp,fcsp]=meshasphere(s0, 5, 1);
+[nosp,fcsp]=meshasphere(s0, rs, 1);
 [no,fc]=mergemesh(nobbx, fcbbx, nosp, fcsp);
 
 [cfg0.node, cfg0.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
@@ -57,7 +58,8 @@ cfg0=rbmeshprep(cfg0);
 %% run forward for all wavelengths
 detphi0=rbrunrecon(0,cfg0);
 
-%% run reconstruction using the forward data
+%% run reconstruction using the forward data, setup dual-mesh
+
 [node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
 clear face
 
@@ -65,15 +67,15 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
 [recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 40);
 clear face
+[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
+%% set up initial guess values for bulk fitting
 recon.param=struct;
 recon.param.hbo=8; % initial guess
 recon.param.hbr=2;
 recon.seg=ones(size(recon.node,1),1);
 
 recon.lambda=0.01;
-
-[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
 %% run bulk fitting
 
@@ -94,7 +96,7 @@ cfg.param=struct;
 cfg.param.hbo=newrecon.param.hbo*ones(size(cfg.node,1),1);
 cfg.param.hbr=newrecon.param.hbr*ones(size(cfg.node,1),1);
 
-[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.05,'tol',0.01,'report',1);
+[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.01,'tol',0.01,'report',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

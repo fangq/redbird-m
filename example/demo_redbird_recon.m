@@ -13,7 +13,7 @@ addpath(fullfile(pwd, '../matlab'));
 %%   prepare simulation input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear cfg cfg0
+clear cfg cfg0 recon
 
 s0=[70, 50, 20];
 
