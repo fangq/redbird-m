@@ -96,7 +96,7 @@ cfg=rmfield(cfg,'seg');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % calling rbrunrecon is equivalent to calling the below for-loop
-[newcfg,newrecon]=rbrunrecon(maxiter,cfg,recon,detphi0);
+[newrecon,resid,newcfg]=rbrunrecon(maxiter,cfg,recon,detphi0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

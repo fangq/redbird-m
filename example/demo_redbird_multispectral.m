@@ -77,7 +77,7 @@ recon.lambda=0.01;
 
 %% run bulk fitting
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.001,'report',1);
+[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.001,'report',1);
 
 newrecon.param
 
@@ -94,7 +94,7 @@ cfg.param=struct;
 cfg.param.hbo=newrecon.param.hbo*ones(size(cfg.node,1),1);
 cfg.param.hbr=newrecon.param.hbr*ones(size(cfg.node,1),1);
 
-[newcfg,newrecon]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.05,'tol',0.01,'report',1);
+[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.05,'tol',0.01,'report',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

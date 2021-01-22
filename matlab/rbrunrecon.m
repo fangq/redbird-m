@@ -51,7 +51,7 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 
 if(maxiter==0 && nargin<3)
     % return detphi as cfg and phi as recon
-    [cfg,recon]=rbrunforward(cfg);
+    [recon,resid]=rbrunforward(cfg);
     return;
 end
 

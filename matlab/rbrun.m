@@ -20,7 +20,7 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 %          if recon is a struct, it can have the following subfields
 %               recon.node, recon.elem: the reconstruction mesh
 %               recon.lambda: Tikhonov regularization parameter, if not
-%                     present, use 0.1
+%                     present, use 0.05
 %               recon.prop or recon.param: initial guess of mua/mus or
 %                     parameters
 %     detphi0: measurement data to be fitted, can be either a matrix or a
@@ -76,17 +76,23 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 switch mode
-    case {'bulk','seg'}
+    case {'bulk','seg','image'}
         if(strcmp(mode,'bulk'))
             recon.seg=ones(size(recon.node,1),1);
             maxseg=1;
+        elseif(strcmp(mode,'image'))
+            if(isfield(recon,'seg'))
+                recon=rmfield(recon,'seg');
+            end
+            if(isfield(cfg,'seg'))
+                cfg=rmfield(cfg,'seg');
+            end
+            maxseg=size(recon.node,1);
         else
             maxseg=max(recon.seg);
         end
         if(isfield(recon,'param') && isstruct(recon.param) && isfield(recon,'bulk'))
-            for ch=fieldnames(recon.param)
-               recon.param.(ch{1})=recon.bulk.(ch{1})*ones(maxseg,1);
-            end
+            recon.param=structfun(@(x) recon.bulk.(x)*ones(maxseg,1), recon.param);
             % cfg.prop will be updated inside rbrunrecon;
         end
         if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) || ~isfield(recon,'prop'))
@@ -99,7 +105,9 @@ switch mode
             else
                 recon.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],maxseg,1);
             end
-            recon.prop=[0 0 1 1; recon.prop];
+            if(strcmp(mode,'image')==0)
+                recon.prop=[0 0 1 1; recon.prop];
+            end
         end
 end
 
