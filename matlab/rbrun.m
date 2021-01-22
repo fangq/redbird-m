@@ -1,9 +1,10 @@
-function varargout=rbrun(cfg,recon,varargin)
+function varargout=rbrun(cfg,recon,detphi0,varargin)
 %
-% phi=rbrun(cfg)
-% prop=rbrun(cfg,recon)
+% detphi=rbrun(cfg)
+% newrecon=rbrun(cfg,recon,detphi0)
+% [newrecon,resid,newcfg,...]=rbrun(cfg,recon,detphi0,sd)
 %   or
-% prop=rbrun(cfg,recon,mode)
+% [newrecon,resid,newcfg,...]=rbrun(cfg,recon,detphi0,sd,'param1',value1,'param2',value2,...)
 %
 % Master script to run streamlined forward, inversion with various
 % reconstruction modes.
@@ -11,38 +12,27 @@ function varargout=rbrun(cfg,recon,varargin)
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
-%     cfg: the redbird data structure, if cfg is the only input, rbrun is
-%            the same as rbrunforward
+%     cfg: the forward data structure defining the forward mesh in a
+%          reconstruction, if cfg is the only input, rbrun is the same as
+%          rbrunforward
 %     recon: if recon is a vector, it must be the measurement data for all
 %               src/detector pairs
-%            if recon is a struct, it can have the following subfields
-%               recon.data (required): the data to be fitted for
-%               recon.sdmap: the sd map of the data vector
+%          if recon is a struct, it can have the following subfields
 %               recon.node, recon.elem: the reconstruction mesh
-%               recon.iter: number of iterations, if not present, use 10
 %               recon.lambda: Tikhonov regularization parameter, if not
 %                     present, use 0.1
-%               recon.prop0 or recon.param0: initial guess of mua/mus or
+%               recon.prop or recon.param: initial guess of mua/mus or
 %                     parameters
-%     mode: if mode='image' or 'r' (default), rbrecon fit the data in recon
-%           if mode='simu' or 'x', rbrecon first creates simulated forward
-%               data and then reconstruct using the recon settings
-%           if mode='bulk' or 'b', bulk fitting of a single segment
-%                    if recon.seg presents, this mode returns optical
-%                    properties per segment
-%           if mode='fuzzy' or 'f', bulk fitting of a labeled segmentation
-%                    recon.seg must present, this mode returns optical
-%                    properties per segment by backmapping optical
-%                    properties back to the volume
-%           if mode='prior' or 'p', compositional-prior reconstruction
-%           if mode='roiprior', compositional-prior reconstruction with
-%                    roi and background probabalistic maps
-%           if mode='roionly', 2-compositional-prior reconstruction with
-%                    roi/non-roi probabalistic map
+%     detphi0: measurement data to be fitted, can be either a matrix or a
+%              containers.Map (multi-wavelength); if detphi0 is a struct
+%              with subfields like node/elem, it is treated as a forward
+%              simulation data structure like cfg, and is used to run the
+%              forward solution to obtain the simulated "measurement"
 %
 % output:
-%     phi or prop: forward solution or reconstructed optical properties or
-%           parameters
+%     newrecon,resid,newcfg...: if only cfg is used as input, the output
+%              parameters are the same as in rbrunforward; if recon is
+%              given, the output sequence is the same as that of rbrunrecon
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details 
@@ -51,62 +41,89 @@ function varargout=rbrun(cfg,recon,varargin)
 %
 
 mode='image';
-if(nargin>2)
-    mode=varargin{1};
+opt=struct;
+if(nargin==4 || ~ischar(varargin{1}) || bitand(length(varargin),1)==1)
+    sd=varargin{1};
+    if(length(varargin)>=3)
+        opt=varargin2struct(varargin{2:end});
+    end
+else
+    opt=varargin2struct(varargin{:});
 end
+
+mode=jsonopt('mode',mode,opt);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run forward for the heterogeneous domain
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if(nargin==1)
-    varargout{1:nargout}=rbrunforward(cfg);
+    [varargout{1:nargout}]=rbrunforward(cfg);
     return;
-elseif(isstruct(recon) && isfield(recon,'srcpos'))
-    detphi0=rbrunforward(recon);
+elseif(nargin==2)
+    if(~isfield(recon,'detphi0'))
+        error('you must give detphi0 as input');
+    else
+        detphi0=recon.detphi0;
+    end
+end
+if(isstruct(detphi0) && isfield(detphi0,'srcpos'))
+    detphi0=rbrunforward(detphi0);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Reset the domain to a homogeneous medium for recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if(isfield(recon,'node') && isfield(recon,'elem'))
-    cfg=rbsetmesh(cfg,recon.node,recon.elem,recon.prop,ones(size(node,1),1));
+switch mode
+    case {'bulk','seg'}
+        if(strcmp(mode,'bulk'))
+            recon.seg=ones(size(recon.node,1),1);
+            maxseg=1;
+        else
+            maxseg=max(recon.seg);
+        end
+        if(isfield(recon,'param') && isstruct(recon.param) && isfield(recon,'bulk'))
+            for ch=fieldnames(recon.param)
+               recon.param.(ch{1})=recon.bulk.(ch{1})*ones(maxseg,1);
+            end
+            % cfg.prop will be updated inside rbrunrecon;
+        end
+        if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) || ~isfield(recon,'prop'))
+            nref=1.37;
+            if(isfield(recon.bulk,'n'))
+                nref=recon.bulk.n;
+            end
+            if(isfield(recon.bulk,'musp'))
+                recon.prop=repmat([recon.bulk.mua,recon.bulk.musp,0,nref],maxseg,1);
+            else
+                recon.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],maxseg,1);
+            end
+            recon.prop=[0 0 1 1; recon.prop];
+        end
 end
 
-if(isfield(recon,'sdmap'))
-    sd=recon.sdmap;
-else
+if(isfield(recon,'seg') && ~isempty(recon.seg))
+    if(numel(recon.seg)==1 || length(unique(recon.seg))==1)
+        recon.seg=ones(size(recon.node,1),1);
+        fprintf('rbrun: run bulk estimation ...\n');
+    elseif(isvector(recon.seg))
+        fprintf('rbrun: run segmented tissue property estimation ...\n');
+    elseif(min(size(recon.seg))>=2)
+        if(strcmp(mode,'fuzzy'))
+            fprintf('rbrun: run fuzzy-segmentation based property estimation ...\n');
+        elseif(strcmp(mode,'prior'))
+            fprintf('rbrun: run composition-prior guided reconstruction ...\n');
+        elseif(strcmp(mode,'roi'))
+            fprintf('rbrun: run roi-based composition-prior guided reconstruction ...\n');
+        end
+    end
+end
+
+if(~exist('sd','var'))
     sd=rbsdmap(cfg);
 end
 
-% at this point, recon.{node,elem} are required
-[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
+maxiter=jsonopt('maxiter',10,opt);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Run 10 iterations to recover mua
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-maxiter=10;
-if(isfield(recon,'iter'))
-    maxiter=iter;
-end
-resid=zeros(1,maxiter);
-
-cfg.mua=ones(size(cfg.node,1),1)*cfg.prop(cfg.seg(1)+1,1);
-
-for i=1:maxiter
-    tic
-    [detphi, phi]=rbrunforward(cfg);   % run forward on recon mesh
-    Jmua=rbfemmatrix(cfg, sd, phi);    % use mex to build Jacobian, 2x faster
-    %Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
-    %Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
-    Jmua_recon=meshremap(Jmua.',f2rid, f2rweight,recon.elem,size(recon.node,1)).'; 
-    misfit=detphi0(:)-detphi(:);       % calculate data-misfit
-    [Jmua_recon,misfit]=rbcreateinv(Jmua_recon, detphi0(:), detphi(:), 'logphase');
-    resid(i)=sum(abs(misfit));         % store the residual
-    dmu_recon=rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
-    dmu=meshinterp(dmu_recon,f2rid, f2rweight,recon.elem); % interpolate the update to the forward mesh
-    cfg.mua=cfg.mua + dmu(:);          % update forward mesh mua vector
-    fprintf(1,'iter [%4d]: residual=%e, relres=%e (time=%f s)\n',i, resid(i), resid(i)/resid(1), toc);
-end
+[varargout{1:nargout}]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,opt);

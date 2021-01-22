@@ -79,6 +79,10 @@ sd=rbsdmap(cfg);
 %%   Run 10 iterations to recover mua
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% the single command below does the bulk fitting and 
+%[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,'mode','bulk');
+%[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,'mode','image');
+
 maxiter=10;
 resid=zeros(1,maxiter);
 
