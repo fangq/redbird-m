@@ -15,14 +15,52 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 %     cfg: the forward data structure defining the forward mesh in a
 %          reconstruction, if cfg is the only input, rbrun is the same as
 %          rbrunforward
-%     recon: if recon is a vector, it must be the measurement data for all
-%               src/detector pairs
-%          if recon is a struct, it can have the following subfields
-%               recon.node, recon.elem: the reconstruction mesh
+%     recon: recon is a struct, it can have the following subfields
+%               recon.node: the node list of the reconstruction mesh
+%               recon.elem: the element list of the reconstruction mesh
+%               recon.mapid: a vector of length the forward mesh node,
+%                     specifying the recon mesh element ID that encloses
+%                     each of the forward mesh node; NaN if the forward
+%                     mesh is outside of the recon mesh
+%               recon.mapweight: a Nn-by-4 array, Nn is the forward mesh
+%                     node number. Each row defines the 4 barycentric
+%                     coordinates for each of the forward mesh node; all
+%                     NaN if the forward mesh is outside of the recon mesh
 %               recon.lambda: Tikhonov regularization parameter, if not
 %                     present, use 0.05
-%               recon.prop or recon.param: initial guess of mua/mus or
-%                     parameters
+%               recon.bulk: a struct defining the fall-back values of the
+%                     bulk optical properties, can have the following
+%                     subfields:
+%                       hbo/hbr/scatamp/scatpow: bulk HbO/HbR
+%                           concentrations and scattering amp/power, if
+%                           defined, it will be used to
+%                           initialize/overwrite recon.param then cfg.param
+%                           then cfg.prop
+%                       mua/musp/dcoeff: bulk absorption coeff (1/mm),
+%                           reduced scattering coeff (1/mm) and diffusion
+%                           coeff. (mm), if defined, it will be used to
+%                           initialize overwrite recon.prop then cfg.prop
+%                       n: refractive index, if not defined, use 1.37
+%
+%                       recon.bulk must be defined if some forward nodes
+%                       are outside of the recon mesh
+%               recon.param: initial guess of multi-spectral parameters
+%                     (wavelength independent) such as chromophore
+%                     concentrations and scattering amp/power; 
+%                     this must be defined, but can be an empty struct;
+%                     rbrun needs the subfield names from this struct to
+%                     determine which parameters to use
+%               recon.prop: initial guess of wavelength-dependent
+%                     properties, always have 4 columns -
+%                           [mua (1/mm), musp (1/mm), g, n]
+%                     anisotropy g is often set to 0; n is set to 1.37 if
+%                     recon.bulk.n is not defined.
+%
+%                     recon.prop must be a matrix (for single-wavelength
+%                     recon) or a containers.Map object (for multi-spectral
+%                     recon). it must be defined if multi-spectral recon is
+%                     used to provide the desired wavelengths as
+%                     recon.prop.keys
 %     detphi0: measurement data to be fitted, can be either a matrix or a
 %              containers.Map (multi-wavelength); if detphi0 is a struct
 %              with subfields like node/elem, it is treated as a forward
