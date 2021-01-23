@@ -104,6 +104,11 @@ switch mode
             for ch=1:length(types)
                recon.param.(types{ch})=recon.bulk.(types{ch})*ones(maxseg,1);
             end
+            if(strcmp(mode,'image'))
+                for ch=1:length(types)
+                   cfg.param.(types{ch})=recon.bulk.(types{ch})*ones(size(cfg.node,1),1);
+                end
+            end
             % cfg.prop will be updated inside rbrunrecon;
         end
         if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) ...

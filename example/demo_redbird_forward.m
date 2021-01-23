@@ -94,8 +94,6 @@ detval=rbfemgetdet(phi, cfg, loc, bary); % or detval=rbfemgetdet(phi, cfg, rhs);
 
 sid=13;
 
-cfg.srcpos(:,3)=cfg.srcpos(:,3)-z0;
-
 srcloc=cfg.srcpos(sid,1:3);
 detloc=cfg.node;
 

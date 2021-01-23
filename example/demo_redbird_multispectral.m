@@ -69,34 +69,17 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 clear face
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
-%% set up initial guess values for bulk fitting
-recon.param=struct;
-recon.param.hbo=8; % initial guess
-recon.param.hbr=2;
-recon.seg=ones(size(recon.node,1),1);
+%% run bulk fitting first
+sd=rbsdmap(cfg);
+recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
+recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
+recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'bulk');
 
-recon.lambda=0.01;
-
-%% run bulk fitting
-
-[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.0002,'tol',0.001,'report',1);
-
-newrecon.param
-
-%% run image reconstruction
-
-recon.param=struct;
-recon.param.hbo=newrecon.param.hbo*ones(size(recon.node,1),1);
-recon.param.hbr=newrecon.param.hbr*ones(size(recon.node,1),1);
-if(isfield(recon,'seg'))
-    recon=rmfield(recon,'seg');
-end
-
-cfg.param=struct;
-cfg.param.hbo=newrecon.param.hbo*ones(size(cfg.node,1),1);
-cfg.param.hbr=newrecon.param.hbr*ones(size(cfg.node,1),1);
-
-[newrecon,resid,newcfg]=rbrunrecon(10,cfg,recon,detphi0,rbsdmap(cfg),'lambda',0.01,'tol',0.01,'report',1);
+%% take the fitted bulk and set it for full image recon
+recon.bulk.hbo=newrecon.param.hbo;
+recon.bulk.hbr=newrecon.param.hbr;
+[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
