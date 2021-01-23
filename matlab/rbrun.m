@@ -122,6 +122,13 @@ switch mode
             else
                 recon.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],maxseg,1);
             end
+            if(strcmp(mode,'image'))
+                if(isfield(recon.bulk,'musp'))
+                    cfg.prop=repmat([recon.bulk.mua,recon.bulk.musp,0,nref],size(cfg.node,1),1);
+                else
+                    cfg.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],size(cfg.node,1),1);
+                end
+            end
             if(strcmp(mode,'image')==0)
                 recon.prop=[0 0 1 1; recon.prop];
             end

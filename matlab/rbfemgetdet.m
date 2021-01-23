@@ -4,7 +4,7 @@ function [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 %    or
 % [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 %
-% Retrieving measurement data at detectors
+% Retrieving measurement data at detectors as a (N_det by N_src) matrix
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -40,6 +40,12 @@ gooddetval=zeros(length(goodidx),srcnum);
 
 if(nargin==3)
     detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
+elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field det
+    for i=1:srcnum
+        for j=1:detnum
+            detval(j,i)=sum(phi(:,i).*cfg.detpos(j,:)');
+        end
+    end
 else
     for i=1:length(goodidx)
         if(~isnan(optodeloc(i)))
