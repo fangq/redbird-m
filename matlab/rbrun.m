@@ -42,7 +42,7 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 
 mode='image';
 opt=struct;
-if(nargin==4 || ~ischar(varargin{1}) || bitand(length(varargin),1)==1 && ~ischar(varargin{1}))
+if(nargin==4 || (~isempty(varargin) && (~ischar(varargin{1}) || bitand(length(varargin),1)==1 && ~ischar(varargin{1}))))
     sd=varargin{1};
     if(length(varargin)==2 && ~ischar(varargin{1}) && ischar(varargin{2}))
         mode=varargin{2};
