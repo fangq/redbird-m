@@ -32,6 +32,8 @@ if(~isfield(cfg,'bulk'))
         bkprop=containers.Map();
         if(~isa(cfg.prop,'containers.Map'))
             prop('')=cfg.prop;
+        else
+            prop=cfg.prop;
         end
         wavelengths=prop.keys;
         for waveid=prop.keys

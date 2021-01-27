@@ -1,4 +1,4 @@
-function [detval, phi, Amat, rhs]=rbrunforward(cfg)
+function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 %
 % [detval, phi, Amat, rhs]=rbrunforward(cfg)
 %
@@ -33,6 +33,9 @@ end
 Amat=containers.Map();
 phi=containers.Map();
 detval=containers.Map();
+opt=varargin2struct(varargin{:});
+solverflag=jsonopt('solverflag',{},opt);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS
@@ -53,8 +56,8 @@ for waveid=wavelengths
 	%%   Solve for solutions at all nodes: Amat*res=rhs
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	%phi(wv)=rbfemsolve(Amat(wv),rhs,'pcg',1e-8,200);
-	phi(wv)=rbfemsolve(Amat(wv),rhs);
+	%solverflag={'pcg',1e-12,200}; % if iterative pcg method is used
+	[phi(wv),sflag]=rbfemsolve(Amat(wv),rhs,solverflag{:});
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	%%   Extract detector readings from the solutions

@@ -69,8 +69,8 @@ fprintf('build LHS using native code ... \t%f seconds\n',toc);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic;fprintf(1,'solving for the solution ...\n');
-%phi=rbfemsolve(Amat,rhs,'symmlq',1e-20,100);
-phi=rbfemsolve(Amat,rhs);
+[phi,sflag]=rbfemsolve(Amat,rhs,'pcg',1e-8,200);
+%phi=rbfemsolve(Amat,rhs);
 fprintf('solving forward solutions ... \t%f seconds\n',toc); 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

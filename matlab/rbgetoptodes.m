@@ -32,7 +32,7 @@ if(isfield(cfg,'srcpos') && ~isempty(cfg.srcpos))
     if(size(cfg.srcpos,2) == size(cfg.node,1))
         widesrc=cfg.srcpos;
     else
-        pointsrc=cfg.srcpos+cfg.srcdir*ltr;
+        pointsrc=cfg.srcpos+repmat(cfg.srcdir*ltr,size(cfg.srcpos,1),1);
     end
 end
 
@@ -40,6 +40,6 @@ if(isfield(cfg,'detpos') && ~isempty(cfg.detpos))
     if(size(cfg.detpos,2) == size(cfg.node,1))
         widesrc=[widesrc; cfg.detpos];
     else
-        pointsrc=[pointsrc; cfg.detpos+cfg.detdir*ltr];
+        pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
     end
 end

@@ -44,10 +44,6 @@ cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
 wavelengths=cfg0.prop.keys;
 
-% z0=1/(cfg0.prop(2,1)+cfg0.prop(2,2)*(1-cfg0.prop(2,3)));
-% cfg0.srcpos(:,3)=cfg0.srcpos(:,3)+z0;
-% cfg0.detpos(:,3)=cfg0.detpos(:,3)-z0;
-
 cfg0.omega=2*pi*70e6;
 cfg0.omega=0;
 
@@ -55,10 +51,15 @@ cfg=cfg0;
 
 cfg0=rbmeshprep(cfg0);
 
-%% run forward for all wavelengths
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   run forward for all wavelengths
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 detphi0=rbrunrecon(0,cfg0);
 
-%% run reconstruction using the forward data, setup dual-mesh
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   run reconstruction using the forward data, setup dual-mesh
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
 clear face
@@ -69,14 +70,20 @@ cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 clear face
 [recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
 
-%% run bulk fitting first
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   run bulk fitting first
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 sd=rbsdmap(cfg);
 recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
 recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
 [newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'bulk');
 
-%% take the fitted bulk and set it for full image recon
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%   take the fitted bulk and set it for full image recon
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 recon.bulk.hbo=newrecon.param.hbo;
 recon.bulk.hbr=newrecon.param.hbr;
 [newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');

@@ -2,7 +2,7 @@
 
 srcpattern = diag(ones(1,16))+diag(ones(1,15),-1);
 srcpattern(1,end)=1;
-srcpattern=permute(repmat(srcpattern,1,1,16),[2 3 1]);
+srcpattern=permute(repmat(srcpattern,[1,1,16]),[2 3 1]);
 srcpattern=cat(3,srcpattern,permute(srcpattern,[2 1 3]));
 detpattern=srcpattern;
 

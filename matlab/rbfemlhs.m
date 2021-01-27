@@ -43,6 +43,7 @@ R_C0=(1./299792458000.);
 
 prop=cfg.prop;
 cfgreff=cfg.reff;
+omega=cfg.omega;
 
 if(nargin==2 && numel(deldotdel)==1)
     wavelength=deldotdel;
@@ -57,6 +58,9 @@ if(isa(cfg.prop,'containers.Map')) % if multiple wavelengths, take current
     end
     prop=cfg.prop(wavelength);
     cfgreff=cfg.reff(wavelength);
+    if(isa(omega,'containers.Map'))
+       omega=omega(wavelength);
+    end
 end
 
 % if deldotdel is provided, call native code; otherwise, call mex
@@ -84,6 +88,9 @@ if(nargin>=2 && numel(deldotdel)>1)
         nref=cfg.bulk.n;
     elseif(isfield(cfg,'seg') && size(prop,1)<min([nn,ne]))
         nref=rbgetbulk(cfg);
+        if(isa(nref,'containers.Map'))
+            nref=nref(wavelength);
+        end
         nref=nref(4);
     else
         nref=prop(:,4);
@@ -96,9 +103,9 @@ if(nargin>=2 && numel(deldotdel)>1)
     if(length(mua)==size(cfg.elem,1))  % element based property
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff(:),1,6) + repmat(0.05*mua(:).*cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff(:),1,4) + repmat(0.10*mua(:).*cfg.evol(:),1,4);
-        if(cfg.omega>0)
-            Aoffd=complex(Aoffd,repmat(0.05*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,6));
-            Adiag=complex(Adiag,repmat(0.10*cfg.omega*R_C0*nref(:).*cfg.evol(:),1,4));
+        if(omega>0)
+            Aoffd=complex(Aoffd,repmat(0.05*omega*R_C0*nref(:).*cfg.evol(:),1,6));
+            Adiag=complex(Adiag,repmat(0.10*omega*R_C0*nref(:).*cfg.evol(:),1,4));
         end
     else  % node based properties
         w1=(1/120)*[2 2 1 1;2 1 2 1; 2 1 1 2;1 2 2 1; 1 2 1 2; 1 1 2 2]';
@@ -113,8 +120,8 @@ if(nargin>=2 && numel(deldotdel)>1)
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff_e,1,6) + (mua_e*w1).*repmat(cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff_e,1,4) + (mua_e*w2).*repmat(cfg.evol(:),1,4);
         if(cfg.omega>0)
-            Aoffd=complex(Aoffd,(cfg.omega*R_C0)*(nref_e*w1).*repmat(cfg.evol(:),1,6));
-            Adiag=complex(Adiag,(cfg.omega*R_C0)*(nref_e*w2).*repmat(cfg.evol(:),1,4));
+            Aoffd=complex(Aoffd,(omega*R_C0)*(nref_e*w1).*repmat(cfg.evol(:),1,6));
+            Adiag=complex(Adiag,(omega*R_C0)*(nref_e*w2).*repmat(cfg.evol(:),1,4));
         end
     end
     % add partial current boundary condition
