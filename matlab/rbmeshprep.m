@@ -65,36 +65,21 @@ if(isfield(cfg,'prop') && isfield(cfg,'param') && ...
         cfg.prop=rbupdateprop(cfg);
     end
 end
+% compute R_eff - effective reflection coeff, and musp0 - background mus'
 if(~isfield(cfg,'reff') || isempty(cfg.reff))
-    if(length(cfg.seg)==size(cfg.elem,1))
-        [ix, iy]=find(cfg.elem==cfg.face(1));
-        if(isa(cfg.prop,'containers.Map'))
-            cfg.reff=containers.Map();
-            cfg.musp0=containers.Map();
-            for waveid=cfg.prop.keys
-                wv=waveid{1};
-                prop=cfg.prop(wv);
-                cfg.reff(wv)=rbgetreff(prop(cfg.seg(ix(1))+1,4), prop(1,4));
-                    cfg.musp0(wv)=prop(cfg.seg(ix(1))+1,2);
-            end
-        else
-                cfg.reff=rbgetreff(cfg.prop(cfg.seg(ix(1))+1,4), cfg.prop(1,4));
-                cfg.musp0=cfg.prop(cfg.seg(ix(1))+1,2);
+    bkprop=rbgetbulk(cfg);
+    if(isa(bkprop,'containers.Map'))
+        cfg.reff=containers.Map();
+        cfg.musp0=containers.Map();
+        for waveid=bkprop.keys
+            wv=waveid{1};
+            prop=bkprop(wv);
+            cfg.reff(wv)=rbgetreff(prop(4), 1);
+            cfg.musp0(wv)=prop(2)*(1-prop(3));
         end
     else
-        if(isa(cfg.prop,'containers.Map'))
-            cfg.reff=containers.Map();
-            cfg.musp0=containers.Map();
-            for waveid=cfg.prop.keys
-                wv=waveid{1};
-                prop=cfg.prop(wv);
-            cfg.reff(wv)=rbgetreff(prop(cfg.seg(cfg.face(1))+1,4), prop(1,4));
-            cfg.musp0(wv)=prop(cfg.seg(cfg.face(1))+1,2);	    
-            end
-        else
-                cfg.reff=rbgetreff(cfg.prop(cfg.seg(cfg.face(1))+1,4), cfg.prop(1,4));
-                cfg.musp0=cfg.prop(cfg.seg(cfg.face(1))+1,2);
-        end
+        cfg.reff=rbgetreff(bkprop(4), 1);
+        cfg.musp0=bkprop(2)*(1-bkprop(3));
     end
 end
 if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))

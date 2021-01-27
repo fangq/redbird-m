@@ -80,10 +80,13 @@ if(nargin>=2 && numel(deldotdel)>1)
     end
     dcoeff=1./(3*(mua+musp));
 
-    if((~isfield(cfg,'nref') || isempty(cfg.nref)) && isfield(cfg,'seg'))
-        nref=prop(cfg.seg+1,4);
+    if(isfield(cfg,'bulk') && isfield(cfg.bulk,'n'))
+        nref=cfg.bulk.n;
+    elseif(isfield(cfg,'seg') && size(prop,1)<min([nn,ne]))
+        nref=rbgetbulk(cfg);
+        nref=nref(4);
     else
-        nref=cfgreff;
+        nref=prop(:,4);
     end
     Reff=cfgreff;
 
@@ -102,7 +105,7 @@ if(nargin>=2 && numel(deldotdel)>1)
         w2=(1/60)*(diag([2 2 2 2])+1);
         mua_e=reshape(mua(cfg.elem),size(cfg.elem));
         if(length(nref)==1)
-            nref_e=nref;
+            nref_e=nref*ones(size(cfg.elem));
         else
             nref_e=reshape(nref(cfg.elem),size(cfg.elem));
         end

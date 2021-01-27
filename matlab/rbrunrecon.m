@@ -25,7 +25,7 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %     sd (optional): source detector mapping table, if not provided, call
 %         rbsdmap(cfg) to compute
 %     param/value: acceptable optional parameters include
-%         'reform': 'complex' (default),'logphase',or 'real'
+%         'reform': 'real'(default), 'complex', or 'logphase'
 %         'lambda': Tikhonov regularization parameter (0.05), overwrite recon.lambda
 %         'report': 1 (default) to print residual and timing; 0 silent mode
 %         'tol': convergence tolerance, if relative residual is less than
@@ -68,7 +68,7 @@ lambda=jsonopt('lambda',lambda,opt);
 
 doreport=jsonopt('report',1,opt);
 convergetol=jsonopt('tol',0,opt);
-reform=jsonopt('reform','complex',opt);
+reform=jsonopt('reform','real',opt);
 
 if(nargin<5)
     sd=rbsdmap(cfg);
@@ -93,7 +93,7 @@ for iter=1:maxiter
     end
     % run forward on forward mesh
     [detphi, phi]=rbrunforward(cfg);
-    
+
     % build Jacobians on forward mesh
     if(isfield(cfg,'omega') && cfg.omega>0) % if RF data
         % currently, only support node-based values; rbjac supports
@@ -176,15 +176,25 @@ for iter=1:maxiter
         switch output{i}
             case {'mua','dcoeff'}
                 propidx=strcmp(output{i},'dcoeff')+1;
-                if(strcmp(output{i},'dcoeff')) % converting from d to musp
-                    dx=1/dx*(1/3);
-                end
                 if(isfield(recon,'node')) % update recon mesh prop
                     if(length(dx)==size(recon.prop,1)-1) % label based prop
-                        recon.prop(2:end,propidx)=recon.prop(2:end, propidx)+dx;
+                        if(strcmp(output{i},'dcoeff')) % converting from d to musp
+                            dcoeff=1./(3*recon.prop(2:end,propidx));
+                            dcoeff=dcoeff+dx;
+                            recon.prop(2:end,propidx)=1./(3*dcoeff);
+                        else
+                            recon.prop(2:end,propidx)=recon.prop(2:end, propidx)+dx;
+                        end
+                        
                         cfg.prop=recon.prop;
                     else % nodal or element based prop
-                        recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
+                        if(strcmp(output{i},'dcoeff')) % converting from d to musp
+                            dcoeff=1./(3*recon.prop(:, propidx));
+                            dcoeff=dcoeff+dx;
+                            recon.prop(:,propidx)=1./(3*dcoeff);
+                        else
+                            recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
+                        end
                         cfg.prop(:,propidx)=...
                             meshinterp(recon.prop(:,propidx),recon.mapid, recon.mapweight,recon.elem,cfg.prop(:,propidx)); % interpolate the update to the forward mesh
                     end
