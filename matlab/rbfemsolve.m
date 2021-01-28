@@ -40,6 +40,7 @@ end
 if(nargout<1)
     error('output can not be empty');
 end
+outputnum=nargout;
 
 if(~ischar(method) && nargout>0)
     res=zeros(size(rhs));
@@ -48,7 +49,7 @@ if(~ischar(method) && nargout>0)
         len=1:method:size(rhs,2);
         res=cell(1,length(len)-1);
         parfor i=1:length(res)
-            vo=cell(1,nargout);
+            vo=cell(1,outputnum);
             maxidx=min([size(rhs,2),len(i)+method-1]);
             [vo{:}]=blqmr(Amat,full(rhs(:,len(i):maxidx)),varargin{:});
             res{i}=vo{1};

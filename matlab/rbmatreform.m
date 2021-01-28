@@ -56,7 +56,7 @@ if(strcmp(form,'real') || strcmp(form,'reim'))
     newrhs=real(rhs);
 
     if(~isreal(rhs) && ~isreal(Amat))
-        if(strcmp(form,'real'))
+        if(strcmp(form,'reim'))
            newA=[real(Amat) -imag(Amat); 
                  imag(Amat) real(Amat)];
         else
