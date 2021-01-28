@@ -42,6 +42,9 @@ if(~isdet)
         if(strcmp(srctype,'pattern'))
                 srcpattern=cfg.srcpattern;
         end
+        if(isfield(cfg,'srcweight'))
+                srcweight=cfg.srcweight;
+        end
 else
         if(~isfield(cfg,'dettype') || strcmp(cfg.dettype,'pencil') || strcmp(cfg.dettype,'isotropic'))
                 return;
@@ -53,6 +56,9 @@ else
         srcparam2=cfg.detparam2;
         if(strcmp(srctype,'pattern'))
                 srcpattern=cfg.detpattern;
+        end
+        if(isfield(cfg,'detweight'))
+                srcweight=cfg.detweight;
         end
 end
 
@@ -167,6 +173,10 @@ for i=1:size(srcbc,1)
     else
         rhs(1:maxbcnode,i)=sparse(cfg.face(:), 1, repmat(Adiagbc(:,i),1,3));
     end
-    rhs(:,i)=rhs(:,i)/sum(rhs(:,i));
+    wsrc=1;
+    if(exist('srcweight','var') && numel(srcweight)==size(srcbc,1))
+        wsrc=srcweight(i);
+    end
+    rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
 end
 srcbc=rhs.';

@@ -36,6 +36,7 @@ cfg.detdir=[0 0 -1];
 
 cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;
+cfg.srcweight=2;
 
 z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
 
@@ -104,7 +105,7 @@ if(exist('mcxlab','file'))
         flux=mcxlab(xcfg);
         fcw=flux.data*xcfg.tstep;
         subplot(211);
-        imagesc(rot90(log10(abs(squeeze(fcw(:,30,:))))))
+        imagesc(rot90(log10(abs(squeeze(cfg.srcweight*fcw(:,30,:))))))
         axis equal; colorbar
         set(gca,'xlim',[0 60],'ylim',[0 30])
         title('MCX solution');
@@ -134,4 +135,4 @@ vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+0.5,yi);
 figure,[c,h] = contour(xi,yi,log10(vphi),clines,'r-','LineWidth',2);
 
 cwf = squeeze(fcw(30,:,:))';
-hold on,contour(xi,yi,log10(cwf),clines,'b-','LineWidth',2);
+hold on,contour(xi,yi,log10(cfg.srcweight*cwf),clines,'b-','LineWidth',2);
