@@ -10,9 +10,14 @@ function varargout=rbfemsolve(Amat, rhs, method, varargin)
 %     Amat: the left-hand-size matrix, can be sparse
 %     rhs:  the right-hand-size vector or matrix (multiple rhs)
 %     method: (optional) a string specifying the solving method
-%          mldivide: use the left-divide method: res=Amat\rhs
-%          blqmr: use the block-QMR iterative method, other methods include
-%          qmr, tfqmr, cgs, gmres, pcg, cgs, minres, symmlq, bicgstab;
+%            'mldivide': use the left-divide method: res=Amat\rhs
+%            'blqmr': use the block-QMR iterative method for entire RHS
+%
+%          other supported methods include
+%            qmr, tfqmr, cgs, gmres, pcg, cgs, minres, symmlq, bicgstab;
+%
+%          if method is a positive integer, it calls blqmr.m (part of the
+%          blit toolbox) with block size defined by "method".
 %
 %          for all non-block solvers, adding "par" prefix calls parfor to
 %          solve each RHS in parallel, one must call matlabpool or parpool
@@ -34,6 +39,32 @@ if(nargin<3)
 end
 if(nargout<1)
     error('output can not be empty');
+end
+
+if(~ischar(method) && nargout>0)
+    res=zeros(size(rhs));
+    if(method<0)
+        method=-method;
+        len=1:method:size(rhs,2);
+        res=cell(1,length(len)-1);
+        parfor i=1:length(res)
+            vo=cell(1,nargout);
+            maxidx=min([size(rhs,2),len(i)+method-1]);
+            [vo{:}]=blqmr(Amat,full(rhs(:,len(i):maxidx)),varargin{:});
+            res{i}=vo{1};
+        end
+        res=cell2mat(res);
+    else
+        vo=cell(1,nargout);
+        for i=1:method:size(rhs,2)
+            maxidx=min([size(rhs,2),i+method-1]);
+            [vo{:}]=blqmr(Amat,full(rhs(:,i:maxidx)),varargin{:});
+            res(:,i:maxidx)=vo{1};
+        end
+    end
+    vo{1}=res;
+    varargout=vo;
+    return
 end
 
 % block solvers can handle multiple RHSs
