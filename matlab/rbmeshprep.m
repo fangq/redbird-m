@@ -101,4 +101,7 @@ end
 if(~isfield(cfg,'deldotdel') || isempty(cfg.deldotdel))
     cfg.deldotdel=rbdeldotdel(cfg);
 end
+if(~isfield(cfg,'omega') || isempty(cfg.omega))
+    cfg.omega=0;
+end
 newcfg=cfg;

@@ -1,3 +1,7 @@
+if(~exist('rbrun','file'))
+    addpath(fullfile(pwd, '../matlab'));
+end
+
 %% Generate Source/Detector Patterns
 
 srcpattern = diag(ones(1,16))+diag(ones(1,15),-1);

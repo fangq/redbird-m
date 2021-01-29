@@ -28,7 +28,9 @@ function [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 %
 
 if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || isempty(cfg.detpos))
-    error('you must define at least 1 source and 1 detector in order to use this function');
+    detval=[];
+    goodidx=[];
+    return;
 end
 
 srcnum=size(cfg.srcpos,1);

@@ -7,7 +7,9 @@
 % This file is part of Redbird URL:http://mcx.sf.net/mmc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-addpath(fullfile(pwd, '../matlab'));
+if(~exist('rbrun','file'))
+    addpath(fullfile(pwd, '../matlab'));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   prepare simulation input
@@ -28,52 +30,18 @@ cfg.srcdir=[0 0 1];
 cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;
 
-cfg.detpos=[40 30 0];
-cfg.detdir=[0 0 -1];
-
-% z0=1/(cfg.prop(2,1)+cfg.prop(2,2)*(1-cfg.prop(2,3)));
-% 
-% cfg.srcpos(:,3)=cfg.srcpos(:,3)+z0;
+% cfg.detpos=[40 30 0];
+% cfg.detdir=[0 0 -1];
 
 cfg=rbmeshprep(cfg);
 
-save config.mat
+%save config.mat
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build LHS
+%%   Solve forward solution using redbird rbrun
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Amat,deldotdel]=rbfemlhs(cfg);
-%[deldotdel2]=rbdeldotdel(cfg);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build RHS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-[rhs,loc,bary]=rbfemrhs(cfg);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Solve for solutions at all freenodes: Afree*sol=rhs
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-tic;fprintf(1,'solving for the solution ...\n');
-%phi=rbfemsolve(Amat,rhs,'qmr',1e-6,100);
-phi=rbfemsolve(Amat,rhs);
-phi(phi<0)=0;
-toc 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Extract detector readings from the solutions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-detval=rbfemgetdet(phi, cfg, rhs); % or detval=rbfemgetdet(phi, cfg, loc, bary);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build Jacobians
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-sd=rbsdmap(cfg);
-[Jmua, Jmua_e, Jd]=rbjac(sd, phi, deldotdel, cfg.elem, cfg.evol);
+[detphi,phi]=rbrun(cfg);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Analytical solution
@@ -89,7 +57,7 @@ if(exist('mcxlab','file'))
         xcfg.tstart=0;
         xcfg.tend=5e-9;
         xcfg.tstep=5e-9;
-        xcfg.seed=99999;
+        xcfg.seed=9999999;
         xcfg.issrcfrom0=0;
 
         % a uniform planar source outside the volume

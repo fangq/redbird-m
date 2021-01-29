@@ -1,3 +1,7 @@
+if(~exist('rbrun','file'))
+    addpath(fullfile(pwd, '../matlab'));
+end
+
 clear cfg
 
 [cfg.node,cfg.face, cfg.elem]=meshabox([40 0 0], [160, 120, 60], 10);
