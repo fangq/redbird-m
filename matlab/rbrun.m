@@ -124,7 +124,11 @@ end
 switch mode
     case {'bulk','seg','image'}
         if(strcmp(mode,'bulk'))
-            recon.seg=ones(size(recon.node,1),1);
+            if(isfield(recon,'node'))
+                recon.seg=ones(size(recon.node,1),1);
+            else
+                cfg.seg=ones(size(cfg.node,1),1);
+            end
             maxseg=1;
         elseif(strcmp(mode,'image'))
             if(isfield(recon,'seg'))
@@ -133,9 +137,17 @@ switch mode
             if(isfield(cfg,'seg'))
                 cfg=rmfield(cfg,'seg');
             end
-            maxseg=size(recon.node,1);
+            if(isfield(recon,'node'))
+                maxseg=size(recon.node,1);
+            else
+                maxseg=size(cfg.node,1);
+            end
         else
-            maxseg=max(recon.seg);
+            if(isfield(recon,'node'))
+                maxseg=max(cfg.seg);
+            else
+                maxseg=max(cfg.seg);
+            end
         end
         if(isfield(recon,'param') && isstruct(recon.param) && isfield(recon,'bulk'))
             types=fieldnames(recon.param);

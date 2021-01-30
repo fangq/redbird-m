@@ -40,7 +40,7 @@ cfg0.prop=[
     0.016 1 0 1.37
 ];
 
-cfg0.omega=0;
+cfg0.omega=2*pi*70e6;
 
 cfg=cfg0;
 
@@ -61,26 +61,32 @@ detphi0=rbrun(cfg0);
 % numerical error - so, set density to 10 gives the best result, need
 % to debug this further
 
-[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 10);
+[node,face,elem]=meshabox([40 0 0], [160, 120, 60], 30);
 cfg=rbsetmesh(cfg,node,elem,cfg.prop,ones(size(node,1),1));
 
 sd=rbsdmap(cfg);
 
-% create coarse reconstruction mesh
-[recon.node,face,recon.elem]=meshabox([40 0 0], [160, 120, 60], 20);
-[recon.mapid, recon.mapweight]=tsearchn(recon.node,recon.elem,cfg.node);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Streamlined reconstruction
+%%  Streamlined bulk fitting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % initialize reconstruction to homogeneous (label=1)
-recon.prop=cfg.prop(ones(size(recon.node,1),1)+1,:);
-cfg.prop=cfg.prop(ones(size(cfg.node,1),1)+1,:);
-cfg=rmfield(cfg,'seg');
+recon.bulk=struct('mua',0.003,'musp',0.6);
 
 % run stream-lined image reconstruction
-[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'mex',0);
+newrecon=rbrun(cfg,recon,detphi0,sd,'bulk');
+
+newrecon.prop
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Streamlined image reconstruction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% set bulk to the fitted result from previous step
+recon.bulk=struct('mua',newrecon.prop(2,1),'musp',newrecon.prop(2,2));
+
+% run stream-lined image reconstruction
+[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

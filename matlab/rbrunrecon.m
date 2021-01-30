@@ -69,6 +69,7 @@ lambda=jsonopt('lambda',lambda,opt);
 doreport=jsonopt('report',1,opt);
 convergetol=jsonopt('tol',0,opt);
 reform=jsonopt('reform','real',opt);
+ismexjac=jsonopt('mex',0,opt);
 
 if(nargin<5)
     sd=rbsdmap(cfg);
@@ -82,7 +83,7 @@ for iter=1:maxiter
     % update forward mesh prop/param using recon mesh prop/param if given
     % for rbsyncprop to work, one must provide initial values of cfg.prop
     % (or cfg.param) if recon.prop (or recon.param) is specified
-    if(isfield(recon,'node') && isfield(recon,'elem'))
+    if((isfield(recon,'node') && isfield(recon,'elem')) || isfield(recon,'prop') || isfield(recon,'param'))
         [cfg,recon]=rbsyncprop(cfg,recon);
     end
 
@@ -112,7 +113,11 @@ for iter=1:maxiter
             [Jmua_n, Jmua]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
             clear Jmua_n;
         else
-            Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+            if(ismexjac)
+                Jmua=rbfemmatrix(cfg, sd, phi);
+            else
+                Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+            end
         end
     end
     % Jmua/Jd are either containers.Map(wavelength) or single matrix
@@ -144,6 +149,8 @@ for iter=1:maxiter
 
     if(isfield(recon,'seg')) % reconstruction of segmented domains
         Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
+    elseif(isfield(cfg,'seg')) % single-mesh bulk/seg recon
+        Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
     end
 
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
@@ -176,31 +183,29 @@ for iter=1:maxiter
         switch output{i}
             case {'mua','dcoeff'}
                 propidx=strcmp(output{i},'dcoeff')+1;
-                if(isfield(recon,'node')) % update recon mesh prop
-                    if(length(dx)==size(recon.prop,1)-1) % label based prop
-                        if(strcmp(output{i},'dcoeff')) % converting from d to musp
-                            dcoeff=1./(3*recon.prop(2:end,propidx));
-                            dcoeff=dcoeff+dx;
-                            recon.prop(2:end,propidx)=1./(3*dcoeff);
-                        else
-                            recon.prop(2:end,propidx)=recon.prop(2:end, propidx)+dx;
-                        end
-                        
-                        cfg.prop=recon.prop;
-                    else % nodal or element based prop
-                        if(strcmp(output{i},'dcoeff')) % converting from d to musp
-                            dcoeff=1./(3*recon.prop(:, propidx));
-                            dcoeff=dcoeff+dx;
-                            recon.prop(:,propidx)=1./(3*dcoeff);
-                        else
-                            recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
-                        end
+                if(length(dx)==size(recon.prop,1)-1) % label based prop
+                    if(strcmp(output{i},'dcoeff')) % converting from d to musp
+                        dcoeff=1./(3*recon.prop(2:end,propidx));
+                        dcoeff=dcoeff+dx;
+                        recon.prop(2:end,propidx)=1./(3*dcoeff);
+                    else
+                        recon.prop(2:end,propidx)=recon.prop(2:end, propidx)+dx;
+                    end
+                    cfg.prop=recon.prop;
+                else % nodal or element based prop
+                    if(strcmp(output{i},'dcoeff')) % converting from d to musp
+                        dcoeff=1./(3*recon.prop(:, propidx));
+                        dcoeff=dcoeff+dx;
+                        recon.prop(:,propidx)=1./(3*dcoeff);
+                    else
+                        recon.prop(:,propidx)=recon.prop(:, propidx)+dx;
+                    end
+                    if(isfield(recon,'node'))
                         cfg.prop(:,propidx)=...
                             meshinterp(recon.prop(:,propidx),recon.mapid, recon.mapweight,recon.elem,cfg.prop(:,propidx)); % interpolate the update to the forward mesh
+                    else
+                        cfg.prop=recon.prop;
                     end
-                else % update forward mesh prop if single mesh
-                    startid=(length(dx)==size(cfg.prop,1)-1)+1;
-                    cfg.prop(startid:end,propidx)=cfg.prop(startid:end, propidx)+dx;
                 end
             case {'hbo','hbr','water','lipid','scatamp','scatpow'}
                 if(isfield(recon,'node')) % update recon mesh prop
