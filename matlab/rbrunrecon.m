@@ -105,8 +105,12 @@ for iter=1:maxiter
             clear Jmua_n Jd_n % do not use ~ because older Octave does not support
         else
             % node based properties
-            [Jmua, Jmua_e, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
-            clear Jmua_e
+            if(ismexjac)
+                [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);
+            else
+                [Jmua, Jmua_e, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                clear Jmua_e
+            end
         end
     else % CW only
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
