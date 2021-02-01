@@ -89,7 +89,7 @@ void mexFunction(int nlhs,       mxArray *plhs[],
 	    jac.isnodal=1; // build nodal Jmua and Jd on a coarse mesh
 	    arraydim=mxGetDimensions(prhs[5]);
 	    if(arraydim[0]*arraydim[1]!=mesh.nn)
-	        MEXERROR("elemid must have the same lengt has the forward mesh node number");
+	        MEXERROR("elemid must have the same length has the forward mesh node number");
 	    jac.elemid=mxGetPr(prhs[5]); 
   
 	    arraydim=mxGetDimensions(prhs[6]);
@@ -482,14 +482,16 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
     int pairs[3][10]={{0,0,0,1,1,2},{1,2,3,2,3,3},{1,2,3,5,6,8}}; //pairs[0]<->[1], local node pairs, [3] pos in deldotdel
     int inode[4]={0,4,7,9}; // position in deldotdel for diagonal
 
+    int colnum=(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne));
+
     if(jac->Jmuar)
-       memset(jac->Jmuar,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
+       memset(jac->Jmuar,0,jac->nsd*colnum*sizeof(double));
     if(jac->Jmuai)
-       memset(jac->Jmuai,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
+       memset(jac->Jmuai,0,jac->nsd*colnum*sizeof(double));
     if(jac->Jdr)
-       memset(jac->Jdr,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
+       memset(jac->Jdr,0,jac->nsd*colnum*sizeof(double));
     if(jac->Jdi)
-       memset(jac->Jdi,0,jac->nsd*(jac->nn? jac->nn: (jac->isnodal?mesh->nn:mesh->ne))*sizeof(double));
+       memset(jac->Jdi,0,jac->nsd*colnum*sizeof(double));
 
     // loop over all elements
     for(t=0;t<mesh->ne;t++){
@@ -525,6 +527,8 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	        jmuar*=0.25*mesh->evol[t];
 	        for(i=0;i<4;i++){
 	           int eid=(int)(jac->elemid[ee[i]]-0.5);
+		   if(jac->elemid[ee[i]]!=jac->elemid[ee[i]]) /*if elemid is nan, the forward node is outside of recon mesh*/
+		       continue;
 		   for(j=0;j<4;j++){
 		     jac->Jmuar[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jmuar*jac->elembary[j*mesh->nn+ee[i]];
 		   }
@@ -540,6 +544,8 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	          jdr*=0.25;
 	          for(i=0;i<4;i++){
 	             int eid=(int)(jac->elemid[ee[i]]-0.5);
+		     if(jac->elemid[ee[i]]!=jac->elemid[ee[i]]) /*if elemid is nan, the forward node is outside of recon mesh*/
+		       continue;
 		     for(j=0;j<4;j++){
 		       jac->Jdr[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jdr*jac->elembary[j*mesh->nn+ee[i]];
 		     }
@@ -589,6 +595,8 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	        jmuai*=0.25*mesh->evol[t];
 	        for(i=0;i<4;i++){
 	           int eid=(int)(jac->elemid[ee[i]]-0.5);
+		   if(jac->elemid[ee[i]]!=jac->elemid[ee[i]]) /*if elemid is nan, the forward node is outside of recon mesh*/
+		       continue;
 		   for(j=0;j<4;j++){
 		     jac->Jmuai[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jmuai*jac->elembary[j*mesh->nn+ee[i]];
 		   }
@@ -604,6 +612,8 @@ void rb_femjacobian(Config *cfg,tetmesh *mesh, Jacobian *jac){
 	          jdi*=0.25;
 	          for(i=0;i<4;i++){
 	             int eid=(int)(jac->elemid[ee[i]]-0.5);
+		     if(jac->elemid[ee[i]]!=jac->elemid[ee[i]]) /*if elemid is nan, the forward node is outside of recon mesh*/
+		       continue;
 		     for(j=0;j<4;j++){
 		       jac->Jdi[(int)(jac->relem[j*jac->ne+eid]-0.5)*jac->nsd+sd]+=jdi*jac->elembary[j*mesh->nn+ee[i]];
 		     }

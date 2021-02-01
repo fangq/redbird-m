@@ -1,6 +1,6 @@
-function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
+function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, iselem)
 %
-% [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
+% [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, isnodal)
 %
 % Building the Jacobian matrices using adjoint method and native matlab code
 %
@@ -12,6 +12,7 @@ function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
 %     deldotdel: grad*phi dot product with grad phi, computed as part of the computation
 %     felem: forward mesh element list
 %     evol: forward mesh element volume
+%     iselem (optional): 1 if elem-based Jacobian; 0 (default) if is nodal-based 
 %
 % output:
 %     Jmua_n: the nodal Jacobian for absorption coeff. mua
@@ -28,7 +29,9 @@ function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol)
 if(nargin<5 || isempty(sd) || isempty(phi) || isempty(deldotdel)|| isempty(evol))
     error('you must give at least 5 inputs and they must not be empty');
 end
-
+if(nargin<6)
+    iselem=0;
+end
 nelem=size(felem,1);
 
 wavelengths={''};
@@ -100,4 +103,9 @@ if(length(wavelengths)==1)
         Jd_n=Jd_n(wavelengths{1});
         Jd_e=Jd_e(wavelengths{1});
     end
+end
+
+if(iselem && nargout<3)
+    Jmua_n=Jmua_e;
+    Jmua_e=Jd_e;
 end

@@ -42,7 +42,7 @@ if(isa(Jmua,'containers.Map'))
     if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         for i=1:length(wv)
             dcoeff=prop(wv);
-            if(size(dcoeff,1)<min([size(cfg.node,1),size(cfg.elem,1)])) % label based
+            if(size(dcoeff,1)<size(Jd,2)) % label based
                 dcoeff=dcoeff(2:end,:);
             end
             dcoeff=1/(3*(dcoeff(:,1)+dcoeff(:,2)));

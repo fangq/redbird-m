@@ -14,6 +14,13 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %     recon: reconstruction data structure, recon may have
 %         node: reconstruction mesh node list
 %         elem: reconstruction mesh elem list
+%         bulk: a struct storing the initial guesses of the param
+%              (wavelength-independent optical properties) and prop
+%              (wavelength-dependent optical properties), accepted
+%              subfields include
+%
+%              mua/musp/dcoeff/n/g: used to initialize recon/cfg.prop
+%              hbo/hbr/scatamp/scatpow: used to initialize recon/cfg.param
 %         param: wavelength-independent parameter on the recon mesh
 %         prop: wavelength-dependent optical properties on the recon mesh
 %         lambda: Tikhonov regularization parameter
@@ -31,16 +38,28 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %         'tol': convergence tolerance, if relative residual is less than
 %                this value, stop, default is 0, which runs maxiter
 %                iterations
+%         'reform': 'real': transform A*x=b so that A/x/b are all real
+%                   'complex': do not transform A*x=b
+%                   'logphase': transform Ax=b to [Alogamp,Aphase]*x=[log10(b),angle(b)]
+%         'mex': 0 (default) use matlab native code rbjac to build Jacobian
+%                1: use mex-file rbfemmatrix to rapidly compute Jacobian
+%                  on forward (dense) mesh then interpolate to coarse mesh
+%                2: call mex rbfemmatrix to build Jacobian directly on the
+%                   recon mesh (coarse).
 %
 % output:
-%     cfg: the updated cfg structure, containing forward mesh and
-%          reconstructed values in cfg.prop or cfg.param
 %     recon: the updated recon structure, containing recon mesh and
 %          reconstructed values in recon.prop or recon.param
 %     resid: the residual betweet the model and the measurement data for
 %          each iteration
+%     cfg: the updated cfg structure, containing forward mesh and
+%          reconstructed values in cfg.prop or cfg.param
+%     updates: a struct array, where the i-th element stores the update
+%          vectors for each unknown block
 %     Jmua: Jacobian in a struct form, each element is the Jacobian of an
 %          unknown block
+%     detphi: the final model prediction that best fits the data detphi0
+%     phi: the final forward solutions resulting from the estimation
 %     
 %
 % license:
@@ -101,24 +120,31 @@ for iter=1:maxiter
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
             % element based properties
-            [Jmua_n, Jmua, Jd_n, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
-            clear Jmua_n Jd_n % do not use ~ because older Octave does not support
+            [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
         else
             % node based properties
-            if(ismexjac)
-                [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);
+            if(ismexjac) % use mex to build
+                if(ismexjac>=2 && isfield(recon,'node'))
+                    [Jmua, Jd]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 1, ...
+                        recon.mapid, recon.mapweight, size(recon.node,1), recon.elem);
+                else
+                    [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);
+                end
             else
-                [Jmua, Jmua_e, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
-                clear Jmua_e
+                [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
             end
         end
     else % CW only
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
-            [Jmua_n, Jmua]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
-            clear Jmua_n;
+            Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
         else
             if(ismexjac)
-                Jmua=rbfemmatrix(cfg, sd, phi);
+                if(ismexjac>=2 && isfield(recon,'node'))
+                    Jmua=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 1, ...
+                        recon.mapid, recon.mapweight, size(recon.node,1), recon.elem);
+                else
+                    Jmua=rbfemmatrix(cfg, sd, phi);
+                end
             else
                 Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
             end
@@ -147,7 +173,7 @@ for iter=1:maxiter
     % concatenated model and measurement RHS vectors
 
     % mapping jacobians from forward mesh to reconstruction mesh
-    if(isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
+    if(ismexjac<2 && isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
         Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
     end
 
