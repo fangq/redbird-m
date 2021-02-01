@@ -46,7 +46,7 @@ fprintf('preparing mesh ... \t%f seconds\n',toc);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic
-[detphi, phi]=rbrunforward(cfg);
+[detphi, phi]=rbrun(cfg);
 fprintf('forward solution ... \t%f seconds\n',toc);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
