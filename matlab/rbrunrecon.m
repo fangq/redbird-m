@@ -32,9 +32,8 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %     sd (optional): source detector mapping table, if not provided, call
 %         rbsdmap(cfg) to compute
 %     param/value: acceptable optional parameters include
-%         'reform': 'real'(default), 'complex', or 'logphase'
 %         'lambda': Tikhonov regularization parameter (0.05), overwrite recon.lambda
-%         'report': 1 (default) to print residual and timing; 0 silent mode
+%         'report': 1 (default) to print residual and runtimes; 0: silent
 %         'tol': convergence tolerance, if relative residual is less than
 %                this value, stop, default is 0, which runs maxiter
 %                iterations
@@ -46,6 +45,22 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %                  on forward (dense) mesh then interpolate to coarse mesh
 %                2: call mex rbfemmatrix to build Jacobian directly on the
 %                   recon mesh (coarse).
+%                setting mex to 2 gives the fastest speed (2x faster than 0)
+%         'prior': apply structure-prior-guided reconstruction,
+%                supported methods include
+%
+%                'laplace': this is also known as the "soft-prior", where
+%                    the L matrix used in (J'J+lambda*L'L)dx=dy is a
+%                    Laplace smoothing matrix where l(i,j)=1 if i=j or
+%                    -1/N_seg if i~=j, where N_seg is the total number of
+%                    nodes/elems that are within each label or region;
+%                    recon.seg must be a vector of integer labels
+%                'comp': use compositional-priors, recon.seg must be a
+%                    N-by-Nc matrix where N is the number of nodes, Nc is
+%                    the number of tissue compositions, each element in the
+%                    matrix must be a number between 0-1, denoting the
+%                    volume fraction of each composition; the row-sum must
+%                    be 1 for each node.
 %
 % output:
 %     recon: the updated recon structure, containing recon mesh and

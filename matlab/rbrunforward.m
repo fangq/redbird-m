@@ -1,6 +1,8 @@
 function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 %
-% [detval, phi, Amat, rhs]=rbrunforward(cfg)
+% [detval, phi]=rbrunforward(cfg)
+%    or
+% [detval, phi, Amat, rhs]=rbrunforward(cfg,'param1',value1,...)
 %
 % Perform forward simulations at all sources and all wavelengths based on the input structure
 %
@@ -14,6 +16,13 @@ function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 %     phi: the full volumetric forward solution computed at all wavelengths
 %     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths 
 %     rhs: the right-hand-side vectors for all sources (independent of wavelengths)
+%     param/value pairs: (optional) additional parameters
+%          'solverflag': a cell array to be used as the optional parameters
+%               for rbfemsolve (starting from parameter 'method'), for
+%               example  rbrunforward(...,'solverflag',{'pcg',1e-10,200})
+%               calls rbfemsolve(A,rhs,'pcg',1e-10,200) to solve forward
+%               solutions
+% 
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details 
