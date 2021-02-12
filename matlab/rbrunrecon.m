@@ -104,6 +104,7 @@ doreport=jsonopt('report',1,opt);
 convergetol=jsonopt('tol',0,opt);
 reform=jsonopt('reform','real',opt);
 ismexjac=jsonopt('mex',0,opt);
+prior=jsonopt('prior','',opt);
 
 if(nargin<5)
     sd=rbsdmap(cfg);
