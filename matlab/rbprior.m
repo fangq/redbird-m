@@ -35,7 +35,7 @@ if(isvector(seg))
             return;
         end
     end
-    if(all((seg<=1.0) && (seg>=0)))
+    if(all((seg<=1.0) & (seg>=0)))
         seg=[seg(:) 1-seg(:)];
     end
 end

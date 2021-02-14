@@ -105,6 +105,17 @@ convergetol=jsonopt('tol',0,opt);
 reform=jsonopt('reform','real',opt);
 ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
+solverflag=jsonopt('solverflag',{},opt);
+
+Lmat=[];
+
+if(~isempty(prior) && isfield(recon,'seg'))
+    if(~isfield(opt,'lmatrix'))
+        Lmat=rbprior(recon.seg,prior,opt);
+    else
+        Lmat=opt.lmatrix;
+    end
+end
 
 if(nargin<5)
     sd=rbsdmap(cfg);
@@ -128,7 +139,7 @@ for iter=1:maxiter
         end
     end
     % run forward on forward mesh
-    [detphi, phi]=rbrunforward(cfg);
+    [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag);
 
     % build Jacobians on forward mesh
     if(isfield(cfg,'omega') && cfg.omega>0) % if RF data
@@ -218,7 +229,7 @@ for iter=1:maxiter
    
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
-    dmu_recon=rbreginv(Jflat, misfit, lambda);  % solve the update on the recon mesh
+    dmu_recon=rbreginv(Jflat, misfit, lambda, Lmat, blocks, solverflag{:});  % solve the update on the recon mesh
    
     % obtain linear index of each output species
     len=cumsum([1; structfun(@(x) x(2), blocks)]);

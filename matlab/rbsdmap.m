@@ -3,7 +3,7 @@ function [sd,dist]=rbsdmap(cfg,maxdist)
 % [sd,dist]=rbsdmap(cfg,maxdist)
 %
 % Create a source-detector mapping table (sd) by setting a maximum separation distance
-
+%
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
