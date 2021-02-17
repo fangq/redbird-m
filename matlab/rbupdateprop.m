@@ -51,8 +51,8 @@ for i=1:length(wv)
     for j=1:length(types)
         mua=mua+extin(i)*cfg.param.(types{j});
     end
-    if(isfield(cfg.param,'scatamp') && isfield(cfg.param,'scatpower'))
-        musp=cfg.param.('scatamp').*exp(-str2double(wavelen)*1e-9.*cfg.param.('scatpower'));
+    if(isfield(cfg.param,'scatamp') && isfield(cfg.param,'scatpow'))
+        musp=(cfg.param.('scatamp').*((str2double(wavelen)/500).^(-cfg.param.('scatpow'))));
     end
     segprop=cfg.prop(wavelen);
     if(length(mua)<min([size(cfg.node,1),size(cfg.elem,1)])) % label-based properties

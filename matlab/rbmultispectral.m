@@ -40,14 +40,15 @@ if(isa(Jmua,'containers.Map'))
     wv=keys(Jmua);
     paramlist=fieldnames(params);
     if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
+        dcoeff = containers.Map();
         for i=1:length(wv)
-            dcoeff=prop(wv);
-            if(size(dcoeff,1)<size(Jd,2)) % label based
-                dcoeff=dcoeff(2:end,:);
+            dtemp=prop(wv);
+            if(size(dtemp,1)<size(Jd(wv{i}),2)) % label based
+                dtemp=dtemp(2:end,:);
             end
-            dcoeff=1/(3*(dcoeff(:,1)+dcoeff(:,2)));
-            Jscat=rbjacscat(Jd, dcoeff, params.scatpow, wv);
+            dcoeff(wv{i})=1/(3*(dtemp(:,1)+dtemp(:,2)));
         end
+        Jscat=rbjacscat(Jd, dcoeff, params.scatpow, wv);
     end
     chromophores=intersect(paramlist,{'hbo','hbr','water','lipids','aa3'});
 
