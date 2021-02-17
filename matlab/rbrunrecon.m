@@ -107,14 +107,18 @@ ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
 solverflag=jsonopt('solverflag',{},opt);
 
-Lmat=[];
+Aregu=[];
+
+if(isfield(opt,'L'))
+    Aregu=opt.lmatrix;
+elseif(isfield(opt,'LTL'))
+    Aregu=opt.LTL;
+elseif(isfield(opt,'LQR'))
+    Aregu=opt.LQR;
+end
 
 if(~isempty(prior) && isfield(recon,'seg'))
-    if(~isfield(opt,'lmatrix'))
-        Lmat=rbprior(recon.seg,prior,opt);
-    else
-        Lmat=opt.lmatrix;
-    end
+    Aregu=rbprior(recon.seg,prior,opt);
 end
 
 if(nargin<5)

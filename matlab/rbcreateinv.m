@@ -102,8 +102,7 @@ finalAmat=[];
 finalrhs=[];
 
 if(isa(params,'struct'))
-    paramlist=fieldnames(params);
-    paramlist=intersect(params,{'hbo','hbr','water','lipids','aa3'});
+    paramlist=intersect(fieldnames(params),{'hbo','hbr','water','lipids','aa3'});
     if(isempty(paramlist))
         error('specified parameters are not supported');
     end
