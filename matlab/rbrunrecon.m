@@ -106,19 +106,22 @@ reform=jsonopt('reform','real',opt);
 ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
 solverflag=jsonopt('solverflag',{},opt);
+isreduced=0;
 
-Aregu=[];
+% create or accept regularization matrix
 
-if(isfield(opt,'L'))
-    Aregu=opt.lmatrix;
-elseif(isfield(opt,'LTL'))
-    Aregu=opt.LTL;
-elseif(isfield(opt,'LQR'))
-    Aregu=opt.LQR;
+Aregu=struct;
+
+if(isfield(opt,'lmat'))
+    Aregu.lmat=opt.lmat;
+elseif(isfield(opt,'ltl'))
+    Aregu.ltl=opt.ltl;
+elseif(isfield(opt,'lir'))
+    Aregu.lir=opt.lir;
 end
 
-if(~isempty(prior) && isfield(recon,'seg'))
-    Aregu=rbprior(recon.seg,prior,opt);
+if(~isempty(prior) && isfield(recon,'seg') && ~isfield(Aregu,'lmat'))
+    Aregu.lmat=rbprior(recon.seg,prior,opt);
 end
 
 if(nargin<5)
@@ -162,7 +165,7 @@ for iter=1:maxiter
                     [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);
                 end
             else
-                [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
+                [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
             end
         end
     else % CW only
@@ -208,10 +211,12 @@ for iter=1:maxiter
         Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
     end
 
-    if(isfield(recon,'seg')) % reconstruction of segmented domains
+    if(isfield(recon,'seg') && isvector(recon.seg)) % reconstruction of segmented domains
         Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
-    elseif(isfield(cfg,'seg')) % single-mesh bulk/seg recon
+        isreduced=1;
+    elseif(isfield(cfg,'seg') && isvector(cfg.seg)) % single-mesh bulk/seg recon
         Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
+        isreduced=1;
     end
 
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
@@ -231,9 +236,18 @@ for iter=1:maxiter
     resid(iter)=sum(abs(misfit));
     updates(iter).detphi=detphi;
    
+    if(isreduced==0 && ~isempty(prior))
+        if(size(Jflat,1)>=size(Jflat,2) && ~isfield(Aregu,'ltl'))
+            Aregu.ltl=Aregu.lmat'*Aregu.lmat;
+        end
+        if(size(Jflat,1)<size(Jflat,2) && ~isfield(Aregu,'lir'))
+            Lr=qr(Aregu.lmat);
+            Aregu.lir=inv(triu(Lr));
+        end
+    end
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
-    dmu_recon=rbreginv(Jflat, misfit, lambda, Lmat, blocks, solverflag{:});  % solve the update on the recon mesh
+    dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
    
     % obtain linear index of each output species
     len=cumsum([1; structfun(@(x) x(2), blocks)]);
