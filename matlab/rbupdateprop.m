@@ -49,7 +49,7 @@ for i=1:length(wv)
     extin=rbextinction(str2double(wavelen), types);
     mua=zeros(size(cfg.param.(types{1})));
     for j=1:length(types)
-        mua=mua+extin(i)*cfg.param.(types{j});
+        mua=mua+extin(j)*cfg.param.(types{j});
     end
     if(isfield(cfg.param,'scatamp') && isfield(cfg.param,'scatpow'))
         musp=(cfg.param.('scatamp').*((str2double(wavelen)/500).^(-cfg.param.('scatpow'))));
