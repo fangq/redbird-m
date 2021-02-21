@@ -98,6 +98,7 @@ else
 end
 
 mode=jsonopt('mode',mode,opt);
+prior=jsonopt('prior','',opt);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run forward for the heterogeneous domain
@@ -131,6 +132,9 @@ switch mode
             end
             maxseg=1;
         elseif(strcmp(mode,'image'))
+            if(~isempty(prior) && isfield(recon,'seg') && ~isfield(opt,'lmat'))
+                opt.lmat=rbprior(recon.seg,prior,opt);
+            end
             if(isfield(recon,'seg'))
                 recon=rmfield(recon,'seg');
             end

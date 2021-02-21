@@ -10,11 +10,11 @@ if(isempty(priortype))
 end
 
 if(isvector(seg))
-    if(isempty(priortype) && all(mod(seg(:),1) == 0))
+    if(~isempty(priortype) && all(mod(seg(:),1) == 0))
         [labels,ix,iy]=unique(seg);
         clear ix;
         counts=hist(seg,labels);
-        Lmat=spzeros(length(seg));
+        Lmat=zeros(length(seg));
         if(strcmp(priortype,'laplace'))
             for i=1:length(labels)
                 idx=find(iy==labels(i));
