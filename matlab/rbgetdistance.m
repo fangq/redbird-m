@@ -1,4 +1,4 @@
-function dist=rbgetdistance(srcpos,detpos)
+function dist=rbgetdistance(srcpos,detpos,badsrc,baddet)
 %
 % dist=rbgetdistance(srcpos,detpos)
 %
@@ -30,7 +30,20 @@ if(size(srcpos,2)>4 || size(detpos,2)>4)
     return;
 end
 
-dist=repmat(srcpos,detnum,1)-kron(detpos,ones(srcnum,1));
-dist=dist.*dist;
-dist=sqrt(sum(dist,2));
-dist=reshape(dist,srcnum,detnum);
+if(nargin<4)
+    baddet=[];
+    if(nargin<3)
+        badsrc=[];
+    end
+end
+
+goodsrc=setdiff(1:srcnum,badsrc);
+gooddet=setdiff(1:detnum,baddet);
+
+dd=repmat(srcpos(goodsrc,:),length(gooddet),1)-kron(detpos(gooddet,:),ones(length(goodsrc),1));
+dd=dd.*dd;
+dd=sqrt(sum(dd,2));
+dd=reshape(dd,length(goodsrc),length(gooddet));
+
+dist=inf*ones(srcnum,detnum);
+dist(goodsrc,gooddet)=dd;

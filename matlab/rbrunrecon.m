@@ -125,7 +125,7 @@ if(~isempty(prior) && isfield(recon,'seg') && ~isfield(Aregu,'lmat'))
 end
 
 if(nargin<5)
-    sd=rbsdmap(cfg);
+    sd=rbsdmap(cfg,opt);
 end
 
 % start iterative Gauss-Newton based reconstruction
@@ -159,10 +159,10 @@ for iter=1:maxiter
             % node based properties
             if(ismexjac) % use mex to build
                 if(ismexjac>=2 && isfield(recon,'node'))
-                    [Jmua, Jd]=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 1, ...
+                    [Jmua, Jd]=rbjacmex(cfg, sd, phi, cfg.deldotdel, 1, ...
                         recon.mapid, recon.mapweight, size(recon.node,1), recon.elem);
                 else
-                    [Jmua, Jd]=rbfemmatrix(cfg, sd, phi);
+                    [Jmua, Jd]=rbjacmex(cfg, sd, phi);
                 end
             else
                 [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
@@ -174,10 +174,10 @@ for iter=1:maxiter
         else
             if(ismexjac)
                 if(ismexjac>=2 && isfield(recon,'node'))
-                    Jmua=rbfemmatrix(cfg, sd, phi, cfg.deldotdel, 1, ...
+                    Jmua=rbjacmex(cfg, sd, phi, cfg.deldotdel, 1, ...
                         recon.mapid, recon.mapweight, size(recon.node,1), recon.elem);
                 else
-                    Jmua=rbfemmatrix(cfg, sd, phi);
+                    Jmua=rbjacmex(cfg, sd, phi);
                 end
             else
                 Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
