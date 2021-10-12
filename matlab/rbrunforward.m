@@ -30,6 +30,9 @@ function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 % -- this function is part of Redbird-m toolbox
 %
 
+opt=varargin2struct(varargin{:});
+sd = jsonopt('sd',[],opt);
+
 if(~isfield(cfg,'deldotdel'))
     cfg.deldotdel=rbdeldotdel(cfg);
 end

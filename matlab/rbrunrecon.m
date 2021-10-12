@@ -84,7 +84,7 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %
 
 if(maxiter==0 && nargin<3)
-    % return detphi as cfg and phi as recon
+    % return detphi as recon and phi as resid
     [recon,resid]=rbrunforward(cfg);
     return;
 end
@@ -154,7 +154,7 @@ for iter=1:maxiter
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
             % element based properties
-            [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
+            [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
         else
             % node based properties
             if(ismexjac) % use mex to build
@@ -165,7 +165,7 @@ for iter=1:maxiter
                     [Jmua, Jd]=rbjacmex(cfg, sd, phi);
                 end
             else
-                [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
             end
         end
     else % CW only

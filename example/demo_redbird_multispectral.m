@@ -46,7 +46,7 @@ cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
 wavelengths=cfg0.prop.keys;
 
-cfg0.omega=2*pi*70e6;
+% cfg0.omega=2*pi*70e6;
 cfg0.omega=0;
 
 cfg=cfg0;
@@ -75,6 +75,8 @@ clear face
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   run bulk fitting first
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 sd=rbsdmap(cfg);
 recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses

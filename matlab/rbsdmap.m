@@ -25,9 +25,10 @@ if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || is
     error('you must define at least 1 source and 1 detector in order to use this function');
 end
 
+opt = struct();
 if(length(varargin)==1)
     maxdist=varargin{1};
-elseif(~isempty(varargin))
+elseif(isempty(varargin))
     maxdist=inf;
 elseif(length(varargin)>1)
     opt=varargin2struct(varargin{:});
@@ -59,18 +60,27 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
         if((isfield(opt,'wavesrc') && ~isempty(opt.wavesrc)) || ...
            (isfield(opt,'wavedet') && ~isempty(opt.wavedet)))
              wavesrc=jsonopt('wavesrc',containers.Map({wid},{[]}), opt);
-             wavesrc=setdiff(goodsrc,wavesrc(wid));
+             if(~isempty(wavesrc(wid)))
+                wavesrc = intersect(goodsrc,wavesrc(wid));
+             else
+                wavesrc=setdiff(goodsrc,wavesrc(wid));
+             end
              wavedet=jsonopt('wavedet',containers.Map({wid},{[]}), opt);
-             wavedet=setdiff(goodsrc,wavedet(wid));
+             if(~isempty(wavedet(wid)))
+                wavedet = intersect(goodsrc,wavedet(wid));
+             else
+                wavedet=setdiff(goodsrc,wavedet(wid));
+             end
              [ss,dd]=meshgrid(wavesrc,srcnum+wavedet);
         end
         sdwv=[ss(:),dd(:)];
-        if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))
+%         if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))
+        if( isinf(maxdist) )
             sdwv(:,3)=1;
         else
             sdwv(:,3)=(dist(:)<maxdist);
         end
-        sd{wid}=sdwv;
+        sd(wid)=sdwv;
     end
 else
     [ss,dd]=meshgrid(goodsrc,srcnum+gooddet);
