@@ -25,7 +25,6 @@ if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || is
     error('you must define at least 1 source and 1 detector in order to use this function');
 end
 
-opt = struct();
 if(length(varargin)==1)
     maxdist=varargin{1};
 elseif(isempty(varargin))
@@ -33,6 +32,10 @@ elseif(isempty(varargin))
 elseif(length(varargin)>1)
     opt=varargin2struct(varargin{:});
     maxdist=jsonopt('maxdist',inf,opt);
+end
+
+if ~exist('opt')
+    opt = struct();
 end
 
 srcnum=size(cfg.srcpos,1);

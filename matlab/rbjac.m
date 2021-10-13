@@ -61,6 +61,7 @@ for waveid=wavelengths
     else
         sdwv=sd;
     end
+    sdwv = sdwv(sdwv(:,3) == 1,:);
     Jmua_node=zeros(size(sdwv,1),size(phiwv,1));
     Jmua_elem=zeros(size(sdwv,1),nelem);
     if(nargout>2)

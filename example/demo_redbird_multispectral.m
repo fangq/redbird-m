@@ -17,7 +17,7 @@ end
 
 clear cfg cfg0 recon
 
-s0=[70, 50, 20]; % center of the inclusion (in mm)
+s0=[90, 50, 20]; % center of the inclusion (in mm)
 rs=5;            % radius of the sphere (in mm)
 
 [nobbx,fcbbx]=meshabox([40 0 0], [160, 120, 60], 10);
@@ -77,8 +77,8 @@ clear face
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
-sd=rbsdmap(cfg);
+% sd = rbsdmap(cfg);
+sd=rbsdmap(cfg,'wavesrc',containers.Map({'690','830'},{[1:2:25],[1:2:25]}));
 recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
 recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
@@ -96,7 +96,7 @@ recon.bulk.hbr=newrecon.param.hbr;
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
+plotmesh([newrecon.node,newrecon.param.hbo(:)+newrecon.param.hbr(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
-plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'x=70','facecolor','interp','linestyle','none')
+plotmesh([newrecon.node,newrecon.param.hbo(:)+newrecon.param.hbr(:)],newrecon.elem,'x=90','facecolor','interp','linestyle','none')
 view(3);

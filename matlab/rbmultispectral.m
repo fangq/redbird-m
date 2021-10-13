@@ -1,4 +1,4 @@
-function [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, params, Jd, prop)
+function [newJ, newy0, newphi]=rbmultispectral(sd, cfg, Jmua, y0, phi, params, Jd, prop)
 %
 % [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, paramlist, Jd)
 %
@@ -39,7 +39,7 @@ newphi=[];
 if(isa(Jmua,'containers.Map'))
     wv=keys(Jmua);
     paramlist=fieldnames(params);
-    if(nargin>5 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
+    if(nargin>7 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         dcoeff = containers.Map();
         for i=1:length(wv)
             dtemp=prop(wv);
@@ -62,20 +62,35 @@ if(isa(Jmua,'containers.Map'))
     end
 else
     newJ.mua=Jmua;
-    if(nargin>4 && ~isa(Jd,'containers.Map'))
+    if(nargin>6 && ~isa(Jd,'containers.Map'))
         newJ.dcoeff=Jd;
     end
 end
 
-if(nargin>4 && ~isa(Jd,'containers.Map'))
+if(nargin>6 && ~isa(Jd,'containers.Map'))
     newJ.dcoeff=Jd;
 end
+
+srcnum=size(cfg.srcpos,1);
+detnum=size(cfg.detpos,1);
+[ss,dd]=meshgrid(1:srcnum,srcnum+[1:detnum]);
+sdAll = [ss(:) dd(:) ones(srcnum*detnum,1)];
+
 if(~isa(y0,'containers.Map'))
     newy0=y0;
 else
     wv=keys(y0);
     for i=1:length(wv)
-        newy0=[newy0; reshape(y0(wv{i}),[],1)];
+        if(~isa(sd,'containers.Map'))
+            [~,sdwv] = intersect(sdAll,sd,'rows');
+        else
+            sdtemp = sd(wv{i});
+            [~,sdwv] = intersect(sdAll,sdtemp,'rows');
+            clear sdtemp
+        end
+        y0temp = reshape(y0(wv{i}),[],1);
+        newy0=[newy0; y0temp(sdwv)];
+        clear y0temp
     end
 end
 if(~isa(phi,'containers.Map'))
@@ -83,6 +98,15 @@ if(~isa(phi,'containers.Map'))
 else
     wv=keys(phi);
     for i=1:length(wv)
-        newphi=[newphi; reshape(phi(wv{i}),[],1)];
+         if(~isa(sd,'containers.Map'))
+            [~,sdwv] = intersect(sdAll,sd,'rows');
+        else
+            sdtemp = sd(wv{i});
+            [~,sdwv] = intersect(sdAll,sdtemp,'rows');
+            clear sdtemp
+        end
+        newphitemp = reshape(phi(wv{i}),[],1);
+        newphi=[newphi; newphitemp(sdwv)];
+        clear newphitemp
     end
 end
