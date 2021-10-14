@@ -1,4 +1,4 @@
-function newcfg=rbmeshprep(cfg)
+function [newcfg,sd]=rbmeshprep(cfg)
 %
 % newcfg=rbmeshprep(cfg)
 %
@@ -105,3 +105,4 @@ if(~isfield(cfg,'omega') || isempty(cfg.omega))
     cfg.omega=0;
 end
 newcfg=cfg;
+sd = rbsdmap(cfg);

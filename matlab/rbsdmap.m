@@ -34,7 +34,7 @@ elseif(length(varargin)>1)
     maxdist=jsonopt('maxdist',inf,opt);
 end
 
-if ~exist('opt')
+if ~exist('opt','var')
     opt = struct();
 end
 
@@ -75,6 +75,19 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                 wavedet=setdiff(goodsrc,wavedet(wid));
              end
              [ss,dd]=meshgrid(wavesrc,srcnum+wavedet);
+        elseif ((isfield(cfg,'wavesrc') && ~isempty(cfg.wavesrc)) || ...
+           (isfield(cfg,'wavedet') && ~isempty(cfg.wavedet)))
+             if(~isempty(cfg.wavesrc(wid)))
+                wavesrc = intersect(goodsrc,cfg.wavesrc(wid));
+             else
+                wavesrc = setdiff(goodsrc,cfg.wavesrc(wid));
+             end
+             if(~isempty(cfg.wavedet(wid)))
+                wavedet = intersect(goodsrc,cfg.wavedet(wid));
+             else
+                wavedet = setdiff(goodsrc,cfg.wavedet(wid));
+             end
+             [ss,dd]=meshgrid(wavesrc,srcnum+wavedet);
         end
         sdwv=[ss(:),dd(:)];
 %         if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))
@@ -82,6 +95,22 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
             sdwv(:,3)=1;
         else
             sdwv(:,3)=(dist(:)<maxdist);
+        end
+        
+        if (isfield(cfg,'rfcw'))
+            modes = cfg.rfcw.src.keys;
+            for md = modes
+                mid = md{1};
+                mdSRC = cfg.rfcw.src(mid);
+                mdDET = cfg.rfcw.det(mid) + srcnum;
+                
+                mdChan = (ismember(sdwv(:,1), mdSRC) & ismember(sdwv(:,2),mdDET));
+                if strcmp(mid,'RF')
+                    sdwv(mdChan,4) = 1;
+                elseif strcmp(mid,'CW')
+                    sdwv(mdChan,4) = 2;
+                end
+            end
         end
         sd(wid)=sdwv;
     end
