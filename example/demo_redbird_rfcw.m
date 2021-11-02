@@ -6,10 +6,10 @@
 %
 % This file is part of Redbird URL:http://mcx.sf.net/mmc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if(~exist('rbrun','file'))
-    addpath(fullfile(pwd, '../matlab'));
-end
+% 
+% if(~exist('rbrun','file'))
+%     addpath(fullfile(pwd, '../matlab'));
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   prepare simulation input
@@ -44,27 +44,31 @@ cfg0.prop = containers.Map();  % if both prop and param are defined, param will 
 cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
 cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
-cfg0.wavesrc = containers.Map({'690','830'},{[1:10,21:23],[11:20,24:25]});
-cfg0.wavedet = containers.Map({'690','830'},{[1:10,21:23],[11:20,24:25]});
+cfg0.wavesrc = containers.Map({'690','830'},{[1:11,21:23],[12:20,24:25]});
+cfg0.wavedet = containers.Map({'690','830'},{[1:11,21:23],[12:20,24:25]});
 
 cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:20],[21:25]});
 cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:20],[21:25]});
 
 wavelengths=cfg0.prop.keys;
 
-% cfg0.omega=2*pi*70e6;
-cfg0.omega=0;
+cfg0.omega=containers.Map({'690','830'},{67.5e6*2*pi,2*pi*75e6});
+% cfg0.omega = 2*pi*75e6;
+% cfg0.omega=0;
 
 cfg=cfg0;
 
-%% 
+%
+
 [cfg0,sd0]=rbmeshprep(cfg0);
+rfcw = [1 2];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   run forward for all wavelengths
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-detphi0=rbrunrecon(0,cfg0);
+[detphi0,phi0] = rbrunforward(cfg0,'sd',sd0,'rfcw',rfcw);
+% detphi0=rbrunrecon(0,cfg0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   run reconstruction using the forward data, setup dual-mesh
@@ -84,12 +88,12 @@ clear face
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% sd = rbsdmap(cfg);
-sd=rbsdmap(cfg,'wavesrc',containers.Map({'690','830'},{[1:2:25],[1:2:25]}));
-recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
-recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
+sd = rbsdmap(cfg);
+% sd=rbsdmap(cfg,'wavesrc',containers.Map({'690','830'},{[1:2:25],[1:2:25]}));
+recon.bulk=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this gives initial guesses
+recon.param=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
-[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'bulk');
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   take the fitted bulk and set it for full image recon

@@ -36,9 +36,10 @@ end
 srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
 
+goodsrc = find(~isnan(optodeloc(1:srcnum)));
 goodidx=find(~isnan(optodeloc(srcnum+1:srcnum+detnum)));
-detval=zeros(detnum,srcnum);
-gooddetval=zeros(length(goodidx),srcnum);
+detval=zeros(length(goodidx),length(goodsrc));
+gooddetval=zeros(srcnum,detnum);
 
 if(nargin==3)
     detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
@@ -49,10 +50,12 @@ elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field de
         end
     end
 else
-    for i=1:length(goodidx)
-        if(~isnan(optodeloc(i)))
-            gooddetval(i,:)=sum(phi(cfg.elem(optodeloc(srcnum+goodidx(i)),:),1:srcnum).*repmat(optodebary(srcnum+goodidx(i),:)',1,srcnum),1);
+    if(~isempty(goodidx))
+        for i=goodidx'
+    %         if(~isnan(optodeloc(goodidx(i))))
+            gooddetval(i,goodsrc)=sum(phi(cfg.elem(optodeloc(srcnum+i),:),goodsrc).*repmat(optodebary(srcnum+i,:)',1,length(goodsrc)),1);
+    %         end
         end
     end
-    detval(goodidx,:)=gooddetval;
+    detval=gooddetval(goodidx,goodsrc);
 end

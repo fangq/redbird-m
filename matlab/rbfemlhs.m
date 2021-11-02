@@ -1,4 +1,4 @@
-function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength)
+function [Amat,deldotdel]=rbfemlhs(cfg, deldotdel, wavelength, mode)
 %
 % [Amat,deldotdel]=rbfemlhs(cfg)
 %   or
@@ -43,7 +43,15 @@ R_C0=(1./299792458000.);
 
 prop=cfg.prop;
 cfgreff=cfg.reff;
-omega=cfg.omega;
+if exist('mode','var')
+    if mode == 1
+        omega=cfg.omega;
+    elseif mode == 2
+        omega = 0;
+    end
+else
+    omega = cfg.omega;
+end
 
 if(nargin==2 && numel(deldotdel)==1)
     wavelength=deldotdel;
@@ -119,7 +127,7 @@ if(nargin>=2 && numel(deldotdel)>1)
         dcoeff_e=mean(reshape(dcoeff(cfg.elem),size(cfg.elem)),2);
         Aoffd=deldotdel(:,[2:4,6:7,9]).*repmat(dcoeff_e,1,6) + (mua_e*w1).*repmat(cfg.evol(:),1,6);
         Adiag=deldotdel(:,[1,5,8, 10]).*repmat(dcoeff_e,1,4) + (mua_e*w2).*repmat(cfg.evol(:),1,4);
-        if(cfg.omega>0)
+        if(omega>0)
             Aoffd=complex(Aoffd,(omega*R_C0)*(nref_e*w1).*repmat(cfg.evol(:),1,6));
             Adiag=complex(Adiag,(omega*R_C0)*(nref_e*w2).*repmat(cfg.evol(:),1,4));
         end

@@ -1,4 +1,4 @@
-function [rhs,loc,bary,optode]=rbfemrhs(cfg)
+function [rhs,loc,bary,optode]=rbfemrhs(cfg,sd,wv,md)
 %
 % newcfg=rbmeshprep(cfg)
 %
@@ -30,20 +30,36 @@ function [rhs,loc,bary,optode]=rbfemrhs(cfg)
 % -- this function is part of Redbird-m toolbox
 %
 
+if (nargin > 2)
+    sd = sd(wv);
+    if (nargin > 3 && size(sd,2) > 3)
+        sd = sd(sd(:,4) == md,:);
+    end
+end
+
 
 [optode,widesrc]=rbgetoptodes(cfg);
+
+if exist('sd','var')
+    activeOpt = unique(sd(:,1:2));
+else
+    activeOpt = size(optode,1) + size(widesrce,1);
+end
 
 if(size(optode,1)<1 && size(widesrc,1)<1)
     error('you must provide at least one source or detector');
 end
 
-loc=[];
-bary=[];
+% loc=[];
+% bary=[];
 
 if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.node,1)))
     rhs=widesrc.';
     loc=nan*ones(1,size(widesrc,1));
     bary=nan*ones(size(widesrc,1),4);
+else
+    loc = nan*ones(size(optode,1),1);
+    bary = nan*ones(size(optode,1),4);
 end
 
 if(isempty(optode))
@@ -51,13 +67,16 @@ if(isempty(optode))
 end
 
 rhs=sparse(size(cfg.node,1),size(widesrc,1)+size(optode,1));
-[newloc, newbary]=tsearchn(cfg.node,cfg.elem,optode);
+[newloc, newbary]=tsearchn(cfg.node,cfg.elem,optode(activeOpt,:));
 
-loc=[loc; newloc];
-bary=[bary; newbary];
+% loc=[loc; newloc];
+% bary=[bary; newbary];
+loc(activeOpt,:) = newloc;
+bary(activeOpt,:) = newbary;
 
-for i=1:size(optode,1)
+for i=1:size(activeOpt,1)
     if(~isnan(newloc(i)))
-        rhs(cfg.elem(newloc(i),:),i+size(widesrc,1))=newbary(i,:)';
+%         rhs(cfg.elem(newloc(i),:),i+size(widesrc,1))=newbary(i,:)';
+        rhs(cfg.elem(newloc(i),:),activeOpt(i))=newbary(i,:)';
     end
 end

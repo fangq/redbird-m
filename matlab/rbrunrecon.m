@@ -105,6 +105,7 @@ convergetol=jsonopt('tol',0,opt);
 reform=jsonopt('reform','real',opt);
 ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
+rfcw = jsonopt('rfcw',1,opt);
 solverflag=jsonopt('solverflag',{},opt);
 isreduced=0;
 
@@ -128,6 +129,20 @@ if(nargin<5)
     sd=rbsdmap(cfg,opt);
 end
 
+if isfield(opt,'rfcw')
+    rfcw = rfcw;
+else
+    if isa(sd,'containers.Map')
+        waves = sd.keys;
+        sdwv = sd(waves{1});
+        if size(sdwv,2 > 3)
+            rfcw = unique(sdwv(:,4));
+            rfcw = rfcw(rfcw > 0);
+        else
+            rfcw = 1;
+        end
+    end
+end
 % start iterative Gauss-Newton based reconstruction
 
 for iter=1:maxiter
@@ -146,10 +161,10 @@ for iter=1:maxiter
         end
     end
     % run forward on forward mesh
-    [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag);
+    [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
 
     % build Jacobians on forward mesh
-    if(isfield(cfg,'omega') && cfg.omega>0) % if RF data
+    if(isfield(cfg,'omega') && (cfg.omega>0 || any(cell2mat(cfg.omega.values)>0))) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
@@ -188,7 +203,7 @@ for iter=1:maxiter
     
     % build Jacobians for chromophores in the form of a struct
     % TODO: need to handle Jmua is a map but cfg.param is not defined
-    if(isa(Jmua,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
+    if(isa(cfg.prop,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
         if(exist('Jd','var'))
             [Jmua,detphi0,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
         else

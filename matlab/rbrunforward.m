@@ -31,7 +31,8 @@ function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 %
 
 opt=varargin2struct(varargin{:});
-sd = jsonopt('sd',[],opt);
+sd = jsonopt('sd',containers.Map({'690','830'},{[],[]}),opt);
+rfcw = jsonopt('rfcw',[1],opt);
 
 if(~isfield(cfg,'deldotdel'))
     cfg.deldotdel=rbdeldotdel(cfg);
@@ -43,44 +44,62 @@ if(isa(cfg.prop,'containers.Map'))
 end
 
 Amat=containers.Map();
-phi=containers.Map();
-detval=containers.Map();
 opt=varargin2struct(varargin{:});
 solverflag=jsonopt('solverflag',{},opt);
+if length(rfcw) < 2
+    detval=containers.Map();
+    phi=containers.Map();
+else
+    for md = rfcw
+        detval(md).detphi = containers.Map();
+        phi(md).phi = containers.Map();
+    end
+end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%   Build RHS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-[rhs,loc,bary]=rbfemrhs(cfg);
 
 for waveid=wavelengths
 	wv=waveid{1};
+    
+    sdwv = sd(wv);
+    for md = rfcw
+    
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%   Build RHS
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%   Build LHS
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        [rhs,loc,bary]=rbfemrhs(cfg,sd,wv,md);
 
-	Amat(wv)=rbfemlhs(cfg,cfg.deldotdel,wv); % use native matlab code, 1 sec for 50k nodes
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%   Build LHS
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%   Solve for solutions at all nodes: Amat*res=rhs
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        Amat(wv)=rbfemlhs(cfg,cfg.deldotdel,wv,md); % use native matlab code, 1 sec for 50k nodes
 
-	%solverflag={'pcg',1e-12,200}; % if iterative pcg method is used
-	[phi(wv),sflag]=rbfemsolve(Amat(wv),rhs,solverflag{:});
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%   Solve for solutions at all nodes: Amat*res=rhs
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%%   Extract detector readings from the solutions
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %solverflag={'pcg',1e-12,200}; % if iterative pcg method is used
+        [phi(md).phi(wv),sflag]=rbfemsolve(Amat(wv),rhs,solverflag{:});
 
-	detval(wv)=rbfemgetdet(phi(wv), cfg, loc, bary); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%   Extract detector readings from the solutions
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        detval(md).detphi(wv)=rbfemgetdet(phi(md).phi(wv), cfg, loc, bary); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
+    end
 end
 
 % if only a single wavelength is required, return regular arrays instead of a map
 if(length(wavelengths)==1)
     Amat=Amat(wavelengths{1});
-    phi=phi(wavelengths{1});
-    detval=detval(wavelengths{1});
+    for md = rfcw
+        phi(md).phi = phi(md).phi(wavelengths{1});
+        detval(md).detphi = detval(md).detphi(wavelengths{1});
+    end
+end
+
+if (length(rfcw) == 1)
+    phi = phi(rfcw).phi;
+    detval = detval(rfcw).detphi;
 end

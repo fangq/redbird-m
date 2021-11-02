@@ -36,10 +36,14 @@ newJ=struct;
 newy0=[];
 newphi=[];
 
-if(isa(Jmua,'containers.Map'))
-    wv=keys(Jmua);
+if(isa(Jmua,'containers.Map') || isa(Jmua(1).J,'containers.Map'))
+    if (isa(Jmua,'containers.Map'))
+        wv = keys(Jmua);
+    else
+        wv = keys(Jmua(1).J);
+    end
     paramlist=fieldnames(params);
-    if(nargin>7 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
+    if(nargin>6 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         dcoeff = containers.Map();
         for i=1:length(wv)
             dtemp=prop(wv);
