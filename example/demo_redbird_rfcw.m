@@ -37,18 +37,20 @@ cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg0.detdir=[0 0 -1];
 
 cfg0.param=struct;
-cfg0.param.hbo=[15 30];
-cfg0.param.hbr=[4  8];
+cfg0.param.hbo=[15 45];
+cfg0.param.hbr=[4  12];
+cfg0.param.scatamp = [2.5 4];
+cfg0.param.scatpow = [3 3];
 
 cfg0.prop = containers.Map();  % if both prop and param are defined, param will ovewrite prop
 cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
 cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
-cfg0.wavesrc = containers.Map({'690','830'},{[1:11,21:23],[12:20,24:25]});
-cfg0.wavedet = containers.Map({'690','830'},{[1:11,21:23],[12:20,24:25]});
+cfg0.wavesrc = containers.Map({'690','830'},{[1:25],[1:25]});
+cfg0.wavedet = containers.Map({'690','830'},{[1:25],[1:25]});
 
-cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:20],[21:25]});
-cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:20],[21:25]});
+cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:2:25],[2:2:24]});
+cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:2:25],[2:2:24]});
 
 wavelengths=cfg0.prop.keys;
 
@@ -93,20 +95,23 @@ sd = rbsdmap(cfg);
 recon.bulk=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this gives initial guesses
 recon.param=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
-[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw);
+
+%%
+
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw,'lambda',1e-3,'maxiter',15);
+
+recon.bulk = newrecon.param;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   take the fitted bulk and set it for full image recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-recon.bulk.hbo=newrecon.param.hbo;
-recon.bulk.hbr=newrecon.param.hbr;
-[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');
+[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'mode','image','reform','logphase');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+figure,
 plotmesh([newrecon.node,newrecon.param.hbo(:)+newrecon.param.hbr(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
 plotmesh([newrecon.node,newrecon.param.hbo(:)+newrecon.param.hbr(:)],newrecon.elem,'x=90','facecolor','interp','linestyle','none')

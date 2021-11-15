@@ -24,12 +24,29 @@ if(~ismatrix(Jmua)) % if a containers.Map, flatten it
     error('Jmua must be a containers.Map with elements of each wavelength');
 end
 
-wavelengths=keys(Jmua);
+if (isstruct(Jmua) && isfield(Jmua,'J'))
+    wavelengths = keys(Jmua(1).J);
+    rfcw = length(Jmua);
+else
+    wavelengths=keys(Jmua);
+    rfcw = 1;
+end
 extin=rbextinction(wavelengths, chromorphores);
 
 Jchrome=struct;
+
 for i=1:length(chromorphores)
-    Jchrome.(chromorphores{i})=rbmatflat(Jmua,extin(:,i));
+    for k = 1:rfcw
+        if (isa(Jmua,'containers.Map'))
+            Jchrome(k).(chromorphores{i})=rbmatflat(Jmua,extin(:,i));
+        else
+            Jchrome(k).(chromorphores{i}) = rbmatflat(Jmua(k).J,extin(:,i));
+        end
+    end
+end
+
+if rfcw == 1
+    Jchrome = Jchrome(1);
 end
 
 % J=[J(chrom1),J(chrom2),...,J(chromM)]

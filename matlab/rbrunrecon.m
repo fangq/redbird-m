@@ -135,9 +135,9 @@ else
     if isa(sd,'containers.Map')
         waves = sd.keys;
         sdwv = sd(waves{1});
-        if size(sdwv,2 > 3)
+        if (size(sdwv,2) > 3)
             rfcw = unique(sdwv(:,4));
-            rfcw = rfcw(rfcw > 0);
+            rfcw = rfcw(rfcw > 0)';
         else
             rfcw = 1;
         end
@@ -147,7 +147,14 @@ end
 
 for iter=1:maxiter
     tic
-
+    
+    if isfield(recon,'param')
+        recon.param
+    end
+    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node))
+        figure(5),plotmesh([recon.node recon.param.hbo],recon.elem,'z=20');colorbar;shading interp
+        drawnow
+    end
     % update forward mesh prop/param using recon mesh prop/param if given
     % for rbsyncprop to work, one must provide initial values of cfg.prop
     % (or cfg.param) if recon.prop (or recon.param) is specified
@@ -164,7 +171,12 @@ for iter=1:maxiter
     [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
 
     % build Jacobians on forward mesh
-    if(isfield(cfg,'omega') && (cfg.omega>0 || any(cell2mat(cfg.omega.values)>0))) % if RF data
+    if isa(cfg.omega,'containers.Map')
+        omegas = cell2mat(cfg.omega.values);
+    else
+        omegas = 0;
+    end
+    if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0))) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
@@ -205,15 +217,19 @@ for iter=1:maxiter
     % TODO: need to handle Jmua is a map but cfg.param is not defined
     if(isa(cfg.prop,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
         if(exist('Jd','var'))
-            [Jmua,detphi0,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
         else
-            [Jmua,detphi0,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param);
         end
     else  % recon mua/d per wavelengths
         if(exist('Jd','var'))
             Jmua=struct('mua',Jmua,'dcoeff',Jd);
+            detphi0iter = detphi0;
+            detphi = detphi;
         else
             Jmua=struct('mua',Jmua);
+            detphi0iter = detphi0;
+            detphi = detphi;
         end
     end
 
@@ -223,28 +239,52 @@ for iter=1:maxiter
 
     % mapping jacobians from forward mesh to reconstruction mesh
     if(ismexjac<2 && isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
-        Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+        if isstruct(Jmua)
+            for ii = 1:length(Jmua)
+                Jmua(ii)=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua(ii),'UniformOutput',false); 
+            end
+        else
+            Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+        end
     end
 
     if(isfield(recon,'seg') && isvector(recon.seg)) % reconstruction of segmented domains
-        Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
+        if (isstruct(Jmua) && (length(Jmua) > 1))
+            for ii = 1:length(Jmua)
+                Jmua(ii) = structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua(ii),'UniformOutput',false);
+            end
+        else
+            Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
+        end
         isreduced=1;
     elseif(isfield(cfg,'seg') && isvector(cfg.seg)) % single-mesh bulk/seg recon
-        Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
+        if (isstruct(Jmua) && (length(Jmua) > 1))
+            for ii = 1:length(Jmua)
+                Jmua(ii)=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua(ii),'UniformOutput',false);
+            end
+        else
+            Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
+        end
         isreduced=1;
     end
 
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
     % and Nn columns, Nsd is src/det pairs, Nw is number of wavelengths,
     % and Nn is the recon mesh, if present, or forward mesh node size.
-    blocks=structfun(@size, Jmua, 'UniformOutput', false);
+    if (isstruct(Jmua) && (length(Jmua) > 1))
+        for ii = 1:length(Jmua)
+            blocks(ii) = structfun(@size, Jmua(ii), 'UniformOutput', false);
+        end
+    else
+        blocks=structfun(@size, Jmua, 'UniformOutput', false);
+    end
     
     % flatten Jmua into a horizontally/column contatenated matrix
     if(strcmp(reform,'complex')==0)
-        [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0(:), detphi(:), reform);
+        [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0iter(:), detphi(:), reform);
     else
         Jflat=rbmatflat(Jmua);
-        misfit=detphi0(:)-detphi(:);
+        misfit=detphi0iter(:)-detphi(:);
     end
 
     % store the residual
@@ -265,7 +305,7 @@ for iter=1:maxiter
     dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
    
     % obtain linear index of each output species
-    len=cumsum([1; structfun(@(x) x(2), blocks)]);
+    len=cumsum([1; structfun(@(x) x(2), blocks(1))]);
     output=fieldnames(blocks);
     for i=1:length(output)
         dx=dmu_recon(len(i):len(i+1)-1);

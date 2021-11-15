@@ -47,9 +47,13 @@ if isstruct(phi)
 else
     if(isa(phi,'containers.Map'))
         wavelengths=phi.keys;
-        phi(1).phi = phi;
+        phitemp = phi; clear phi
+        phi(1).phi = phitemp;
+        clear phitemp
     else
-        phi(1).phi = containers.Map({''},{phi});
+        phitemp = phi; clear phi
+        phi(1).phi = containers.Map({''},{phitemp});
+        clear phitemp
     end
 end
 mode = 1:length(phi);
@@ -75,6 +79,9 @@ for waveid=wavelengths
         sdwv=sd;
     end
     for md = mode
+        if (size(sdwv,2) < 4)
+            sdwv(:,4) = md;
+        end
         sdmd = sdwv(((sdwv(:,3) == 1) & (sdwv(:,4) == md)),:);
         phiwv = phi(md).phi(wv);
         Jmua_node=zeros(size(sdmd,1),size(phiwv,1));
@@ -87,7 +94,7 @@ for waveid=wavelengths
             phidotphi1=phiwv(felem(i,1:4),sdmd(:,1)).*phiwv(felem(i,1:4),sdmd(:,2));
             phidotphi2=phiwv(felem(i,idx(1,:)),sdmd(:,1)).*phiwv(felem(i,idx(2,:)),sdmd(:,2));
             Jmua_elem(:,i)=-(sum(phidotphi1,1)+sum(phidotphi2,1)*0.5)*(0.1*evol(i));
-            if(nargout>2)
+            if(nargout>2 && ~isreal(phiwv))
                 Jcol=phidotphi1.'*deldotdel(i,[1 5 8 10]).';
                 Jcol=Jcol+phidotphi2.'*deldotdel(i,idx(3,:)).';
                 Jd_elem(:,i)=-Jcol;
@@ -95,7 +102,7 @@ for waveid=wavelengths
             for j=1:4
                 Jmua_node(:,felem(i,j))=Jmua_node(:,felem(i,j))+Jmua_elem(:,i);
             end
-            if(nargout>2)
+            if(nargout>2 && ~isreal(phiwv))
                 for j=1:4
                     Jd_node(:,felem(i,j))=Jd_node(:,felem(i,j))-Jcol;
                 end

@@ -31,7 +31,6 @@ function [detval, phi, Amat, rhs, sflag]=rbrunforward(cfg,varargin)
 %
 
 opt=varargin2struct(varargin{:});
-sd = jsonopt('sd',containers.Map({'690','830'},{[],[]}),opt);
 rfcw = jsonopt('rfcw',[1],opt);
 
 if(~isfield(cfg,'deldotdel'))
@@ -42,18 +41,21 @@ wavelengths={''};
 if(isa(cfg.prop,'containers.Map'))
    wavelengths=cfg.prop.keys;
 end
+sd = jsonopt('sd',containers.Map(wavelengths,cell(1,length(wavelengths))),opt);
+if (isempty(sd(wavelengths{1})))
+    sd = rbsdmap(cfg);
+    if (~isa(sd,'containers.Map'))
+        sd = containers.Map(wavelengths,{sd});
+    end
+end
 
 Amat=containers.Map();
 opt=varargin2struct(varargin{:});
 solverflag=jsonopt('solverflag',{},opt);
-if length(rfcw) < 2
-    detval=containers.Map();
-    phi=containers.Map();
-else
-    for md = rfcw
-        detval(md).detphi = containers.Map();
-        phi(md).phi = containers.Map();
-    end
+
+for md = rfcw
+    detval(md).detphi = containers.Map();
+    phi(md).phi = containers.Map();
 end
 
 

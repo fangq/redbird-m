@@ -43,7 +43,7 @@ end
 if exist('sd','var')
     activeOpt = unique(sd(:,1:2));
 else
-    activeOpt = size(optode,1) + size(widesrce,1);
+    activeOpt = size(optode,1) + size(widesrc,1);
 end
 
 if(size(optode,1)<1 && size(widesrc,1)<1)
