@@ -14,8 +14,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   prepare simulation input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 clear cfg cfg0 recon
+
+srcpattern = diag(ones(1,16))+diag(ones(1,15),-1);
+srcpattern(1,end)=1;
+srcpattern=permute(repmat(srcpattern,[1,1,16]),[2 3 1]);
+srcpattern=cat(3,srcpattern,permute(srcpattern,[2 1 3]));
+detpattern=srcpattern;
 
 s0=[90, 50, 20]; % center of the inclusion (in mm)
 rs=5;            % radius of the sphere (in mm)
@@ -36,6 +41,25 @@ cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg0.detdir=[0 0 -1];
 
+cfg0.srcpos = [cfg0.srcpos; 60 20 0];
+cfg0.srcid = 26;
+cfg0.srcparam1 = [80 0 0 0];
+cfg0.srcparam2 = [0 80 0 0];
+cfg0.srctype = 'pattern';
+cfg0.srcpattern = srcpattern;
+cfg0.srcweight = rand(1,32);
+
+cfg0.detpos = [cfg0.detpos; 60 20 60];
+cfg0.detid = 26;
+cfg0.detparam1 = [80 0 0 0];
+cfg0.detparam2 = [0 80 0 0];
+cfg0.dettype = 'pattern';
+cfg0.detpattern = srcpattern;
+cfg0.detweight = rand(1,32);
+% cfg0.widesrcid = containers.Map();
+% cfg0.widesrcid('690') = struct('srcid',26,'srcpattern',srcpattern,'srcweight',srcweight);
+% cfg0.widesrcid('830') = struct('srcid',26,'srcpattern',srcpattern,'srcweight',srcweight);
+
 cfg0.param=struct;
 cfg0.param.hbo=[15 45];
 cfg0.param.hbr=[4  12];
@@ -46,11 +70,11 @@ cfg0.prop = containers.Map();  % if both prop and param are defined, param will 
 cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
 cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
-cfg0.wavesrc = containers.Map({'690','830'},{[1:25],[1:25]});
-cfg0.wavedet = containers.Map({'690','830'},{[1:25],[1:25]});
+cfg0.wavesrc = containers.Map({'690','830'},{[1:13,26],[14:25,26]});
+cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:25],[26]});
 
-cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:2:25],[2:2:24]});
-cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:2:25],[2:2:24]});
+cfg0.wavedet = containers.Map({'690','830'},{[1:13,26],[14:25,26]});
+cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:25],[26]});
 
 wavelengths=cfg0.prop.keys;
 

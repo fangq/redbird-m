@@ -82,13 +82,15 @@ if(~isfield(cfg,'reff') || isempty(cfg.reff))
         cfg.musp0=bkprop(2)*(1-bkprop(3));
     end
 end
-if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
+if(isfield(cfg,'srctype') && ~isfield(cfg,'widesrc') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
     cfg.srcpos0=cfg.srcpos;
-    cfg.srcpos=rbsrc2bc(cfg);
+%     cfg.srcpos=rbsrc2bc(cfg);
+    cfg = rbsrc2bc(cfg);
 end
-if(isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
+if(isfield(cfg,'dettype') && ~isfield(cfg,'widedet') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
     cfg.detpos0=cfg.detpos;
-    cfg.detpos=rbsrc2bc(cfg,1);
+%     cfg.detpos=rbsrc2bc(cfg,1);
+    cfg = rbsrc2bc(cfg,1);
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))
     [cfg.rows,cfg.cols,cfg.idxcount]=rbfemnz(cfg.elem,size(cfg.node,1));

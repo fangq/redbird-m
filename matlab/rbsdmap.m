@@ -40,9 +40,25 @@ end
 
 srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
+if isfield(cfg,'widesrc')
+    widesrcnum = size(cfg.widesrc,1);
+    badwfsrc = find(sum(cfg.widesrc,2) == 0)';
+else
+    widesrcnum = 0;
+    badwfsrc = [];
+end
+if isfield(cfg,'widedet')
+    widedetnum = size(cfg.widedet,1);
+    badwfdet = find(sum(cfg.widedet,2) == 0)';
+else
+    widedetnum = 0;
+    badwfdet = [];
+end
+
 
 badsrc=jsonopt('excludesrc',[],opt);
 baddet=jsonopt('excludedet',[],opt);
+
 
 if(isfield(cfg,'srcpos') && ((size(cfg.srcpos,2) == size(cfg.face,1)) || (size(cfg.srcpos,2) == size(cfg.node,1))) )
     dist=zeros(srcnum,detnum);
@@ -51,50 +67,62 @@ else
 end
 
 goodsrc=sort(setdiff(1:srcnum,badsrc));
-gooddet=sort(setdiff(1:detnum,baddet));
+goodwfsrc = sort(setdiff(1:widesrcnum,badwfsrc));
+if ~isempty(goodwfsrc)
+    goodwfsrc = goodwfsrc+srcnum;
+end
+gooddet=sort(setdiff(1:detnum+widedetnum,baddet));
+goodwfdet = sort(setdiff(1:widedetnum,badwfdet));
+if ~isempty(goodwfdet)
+    goodwfdet = goodwfdet+detnum;
+end
 
 if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
     wavelengths=cfg.prop.keys;
     sd=containers.Map();
-    [ss,dd]=meshgrid(goodsrc,srcnum+gooddet);
+    [ss,dd]=meshgrid([goodsrc goodwfsrc],srcnum+widesrcnum+[gooddet goodwfdet]);
 
     for wv=wavelengths
         wid=wv{1};
-        if((isfield(opt,'wavesrc') && ~isempty(opt.wavesrc)) || ...
-           (isfield(opt,'wavedet') && ~isempty(opt.wavedet)))
-             wavesrc=jsonopt('wavesrc',containers.Map({wid},{[]}), opt);
-             if(~isempty(wavesrc(wid)))
-                wavesrc = intersect(goodsrc,wavesrc(wid));
-             else
-                wavesrc=setdiff(goodsrc,wavesrc(wid));
-             end
-             wavedet=jsonopt('wavedet',containers.Map({wid},{[]}), opt);
-             if(~isempty(wavedet(wid)))
-                wavedet = intersect(goodsrc,wavedet(wid));
-             else
-                wavedet=setdiff(goodsrc,wavedet(wid));
-             end
-             [ss,dd]=meshgrid(wavesrc,srcnum+wavedet);
-        elseif ((isfield(cfg,'wavesrc') && ~isempty(cfg.wavesrc)) || ...
+        if (isfield(cfg,'wfsrcmapping'))
+            wfsrcmap = cfg.wfsrcmapping(wid);
+        end
+        if (isfield(cfg,'wfdetmapping'))
+            wfdetmap = cfg.wfdetmapping(wid);
+        end
+        
+        if ((isfield(cfg,'wavesrc') && ~isempty(cfg.wavesrc)) || ...
            (isfield(cfg,'wavedet') && ~isempty(cfg.wavedet)))
              if(~isempty(cfg.wavesrc(wid)))
-                wavesrc = intersect(goodsrc,cfg.wavesrc(wid));
+                 wavesrc = cfg.wavesrc(wid);
+                 if exist('wfsrcmap','var')
+                     wavesrc = rbremapsrc(wavesrc,wfsrcmap,srcnum);
+                 end
+                 wavesrc = intersect([goodsrc goodwfsrc],wavesrc);
              else
-                wavesrc = setdiff(goodsrc,cfg.wavesrc(wid));
+                 wavesrc = goodsrc;
              end
              if(~isempty(cfg.wavedet(wid)))
-                wavedet = intersect(goodsrc,cfg.wavedet(wid));
+                 wavedet  = cfg.wavedet(wid);
+                 if exist('wfdetmap','var')
+                     wavedet = rbremapsrc(wavedet,wfdetmap,detnum);
+                 end
+                 wavedet = intersect([gooddet goodwfdet],wavedet);
              else
-                wavedet = setdiff(goodsrc,cfg.wavedet(wid));
+                wavedet = gooddet;
              end
-             [ss,dd]=meshgrid(wavesrc,srcnum+wavedet);
+             [ss,dd]=meshgrid(wavesrc,srcnum+widesrcnum+wavedet);
         end
         sdwv=[ss(:),dd(:)];
 %         if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))
-        if( isinf(maxdist) )
-            sdwv(:,3)=1;
+        if( ~isinf(maxdist) )
+            [s2,d2] = meshgrid(1:srcnum,(1:detnum)+srcnum+widesrcnum);
+            sd2 = [s2(:) d2(:)];
+            [~,idx] = ismember(sdwv,sd2,'rows');idx = idx(find(idx));
+            sdwv(:,3) = 1;
+            sdwv(idx,3)=(dist(:)<maxdist);
         else
-            sdwv(:,3)=(dist(:)<maxdist);
+            sdwv(:,3) = 1;
         end
         
         if (isfield(cfg,'rfcw'))
@@ -102,7 +130,14 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
             for md = modes
                 mid = md{1};
                 mdSRC = cfg.rfcw.src(mid);
-                mdDET = cfg.rfcw.det(mid) + srcnum;
+                if (exist('wfsrcmap','var') && any(ismember(wfsrcmap(:,1),mdSRC)))
+                    mdSRC = rbremapsrc(mdSRC,wfsrcmap,srcnum);
+                end
+                mdDET = cfg.rfcw.det(mid);
+                if (exist('wfdetmap','var') && any(ismember(wfdetmap(:,1),mdDET)))
+                    mdDET = rbremapsrc(mdSRC,wfdetmap,detnum);
+                end
+                mdDET = mdDET + srcnum + widesrcnum;
                 
                 mdChan = (ismember(sdwv(:,1), mdSRC) & ismember(sdwv(:,2),mdDET));
                 if strcmp(mid,'RF')
@@ -112,6 +147,7 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                 end
             end
         end
+        sdwv((sdwv(:,3) == 0 | sdwv(:,4) == 0),:) = [];
         sd(wid)=sdwv;
     end
 else
@@ -121,5 +157,19 @@ else
         sd(:,3)=1;
     else
         sd(:,3)=(dist(:)<maxdist);
+    end
+end
+
+
+function remap = rbremapsrc(sourcelist,wflist,srcnum)
+if (isempty(intersect(sourcelist,wflist)) && ~isempty(wflist))
+    remap = sourcelist;
+else
+    [idA,idB] = ismember(wflist(:,1),sourcelist);
+    remap = sourcelist;
+    remap(idB(find(idB))) = [];
+    wf = wflist(idA,:);
+    for ii = 1:size(wf,1)
+        remap = [remap srcnum+(wf(ii,2):wf(ii,3))];
     end
 end
