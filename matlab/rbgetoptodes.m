@@ -1,10 +1,12 @@
-function [pointsrc, widesrc]=rbgetoptodes(cfg)
+function [pointsrc,pointdet,widesrc,widedet]=rbgetoptodes(cfg,wv)
 %
 % [pointsrc, widesrc]=rbgetoptodes(cfg)
 %
 % Return the combined list of point optodes (sources+dectors) and widefield
 % optodes; In a simulation, all sources, or indenpently, all dectors, can
 % only be either point sources or widefield sources.
+%
+% Edit 2021/11/15 : Now supports simultaneous point source and widefield detectors
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
@@ -23,23 +25,28 @@ function [pointsrc, widesrc]=rbgetoptodes(cfg)
 % -- this function is part of Redbird-m toolbox
 %
 
-pointsrc=[];
+pointsrc=[];        % EXu - Separated source and detector so easier to concatenate in rbfemrhs
+pointdet = [];
 widesrc=[];
+widedet = [];
 
-ltr=rbgetltr(cfg);
+if nargin>1
+    ltr = rbgetltr(cfg,wv);
+else
+    ltr = rbgetltr(cfg);
+end
 
 if(isfield(cfg,'srcpos') && ~isempty(cfg.srcpos))
-    if(size(cfg.srcpos,2) == size(cfg.node,1))
-        widesrc=cfg.srcpos;
-    else
-        pointsrc=cfg.srcpos+repmat(cfg.srcdir*ltr,size(cfg.srcpos,1),1);
-    end
+    pointsrc=cfg.srcpos+repmat(cfg.srcdir*ltr,size(cfg.srcpos,1),1);
+end
+if (isfield(cfg,'widesrc') && ~isempty(cfg.widesrc))
+    widesrc=cfg.widesrc;
 end
 
 if(isfield(cfg,'detpos') && ~isempty(cfg.detpos))
-    if(size(cfg.detpos,2) == size(cfg.node,1))
-        widesrc=[widesrc; cfg.detpos];
-    else
-        pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
-    end
+%     pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
+    pointdet = cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1);
+end
+if(isfield(cfg,'widedet') && ~isempty(cfg.widedet))
+    widedet = cfg.widedet;
 end

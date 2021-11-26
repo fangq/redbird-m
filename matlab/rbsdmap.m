@@ -21,7 +21,7 @@ function [sd,dist]=rbsdmap(cfg,varargin)
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || isempty(cfg.detpos))
+if((~isfield(cfg,'srcpos') && ~isfield(cfg,'widesrc')) || (isempty(cfg.srcpos) && ~isfield(cfg,'widesrc')) || (~isfield(cfg,'detpos') && ~isfield(cfg,'widedet')) || (isempty(cfg.detpos) && ~isfield(cfg,'widedet')))
     error('you must define at least 1 source and 1 detector in order to use this function');
 end
 
@@ -127,6 +127,7 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
         
         if (isfield(cfg,'rfcw'))
             modes = cfg.rfcw.src.keys;
+            sdwv(:,4) = zeros(size(sdwv,1),1);
             for md = modes
                 mid = md{1};
                 mdSRC = cfg.rfcw.src(mid);
@@ -141,9 +142,9 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                 
                 mdChan = (ismember(sdwv(:,1), mdSRC) & ismember(sdwv(:,2),mdDET));
                 if strcmp(mid,'RF')
-                    sdwv(mdChan,4) = 1;
+                    sdwv(mdChan,4) = sdwv(mdChan,4) + 1;
                 elseif strcmp(mid,'CW')
-                    sdwv(mdChan,4) = 2;
+                    sdwv(mdChan,4) = sdwv(mdChan,4) + 2;
                 end
             end
         end

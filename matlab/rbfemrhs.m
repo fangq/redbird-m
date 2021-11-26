@@ -33,50 +33,50 @@ function [rhs,loc,bary,optode]=rbfemrhs(cfg,sd,wv,md)
 if (nargin > 2)
     sd = sd(wv);
     if (nargin > 3 && size(sd,2) > 3)
-        sd = sd(sd(:,4) == md,:);
+        sd = sd((sd(:,4) == md | sd(:,4) == 3),:);
     end
+    [optsrc,optdet,widesrc,widedet]=rbgetoptodes(cfg,wv);
+else
+    [optsrc,optdet,widesrc,widedet]=rbgetoptodes(cfg);
 end
-
-
-[optode,widesrc]=rbgetoptodes(cfg);
 
 if exist('sd','var')
     activeOpt = unique(sd(:,1:2));
 else
-    activeOpt = size(optode,1) + size(widesrc,1);
+    activeOpt = size([optsrc;optdet],1) + size([widesrc;widedet],1);
 end
 
-if(size(optode,1)<1 && size(widesrc,1)<1)
+if((size(optsrc,1)<1 && size(widesrc,1)<1) || (size(optdet,1)<1 && size(widedet,1)<1))
     error('you must provide at least one source or detector');
 end
 
-% loc=[];
-% bary=[];
+loc=[];
+bary=[];
 
-if(~isempty(widesrc) && (size(widesrc,2) == size(cfg.node,1)))
-    rhs=widesrc.';
-    loc=nan*ones(1,size(widesrc,1));
-    bary=nan*ones(size(widesrc,1),4);
-else
-    loc = nan*ones(size(optode,1),1);
-    bary = nan*ones(size(optode,1),4);
+rhs=sparse(size(cfg.node,1),size([widesrc;widedet],1)+size([optsrc;optdet],1));
+[locsrc,barysrc] = tsearchn(cfg.node,cfg.elem,optsrc);
+[locdet,barydet] = tsearchn(cfg.node,cfg.elem,optdet);
+
+rhsoptsrc = point2rhs(optsrc,locsrc,barysrc,cfg);
+rhsoptdet = point2rhs(optdet,locdet,barydet,cfg);
+
+loc = [locsrc; nan*ones(size(widesrc,1),1); locdet; nan*ones(size(widedet,1),1)];
+bary = [barysrc; nan*ones(size(widesrc,1),4); barydet; nan*ones(size(widesrc,1),4)];
+
+rhs = [rhsoptsrc widesrc' rhsoptdet widedet'];
+
+inactive = setdiff(1:size(rhs,2),activeOpt);
+rhs(:,inactive) = 0;
+
+
+function optoderhs = point2rhs(srcs,locidx,baryc,cfg)
+if (size(srcs,1) ~= size(baryc,1))
+    error('barycentric indices should equal number of sources or detectors')
 end
 
-if(isempty(optode))
-    return;
-end
-
-rhs=sparse(size(cfg.node,1),size(widesrc,1)+size(optode,1));
-[newloc, newbary]=tsearchn(cfg.node,cfg.elem,optode(activeOpt,:));
-
-% loc=[loc; newloc];
-% bary=[bary; newbary];
-loc(activeOpt,:) = newloc;
-bary(activeOpt,:) = newbary;
-
-for i=1:size(activeOpt,1)
-    if(~isnan(newloc(i)))
-%         rhs(cfg.elem(newloc(i),:),i+size(widesrc,1))=newbary(i,:)';
-        rhs(cfg.elem(newloc(i),:),activeOpt(i))=newbary(i,:)';
+optoderhs = zeros(size(cfg.node,1),size(srcs,1));
+for ii = 1:size(srcs,1)
+    if ~isnan(locidx(ii))
+        optoderhs(cfg.elem(locidx(ii),:),ii) = baryc(ii,:)';
     end
 end

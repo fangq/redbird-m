@@ -35,14 +35,29 @@ end
 
 srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
+if isfield(cfg,'widesrc')
+    wfsrcnum = size(cfg.widesrc,1);
+else
+    wfsrcnum = 0;
+end
+if isfield(cfg,'widedet')
+    wfdetnum = size(cfg.widedet,1);
+else
+    wfdetnum = 0;
+end
 
-goodsrc = find(~isnan(optodeloc(1:srcnum)));
-goodidx=find(~isnan(optodeloc(srcnum+1:srcnum+detnum)));
+goodsrc = find(~isnan(optodeloc(1:srcnum+wfsrcnum)));
+goodidx=find(~isnan(optodeloc(srcnum+wfsrcnum+1:srcnum+wfsrcnum+detnum+wfdetnum)));
 detval=zeros(length(goodidx),length(goodsrc));
 gooddetval=zeros(srcnum,detnum);
 
 if(nargin==3)
-    detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
+%     detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
+    [~,goodsrc] = find(optodeloc(:,1:srcnum+wfsrcnum));
+    goodsrc = unique(goodsrc);
+    [~,goodidx] = find(optodeloc(:,srcnum+wfsrcnum+1:srcnum+wfsrcnum+detnum+wfdetnum));
+    goodidx = unique(goodidx);
+    detval=optodeloc(:,goodidx+srcnum+wfsrcnum)'*phi(:,goodsrc);
 elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field det
     for i=1:srcnum
         for j=1:detnum

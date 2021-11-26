@@ -6,10 +6,10 @@
 %
 % This file is part of Redbird URL:http://mcx.sf.net/mmc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% if(~exist('rbrun','file'))
-%     addpath(fullfile(pwd, '../matlab'));
-% end
+
+if(~exist('rbrun','file'))
+    addpath(fullfile(pwd, '../matlab'));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   prepare simulation input
@@ -17,7 +17,7 @@
 
 clear cfg cfg0 recon
 
-s0=[90, 50, 20]; % center of the inclusion (in mm)
+s0=[70, 50, 20]; % center of the inclusion (in mm)
 rs=5;            % radius of the sphere (in mm)
 
 [nobbx,fcbbx]=meshabox([40 0 0], [160, 120, 60], 10);
@@ -26,12 +26,9 @@ rs=5;            % radius of the sphere (in mm)
 
 [cfg0.node, cfg0.elem]=s2m(no,fc(:,1:3),1,40,'tetgen',[41 1 1;s0]);
 
-% [cfg0.node,~,cfg0.elem] = meshabox([40 0 0], [160, 120, 60], 10);
-
 %[cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn=size(cfg0.node,1);
 cfg0.seg=cfg0.elem(:,5);
-% cfg0.seg = ones(nn,1);
 cfg0.srcdir=[0 0 1];
 
 [xi,yi]=meshgrid(60:20:140,20:20:100);
@@ -39,20 +36,18 @@ cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg0.detdir=[0 0 -1];
 
-% cfg0.param=struct;
-% cfg0.param.hbo=[15 30];
-% cfg0.param.hbr=[4  8];
-% cfg0.param.scatamp = [2.3 2.3];
-% cfg0.param.scatpow = [2 2];
+cfg0.param=struct;
+cfg0.param.hbo=[15 30];
+cfg0.param.hbr=[4  8];
 
 cfg0.prop = containers.Map();  % if both prop and param are defined, param will ovewrite prop
-cfg0.prop('690')=[0 0 1 1; 0.008   1 0 1.37; 0.032 2 0 1.37];
-cfg0.prop('830')=[0 0 1 1; 0.005 0.7 0 1.37; 0.020 1.4 0 1.37];
+cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
+cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
 wavelengths=cfg0.prop.keys;
 
 cfg0.omega=2*pi*70e6;
-% cfg0.omega=0;
+cfg0.omega=0;
 
 cfg=cfg0;
 
@@ -81,29 +76,25 @@ clear face
 %%   run bulk fitting first
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-sd = rbsdmap(cfg);
-% sd=rbsdmap(cfg,'wavesrc',containers.Map({'690','830'},{[1:2:25],[1:2:25]}));
-% recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
-% recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
-recon.bulk=struct('hbo',8,'hbr',2,'scatamp',1,'scatpow',1.5); % Required: this gives initial guesses
-recon.param=struct('hbo',8,'hbr',2,'scatamp',1,'scatpow',1.5); % Required: this defines chromophores
+sd=rbsdmap(cfg);
+recon.bulk=struct('hbo',8,'hbr',2); % Required: this gives initial guesses
+recon.param=struct('hbo',8,'hbr',2); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
-[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','reform','logphase','lambda',5e-3);
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'bulk');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   take the fitted bulk and set it for full image recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-recon.bulk = newrecon.param;
-[newreconCW,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');
+recon.bulk.hbo=newrecon.param.hbo;
+recon.bulk.hbr=newrecon.param.hbr;
+[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'image');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-figure,
-plotmesh([newreconCW.node,newreconCW.param.hbo(:)+newreconCW.param.hbr(:)],newreconCW.elem,'z=20','facecolor','interp','linestyle','none')
+plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
-plotmesh([newreconCW.node,newreconCW.param.hbo(:)+newreconCW.param.hbr(:)],newreconCW.elem,'x=90','facecolor','interp','linestyle','none')
+plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'x=70','facecolor','interp','linestyle','none')
 view(3);

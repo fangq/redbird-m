@@ -257,8 +257,13 @@ for wv = wavelengths
             rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
         end
         srcbc=rhs.';
+        if exist('srcpattern','var')
+            patsize = size(srcpattern,1);
+        else
+            patsize = 1;
+        end
         
-        indices = [(size(widesrc,1) + 1) (size(widesrc,1) + size(srcpattern,1))];
+        indices = [(size(widesrc,1) + 1) (size(widesrc,1) + patsize)];
         widesrc = [widesrc; full(srcbc)];
         srcmapping = [srcmapping;srcid indices];
     end

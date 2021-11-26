@@ -82,7 +82,7 @@ for waveid=wavelengths
         if (size(sdwv,2) < 4)
             sdwv(:,4) = md;
         end
-        sdmd = sdwv(((sdwv(:,3) == 1) & (sdwv(:,4) == md)),:);
+        sdmd = sdwv(((sdwv(:,3) == 1) & (sdwv(:,4) == md | sdwv(:,4) == 3)),:);
         phiwv = phi(md).phi(wv);
         Jmua_node=zeros(size(sdmd,1),size(phiwv,1));
         Jmua_elem=zeros(size(sdmd,1),nelem);

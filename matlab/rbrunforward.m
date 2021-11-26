@@ -88,7 +88,7 @@ for waveid=wavelengths
         %%   Extract detector readings from the solutions
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        detval(md).detphi(wv)=rbfemgetdet(phi(md).phi(wv), cfg, loc, bary); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
+        detval(md).detphi(wv)=rbfemgetdet(phi(md).phi(wv), cfg, rhs); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
     end
 end
 

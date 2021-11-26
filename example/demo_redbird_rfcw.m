@@ -36,29 +36,26 @@ nn=size(cfg0.node,1);
 cfg0.seg=cfg0.elem(:,5);
 cfg0.srcdir=[0 0 1];
 
-[xi,yi]=meshgrid(60:20:140,20:20:100);
+[xi,yi]=meshgrid(60:40:140,20:40:100);
 cfg0.srcpos=[xi(:),yi(:),zeros(numel(yi),1)];
 cfg0.detpos=[xi(:),yi(:),60*ones(numel(yi),1)];
 cfg0.detdir=[0 0 -1];
 
 cfg0.srcpos = [cfg0.srcpos; 60 20 0];
-cfg0.srcid = 26;
+cfg0.srcid = 10;
 cfg0.srcparam1 = [80 0 0 0];
 cfg0.srcparam2 = [0 80 0 0];
 cfg0.srctype = 'pattern';
 cfg0.srcpattern = srcpattern;
-cfg0.srcweight = rand(1,32);
+cfg0.srcweight = ones(1,32);
 
 cfg0.detpos = [cfg0.detpos; 60 20 60];
-cfg0.detid = 26;
+cfg0.detid = 10;
 cfg0.detparam1 = [80 0 0 0];
 cfg0.detparam2 = [0 80 0 0];
 cfg0.dettype = 'pattern';
 cfg0.detpattern = srcpattern;
-cfg0.detweight = rand(1,32);
-% cfg0.widesrcid = containers.Map();
-% cfg0.widesrcid('690') = struct('srcid',26,'srcpattern',srcpattern,'srcweight',srcweight);
-% cfg0.widesrcid('830') = struct('srcid',26,'srcpattern',srcpattern,'srcweight',srcweight);
+cfg0.detweight = ones(1,32);
 
 cfg0.param=struct;
 cfg0.param.hbo=[15 45];
@@ -70,11 +67,18 @@ cfg0.prop = containers.Map();  % if both prop and param are defined, param will 
 cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
 cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
 
-cfg0.wavesrc = containers.Map({'690','830'},{[1:13,26],[14:25,26]});
-cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:25],[26]});
 
-cfg0.wavedet = containers.Map({'690','830'},{[1:13,26],[14:25,26]});
-cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:25],[26]});
+% cfg0.wavesrc = containers.Map({'690','830'},{[1:9],[1:9]});
+% cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:9],[1:9]});
+% 
+% cfg0.wavedet = containers.Map({'690','830'},{[1:9],[1:9]});
+% cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:9],[1:9]});
+
+cfg0.wavesrc = containers.Map({'690','830'},{[1:10],[1:10]});
+cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:9],[10]});
+
+cfg0.wavedet = containers.Map({'690','830'},{[1:10],[1:10]});
+cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:9],[10]});
 
 wavelengths=cfg0.prop.keys;
 
@@ -122,7 +126,7 @@ recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
 
 %%
 
-[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw,'lambda',1e-3,'maxiter',15);
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw,'lambda',1e-3,'maxiter',10);
 
 recon.bulk = newrecon.param;
 
@@ -130,7 +134,7 @@ recon.bulk = newrecon.param;
 %%   take the fitted bulk and set it for full image recon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'mode','image','reform','logphase');
+[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'mode','image','reform','logphase','rfcw',rfcw,'lambda',1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
