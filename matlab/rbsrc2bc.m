@@ -38,7 +38,7 @@ if (~isdet)
     sources = cfg.srcpos;
     if isfield(cfg,'widesrcid')
         widesrcid = cfg.widesrcid;
-        if ~isa(widesrcID,'containers.Map')
+        if ~isa(widesrcid,'containers.Map')
             widesrcid = containers.Map({''},{widesrcid});
         end
     else
@@ -69,7 +69,7 @@ else
     sources = cfg.detpos;
     if isfield(cfg,'widedetid')
         widesrcid = cfg.widedetid;
-        if ~isa(widesrcID,'containers.Map')
+        if ~isa(widesrcid,'containers.Map')
             widesrcid = containers.Map({''},{widesrcid});
         end
     else

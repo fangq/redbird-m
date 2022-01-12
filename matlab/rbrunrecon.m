@@ -150,6 +150,8 @@ for iter=1:maxiter
     
     if isfield(recon,'param')
         recon.param
+    elseif (size(recon.prop,1) < 6)
+        recon.prop
     end
     if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node))
         figure(5),plotmesh([recon.node recon.param.hbo],recon.elem,'z=20');colorbar;shading interp
@@ -224,8 +226,11 @@ for iter=1:maxiter
     else  % recon mua/d per wavelengths
         if(exist('Jd','var'))
             Jmua=struct('mua',Jmua,'dcoeff',Jd);
-            detphi0iter = detphi0;
-            detphi = detphi;
+            sdkeep = find(sd(:,3) == 1);
+            detphi0iter = detphi0(:);
+            detphi = detphi(:);
+            detphi0iter = detphi0iter(sdkeep);
+            detphi = detphi(sdkeep);
         else
             Jmua=struct('mua',Jmua);
             detphi0iter = detphi0;

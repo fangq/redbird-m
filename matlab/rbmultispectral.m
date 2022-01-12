@@ -85,7 +85,6 @@ end
 
 if(~isa(y0,'containers.Map') && ~isfield(y0,'detphi'))
     newy0=y0;
-    newphi=phi;
 else
     if isstruct(y0)
         wv = keys(y0(1).detphi);
@@ -93,32 +92,56 @@ else
     else
         wv=keys(y0);
         rfcw = 1;
-        temp = struct('y0',y0,'phi',phi);clear y0 phi
-        y0(1).detphi = temp.y0;
-        phi(1).detphi = temp.phi;
-        clear temp
+        temp = struct('y0',y0);clear y0
+        y0(1).detphi = temp.y0;     clear temp
     end
     newy0 = struct('detphi',cell(1,rfcw));
-    newphi = struct('detphi',cell(1,rfcw));
     for i=1:length(wv)
+        sdwv = sd(wv{i});
         for j = 1:rfcw
-            newy0(j).detphi = [newy0(j).detphi; reshape(y0(j).detphi(wv{i}),[],1)];
-            newphi(j).detphi = [newphi(j).detphi; reshape(phi(j).detphi(wv{i}),[],1)];
+            tempphi = reshape(y0(j).detphi(wv{i}),[],1);
+            sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
+            tempphi = tempphi(find(sdtemp(:,3)));
+            newy0(j).detphi = [newy0(j).detphi; tempphi];   clear tempphi
         end
     end
     
     if (length(newy0) == 1)
         newy0 = newy0(1).detphi;
+    end
+end
+
+
+if(~isa(phi,'containers.Map') && ~isfield(phi,'detphi'))
+    newphi=phi;
+else
+    if isstruct(y0)
+        wv = keys(phi(1).detphi);
+        rfcw = length(phi);
+    else
+        wv=keys(y0);
+        rfcw = 1;
+        temp = struct('phi',phi);   clear phi
+        phi(1).detphi = temp.phi;   clear temp
+    end
+    newphi = struct('detphi',cell(1,rfcw));
+    for i=1:length(wv)
+        sdwv = sd(wv{i});
+        for j = 1:rfcw
+            tempphi = reshape(phi(j).detphi(wv{i}),[],1);
+            sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
+            tempphi = tempphi(find(sdtemp(:,3)));
+            newphi(j).detphi = [newphi(j).detphi; tempphi];  clear tempphi sdtemp
+        end
+    end
+    
+    if (length(newphi) == 1)
         newphi = newphi(1).detphi;
     end
 end
 
-% 
-% 
-% if(~isa(phi,'containers.Map'))
-%     newphi=phi;
-% else
-%     wv=keys(phi);
+
+
 %     for i=1:length(wv)
 %          if(~isa(sd,'containers.Map'))
 %             [~,sdwv] = intersect(sdAll,sd,'rows');
@@ -131,4 +154,3 @@ end
 %         newphi=[newphi; newphitemp(sdwv)];
 %         clear newphitemp
 %     end
-% end

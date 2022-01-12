@@ -15,7 +15,7 @@ addpath(fullfile(pwd, '../matlab'));
 
 clear cfg xcfg
 
-[cfg.node, cfg.elem]=meshgrid6(0:2:60,0:2:60,0:2:30);
+[cfg.node, cfg.elem]=meshgrid6(0:1.5:60,0:1.5:60,0:1.5:60);
 cfg.elem(:,1:4)=meshreorient(cfg.node(:,1:3),cfg.elem(:,1:4));
 cfg.face=volface(cfg.elem);
 
@@ -29,7 +29,7 @@ cfg.prop=[0 0 1 1;0.005 1 0 1.37];
 cfg.omega=0;
 
 cfg.detpos=[40 30 0];
-cfg.detdir=[0 0 -1];
+cfg.detdir=[0 0 1];
 
 cfg=rbmeshprep(cfg);
 
@@ -74,10 +74,10 @@ sd=rbsdmap(cfg);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Analytical solution
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+figure,
 if(exist('mcxlab','file'))
         xcfg.nphoton=1e8;
-        xcfg.vol=uint8(ones(60,60,30));
+        xcfg.vol=uint8(ones(60,60,60));
         xcfg.srcdir=[0 0 1 0];
         xcfg.gpuid=2;
         xcfg.autopilot=1;
@@ -87,7 +87,7 @@ if(exist('mcxlab','file'))
         xcfg.tstep=5e-9;
         xcfg.seed=99999;
         xcfg.issrcfrom0=0;
-        xcfg.isreflect=0;
+        xcfg.isreflect=1;
 
         % a uniform planar source outside the volume
         xcfg.srctype='pencil';
@@ -98,7 +98,7 @@ if(exist('mcxlab','file'))
         subplot(211);
         imagesc(rot90(log10(abs(squeeze(fcw(:,30,:))))))
         axis equal; colorbar
-        set(gca,'xlim',[0 60],'ylim',[0 30])
+        set(gca,'xlim',[0 60],'ylim',[0 60])
         title('MCX solution');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,8 +118,8 @@ title('Redbird solution');
 %%   Comparison
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clines = 0:-0.5:-5;
-[xi,yi] = meshgrid(0.5:59.5,0.5:29.5);
+clines = 0:-0.5:-8;
+[xi,yi] = meshgrid(0.5:59.5,0.5:59.5);
 [cutpos,cutvalue,facedata] = qmeshcut(cfg.elem,cfg.node,phi(:,1),'x=29.5');
 vphi = griddata(cutpos(:,2),cutpos(:,3),cutvalue,xi+0.5,yi+0.5);
 

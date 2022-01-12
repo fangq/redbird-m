@@ -37,10 +37,10 @@ cfg0.detdir=[0 0 -1];
 cfg0.prop=[
     0 0 1 1
     0.008 1 0 1.37
-    0.016 1 0 1.37
+    0.016 1.2 0 1.37
 ];
 
-cfg0.omega=0;
+cfg0.omega=67.5e6*2*pi;
 
 cfg=cfg0;
 
@@ -80,7 +80,7 @@ cfg.prop=cfg.prop(ones(size(cfg.node,1),1)+1,:);
 cfg=rmfield(cfg,'seg');
 
 % run stream-lined image reconstruction
-[newrecon,resid,newcfg]=rbrun(cfg,recon,detphi0,sd,'mex',0);
+[newrecon,resid,newcfg,~,~,phi]=rbrun(cfg,recon,detphi0,sd,'mex',0,'maxiter',5);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

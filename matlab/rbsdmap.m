@@ -55,15 +55,32 @@ else
     badwfdet = [];
 end
 
-
-badsrc=jsonopt('excludesrc',[],opt);
-baddet=jsonopt('excludedet',[],opt);
+if isfield(cfg,'excludesrc')
+    badsrc = cfg.excludesrc;
+else
+    badsrc=jsonopt('excludesrc',[],opt);
+end
+if isfield(cfg,'excludedet')
+    baddet = cfg.excludedet;
+else
+    baddet=jsonopt('excludedet',[],opt);
+end
 
 
 if(isfield(cfg,'srcpos') && ((size(cfg.srcpos,2) == size(cfg.face,1)) || (size(cfg.srcpos,2) == size(cfg.node,1))) )
     dist=zeros(srcnum,detnum);
 else
-    dist=rbgetdistance(cfg.srcpos,cfg.detpos,badsrc,baddet);
+    if isfield(cfg,'widesrc')
+        widesrc = cfg.widesrc;
+    else
+        widesrc = [];
+    end
+    if isfield(cfg,'widedet')
+        widedet = cfg.widedet;
+    else
+        widedet = [];
+    end
+    dist=rbgetdistance(cfg.srcpos,cfg.detpos,badsrc,baddet,widesrc,widedet,cfg)';
 end
 
 goodsrc=sort(setdiff(1:srcnum,badsrc));
@@ -71,7 +88,7 @@ goodwfsrc = sort(setdiff(1:widesrcnum,badwfsrc));
 if ~isempty(goodwfsrc)
     goodwfsrc = goodwfsrc+srcnum;
 end
-gooddet=sort(setdiff(1:detnum+widedetnum,baddet));
+gooddet=sort(setdiff(1:detnum,baddet));
 goodwfdet = sort(setdiff(1:widedetnum,badwfdet));
 if ~isempty(goodwfdet)
     goodwfdet = goodwfdet+detnum;
@@ -120,7 +137,8 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
             sd2 = [s2(:) d2(:)];
             [~,idx] = ismember(sdwv,sd2,'rows');idx = idx(find(idx));
             sdwv(:,3) = 1;
-            sdwv(idx,3)=(dist(:)<maxdist);
+            sdwv(:,3)=(reshape(dist(unique(sdwv(:,2)) - (srcnum+widesrcnum),unique(sdwv(:,1))),[],1)<maxdist);
+            %sdwv(idx,3)=(dist(:)<maxdist);
         else
             sdwv(:,3) = 1;
         end
@@ -136,7 +154,7 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                 end
                 mdDET = cfg.rfcw.det(mid);
                 if (exist('wfdetmap','var') && any(ismember(wfdetmap(:,1),mdDET)))
-                    mdDET = rbremapsrc(mdSRC,wfdetmap,detnum);
+                    mdDET = rbremapsrc(mdDET,wfdetmap,detnum);
                 end
                 mdDET = mdDET + srcnum + widesrcnum;
                 
@@ -147,12 +165,15 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                     sdwv(mdChan,4) = sdwv(mdChan,4) + 2;
                 end
             end
+            sdwv(sdwv(:,4)==0,:) = [];
+%             sdwv((sdwv(:,3) == 0 | sdwv(:,4) == 0),:) = [];
+        else
+            sdwv((sdwv(:,3) == 0),:) = [];
         end
-        sdwv((sdwv(:,3) == 0 | sdwv(:,4) == 0),:) = [];
         sd(wid)=sdwv;
     end
 else
-    [ss,dd]=meshgrid(goodsrc,srcnum+gooddet);
+    [ss,dd]=meshgrid([goodsrc goodwfsrc+srcnum],[gooddet goodwfdet+detnum]+(srcnum+widesrcnum));
     sd=[ss(:),dd(:)];
     if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))
         sd(:,3)=1;

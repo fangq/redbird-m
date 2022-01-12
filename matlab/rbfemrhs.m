@@ -34,6 +34,9 @@ if (nargin > 2)
     sd = sd(wv);
     if (nargin > 3 && size(sd,2) > 3)
         sd = sd((sd(:,4) == md | sd(:,4) == 3),:);
+        if (isfield(cfg,'rhsweight') && isstruct(cfg.rhsweight))
+            rhsweight = cfg.rhsweight(md).weight;
+        end
     end
     [optsrc,optdet,widesrc,widedet]=rbgetoptodes(cfg,wv);
 else
@@ -43,7 +46,7 @@ end
 if exist('sd','var')
     activeOpt = unique(sd(:,1:2));
 else
-    activeOpt = size([optsrc;optdet],1) + size([widesrc;widedet],1);
+    activeOpt = 1:size([optsrc;optdet],1) + size([widesrc;widedet],1);
 end
 
 if((size(optsrc,1)<1 && size(widesrc,1)<1) || (size(optdet,1)<1 && size(widedet,1)<1))
@@ -54,11 +57,21 @@ loc=[];
 bary=[];
 
 rhs=sparse(size(cfg.node,1),size([widesrc;widedet],1)+size([optsrc;optdet],1));
-[locsrc,barysrc] = tsearchn(cfg.node,cfg.elem,optsrc);
-[locdet,barydet] = tsearchn(cfg.node,cfg.elem,optdet);
+if ~isempty(optsrc)
+    [locsrc,barysrc] = tsearchn(cfg.node,cfg.elem,optsrc);
+    rhsoptsrc = point2rhs(optsrc,locsrc,barysrc,cfg);
+else
+    locsrc = [];barysrc = [];
+    rhsoptsrc = [];
+end
+if ~isempty(optdet)
+    [locdet,barydet] = tsearchn(cfg.node,cfg.elem,optdet);
+    rhsoptdet = point2rhs(optdet,locdet,barydet,cfg);
+else
+    locdet = [];barydet = [];
+    rhsoptdet = [];
+end
 
-rhsoptsrc = point2rhs(optsrc,locsrc,barysrc,cfg);
-rhsoptdet = point2rhs(optdet,locdet,barydet,cfg);
 
 loc = [locsrc; nan*ones(size(widesrc,1),1); locdet; nan*ones(size(widedet,1),1)];
 bary = [barysrc; nan*ones(size(widesrc,1),4); barydet; nan*ones(size(widesrc,1),4)];
@@ -66,6 +79,15 @@ bary = [barysrc; nan*ones(size(widesrc,1),4); barydet; nan*ones(size(widesrc,1),
 rhs = [rhsoptsrc widesrc' rhsoptdet widedet'];
 
 inactive = setdiff(1:size(rhs,2),activeOpt);
+
+%% Test rhs weight
+if (isfield(cfg,'rhsweight') && ~exist('rhsweight','var'))
+    rhs = rhs.*cfg.rhsweight.';
+elseif exist('rhsweight','var')
+    rhs = rhs.*rhsweight.';
+end
+%%
+
 rhs(:,inactive) = 0;
 
 

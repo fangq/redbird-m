@@ -99,6 +99,9 @@ end
 
 mode=jsonopt('mode',mode,opt);
 prior=jsonopt('prior','',opt);
+if isfield(opt,'sd');
+    sd = opt.sd;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run forward for the heterogeneous domain

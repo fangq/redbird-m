@@ -27,7 +27,8 @@ function [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || isempty(cfg.detpos))
+if(((~isfield(cfg,'srcpos') || isempty(cfg.srcpos)) && ~isfield(cfg,'widesrc')) ...
+        || ((~isfield(cfg,'detpos') || isempty(cfg.detpos)) && ~isfield(cfg,'widedet')))
     detval=[];
     goodidx=[];
     return;

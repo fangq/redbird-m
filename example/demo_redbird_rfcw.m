@@ -58,14 +58,14 @@ cfg0.detpattern = srcpattern;
 cfg0.detweight = ones(1,32);
 
 cfg0.param=struct;
-cfg0.param.hbo=[15 45];
-cfg0.param.hbr=[4  12];
+cfg0.param.hbo=[15 30];
+cfg0.param.hbr=[4  8];
 cfg0.param.scatamp = [2.5 4];
 cfg0.param.scatpow = [3 3];
 
 cfg0.prop = containers.Map();  % if both prop and param are defined, param will ovewrite prop
-cfg0.prop('690')=[0 0 1 1; 0   1 0 1.37; 0 1 0 1.37];
-cfg0.prop('830')=[0 0 1 1; 0 0.8 0 1.37; 0 0.8 0 1.37];
+cfg0.prop('690')=[0 0 1 1; 0.006 0.8 0 1.37; 0.012 1 0 1.37];
+cfg0.prop('830')=[0 0 1 1; 0.005 0.5 0 1.37; 0.010 0.6 0 1.37];
 
 
 % cfg0.wavesrc = containers.Map({'690','830'},{[1:9],[1:9]});
@@ -126,7 +126,7 @@ recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
 
 %%
 
-[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw,'lambda',1e-3,'maxiter',10);
+[newrecon,resid]=rbrun(cfg,recon,detphi0,sd,'mode','bulk','rfcw',rfcw,'lambda',1e-1,'maxiter',10);
 
 recon.bulk = newrecon.param;
 
