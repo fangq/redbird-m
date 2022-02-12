@@ -85,7 +85,7 @@ cfg=rmfield(cfg,'seg');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+figure,
 plotmesh([newcfg.node,newcfg.prop(:,1)],newcfg.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
 plotmesh([newcfg.node,newcfg.prop(:,1)],newcfg.elem,'x=70','facecolor','interp','linestyle','none')

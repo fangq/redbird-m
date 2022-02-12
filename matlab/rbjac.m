@@ -92,9 +92,9 @@ for waveid=wavelengths
         end
         for i=1:nelem
             phidotphi1=phiwv(felem(i,1:4),sdmd(:,1)).*phiwv(felem(i,1:4),sdmd(:,2));
-            phidotphi2=phiwv(felem(i,idx(1,:)),sdmd(:,1)).*phiwv(felem(i,idx(2,:)),sdmd(:,2));
+            phidotphi2=phiwv(felem(i,idx(1,:)),sdmd(:,1)).*phiwv(felem(i,idx(2,:)),sdmd(:,2));  
             Jmua_elem(:,i)=-(sum(phidotphi1,1)+sum(phidotphi2,1)*0.5)*(0.1*evol(i));
-            if(nargout>2 && ~isreal(phiwv))
+            if(nargout>2)
                 Jcol=phidotphi1.'*deldotdel(i,[1 5 8 10]).';
                 Jcol=Jcol+phidotphi2.'*deldotdel(i,idx(3,:)).';
                 Jd_elem(:,i)=-Jcol;
@@ -102,7 +102,7 @@ for waveid=wavelengths
             for j=1:4
                 Jmua_node(:,felem(i,j))=Jmua_node(:,felem(i,j))+Jmua_elem(:,i);
             end
-            if(nargout>2 && ~isreal(phiwv))
+            if(nargout>2)
                 for j=1:4
                     Jd_node(:,felem(i,j))=Jd_node(:,felem(i,j))-Jcol;
                 end

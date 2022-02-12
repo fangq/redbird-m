@@ -42,6 +42,53 @@ if(nargin<4)
 end
 nblock=1;
 
+if isstruct(Amat)
+    Amat = cell2mat(squeeze(struct2cell(Amat)));
+    ymeas = struct2cell(ymeas);
+    ymodel = struct2cell(ymodel);
+    if (size(ymeas,1) < size(ymeas,2))
+        ymeas = ymeas.';
+        ymodel = ymodel.';
+    end
+    ymeas = cell2mat(ymeas);
+    ymodel = cell2mat(ymodel);
+end
+
+rhs=ymeas-ymodel;
+
+if(strcmp(form,'real') || strcmp(form,'reim'))
+    newA=real(Amat);
+    newrhs=real(rhs);
+
+    if(~isreal(rhs) && ~isreal(Amat))
+        if(strcmp(form,'reim'))
+           newA=[real(Amat) -imag(Amat); 
+                 imag(Amat) real(Amat)];
+        else
+           newA=[newA; imag(Amat)];
+        end
+	    newrhs=[newrhs; imag(rhs)];
+        nblock=1;
+    end
+    return;
+end
+
+if(strcmp(form,'logphase'))
+    temp=repmat(conj(ymodel)./abs(ymodel.*ymodel),1,size(Amat,2)).*Amat;
+    if(isreal(ymodel))
+        newA=real(temp);
+        newrhs=log(abs(ymeas))-log(abs(ymodel));
+    else
+        newA=[real(temp) ; imag(temp)];
+	    newrhs=[log(abs(ymeas)) - log(abs(ymodel)); 
+                angle(ymeas) - angle(ymodel)];
+        nblock=1;
+    end
+    return;
+end
+
+
+%{
 if (~isstruct(Amat))
     Amat = struct('J',Amat);
     ymeas = struct('detphi',ymeas);
@@ -98,3 +145,4 @@ end
 
 newA = Aout;
 newrhs = rhsout;
+%}

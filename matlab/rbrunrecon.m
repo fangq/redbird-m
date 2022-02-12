@@ -107,6 +107,9 @@ ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
 rfcw = jsonopt('rfcw',1,opt);
 solverflag=jsonopt('solverflag',{},opt);
+blockscale = jsonopt('blockscale',1,opt);
+musscale = jsonopt('MusScale',0.5,opt);
+mode = jsonopt('mode',[],opt);
 isreduced=0;
 
 % create or accept regularization matrix
@@ -195,6 +198,7 @@ for iter=1:maxiter
                 end
             else
                 [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+%                 [Jmua,Jd] = rbjtestnode(sd,phi,cfg.deldotdel,cfg.elem,cfg.evol,cfg);
             end
         end
     else % CW only
@@ -305,9 +309,31 @@ for iter=1:maxiter
             Aregu.lir=inv(triu(Lr));
         end
     end
+    
+    
+    cn = blocks(1).hbo(2);
+    if ((blockscale == 1) && isstruct(Jmua) && strcmp(mode,'image'))
+        scalefact = [];
+        for zz = 1:length(fieldnames(Jmua))
+            if (zz<=length(intersect(fieldnames(Jmua),{'hbo','hbr'})))
+                scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2)));
+            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'hbo','hbr'})))
+                scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2))).*musscale;
+            end
+            
+            Jflat(:,(zz-1)*cn+1:zz*cn) = Jflat(:,(zz-1)*cn+1:zz*cn).*scalefact(zz);
+        end
+    end
+                  
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
     dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
+    
+    if (blockscale == 1 && exist('scalefact','var'))
+        for zz = 1:length(scalefact)
+            dmu_recon((zz-1)*cn+1:zz*cn) = dmu_recon((zz-1)*cn+1:zz*cn).*scalefact(zz);
+        end
+    end
    
     % obtain linear index of each output species
     len=cumsum([1; structfun(@(x) x(2), blocks(1))]);

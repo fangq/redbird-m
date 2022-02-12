@@ -41,16 +41,16 @@ if(isa(Jmua,'containers.Map') || (isstruct(Jmua) && isa(Jmua(1).J,'containers.Ma
         wv = keys(Jmua);
     else
         wv = keys(Jmua(1).J);
-        if (exist('Jd','var') && length(Jd) > 1)
-            Jd = Jd(1).J;
-        end
+%         if (exist('Jd','var') && length(Jd) > 1)
+%             Jd = Jd(1).J;
+%         end
     end
     paramlist=fieldnames(params);
     if(nargin>6 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         dcoeff = containers.Map();
         for i=1:length(wv)
             dtemp=prop(wv{i});
-            if(size(dtemp,1)<size(Jd(wv{i}),2)) % label based
+            if((isa(Jd,'containers.Map') && size(dtemp,1)<size(Jd(wv{i}),2)) || ((isstruct(Jd) && size(dtemp,1) < size(Jd(1).J(wv{i}),2))))
                 dtemp=dtemp(2:end,:);
             end
             dcoeff(wv{i})=1./(3.*(dtemp(:,1)+dtemp(:,2)))';
@@ -64,8 +64,8 @@ if(isa(Jmua,'containers.Map') || (isstruct(Jmua) && isa(Jmua(1).J,'containers.Ma
         allkeys=fieldnames(Jscat);
         for i=1:length(allkeys)
             if (isstruct(newJ) && length(newJ) >1)
-                newJ(1).(allkeys{i}) = Jscat.(allkeys{i});
-                newJ(2).(allkeys{i}) = zeros(size(newJ(2).(chromophores{1})));
+                newJ(1).(allkeys{i}) = Jscat(1).(allkeys{i});
+                newJ(2).(allkeys{i}) = Jscat(2).(allkeys{i});%zeros(size(newJ(2).(chromophores{1})));
             else
                 newJ.(allkeys{i})=Jscat.(allkeys{i});
             end
@@ -79,7 +79,7 @@ else
     end
 end
 
-if(nargin>6 && ~isa(Jd,'containers.Map'))
+if(nargin>6 && ~isa(Jd,'containers.Map') && ~isstruct(Jd))
     newJ.dcoeff=Jd;
 end
 
@@ -98,6 +98,9 @@ else
     newy0 = struct('detphi',cell(1,rfcw));
     for i=1:length(wv)
         sdwv = sd(wv{i});
+        if (size(sdwv,2) == 3)
+            sdwv(:,4) = 1;
+        end
         for j = 1:rfcw
             tempphi = reshape(y0(j).detphi(wv{i}),[],1);
             sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
@@ -115,11 +118,11 @@ end
 if(~isa(phi,'containers.Map') && ~isfield(phi,'detphi'))
     newphi=phi;
 else
-    if isstruct(y0)
+    if isstruct(phi)
         wv = keys(phi(1).detphi);
         rfcw = length(phi);
     else
-        wv=keys(y0);
+        wv=keys(phi);
         rfcw = 1;
         temp = struct('phi',phi);   clear phi
         phi(1).detphi = temp.phi;   clear temp
@@ -127,6 +130,9 @@ else
     newphi = struct('detphi',cell(1,rfcw));
     for i=1:length(wv)
         sdwv = sd(wv{i});
+        if (size(sdwv,2) == 3)
+            sdwv(:,4) = 1;
+        end
         for j = 1:rfcw
             tempphi = reshape(phi(j).detphi(wv{i}),[],1);
             sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
