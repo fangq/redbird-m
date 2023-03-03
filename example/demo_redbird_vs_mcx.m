@@ -76,7 +76,7 @@ sd=rbsdmap(cfg);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure,
 if(exist('mcxlab','file'))
-        xcfg.nphoton=1e8;
+        xcfg.nphoton=1e9;
         xcfg.vol=uint8(ones(60,60,60));
         xcfg.srcdir=[0 0 1 0];
         xcfg.gpuid=2;

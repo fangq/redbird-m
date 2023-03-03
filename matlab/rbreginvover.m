@@ -45,7 +45,7 @@ rhs=Amat'*rhs(:);
 
 Hess=Amat'*Amat; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
 
-[Hess,Gdiag]=rbnormalizediag(Hess);
+% [Hess,Gdiag]=rbnormalizediag(Hess);
 
 if(nargin<4 || isempty(LTL))
     Hess(1:1+size(Hess,1):end)=Hess(1:1+size(Hess,1):end)+lambda;
@@ -71,7 +71,7 @@ else
         end
      end
 end
-
+[Hess,Gdiag]=rbnormalizediag(Hess);
 res=Gdiag(:).*rbfemsolve(Hess, Gdiag(:).*rhs, varargin{:});
 
 if(length(idx)<len)

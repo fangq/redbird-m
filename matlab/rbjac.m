@@ -1,4 +1,4 @@
-function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, iselem)
+function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, varargin)
 %
 % [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, isnodal)
 %
@@ -29,8 +29,16 @@ function [Jmua_n, Jmua_e, Jd_n, Jd_e]=rbjac(sd, phi, deldotdel, felem, evol, ise
 if(nargin<5 || isempty(sd) || isempty(phi) || isempty(deldotdel)|| isempty(evol))
     error('you must give at least 5 inputs and they must not be empty');
 end
-if(nargin<6)
+if (isempty(varargin))
     iselem=0;
+    rfcw = 1;
+elseif (length(varargin) == 1)
+    iselem = varargin{1};
+    rfcw = 1;
+else
+    opt=varargin2struct(varargin{:});
+    rfcw = jsonopt('rfcw',1,opt);
+    iselem = jsonopt('iselem',0,opt);
 end
 nelem=size(felem,1);
 
@@ -48,11 +56,11 @@ else
     if(isa(phi,'containers.Map'))
         wavelengths=phi.keys;
         phitemp = phi; clear phi
-        phi(1).phi = phitemp;
+        phi(rfcw).phi = phitemp;
         clear phitemp
     else
         phitemp = phi; clear phi
-        phi(1).phi = containers.Map({''},{phitemp});
+        phi(rfcw).phi = containers.Map({''},{phitemp});
         clear phitemp
     end
 end
@@ -78,7 +86,7 @@ for waveid=wavelengths
     else
         sdwv=sd;
     end
-    for md = mode
+    for md = rfcw
         if (size(sdwv,2) < 4)
             sdwv(:,4) = md;
         end
@@ -131,12 +139,12 @@ if(length(wavelengths)==1)
     end
 end
 
-if (length(mode) == 1)
-    Jmua_n = Jmua_n(1).J;
-    Jmua_e = Jmua_e(1).J;
+if (length(rfcw) == 1)      %%(length(mode) == 1)
+    Jmua_n = Jmua_n(rfcw).J;    %%Jmua_n(1).J;
+    Jmua_e = Jmua_e(rfcw).J;    %%Jmua_e(1).J;
     if (nargout>2)
-        Jd_n = Jd_n(1).J;
-        Jd_e = Jd_e(1).J;
+        Jd_n = Jd_n(rfcw).J;    %%Jd_n(1).J;
+        Jd_e = Jd_e(rfcw).J;    %%Jd_e(1).J;
     end
 end
 

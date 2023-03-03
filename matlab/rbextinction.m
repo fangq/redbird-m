@@ -2101,8 +2101,8 @@ chrome.hb(:,2:3)=chrome.hb(:,[3 2])*2.303*1e-7;
 chrome.hbo=chrome.hb(:,[1 3]);
 chrome.hbr=chrome.hb(:,[1 2]);
 
-chrome.water(:,2)=chrome.water(:,2)*0.1;
-chrome.lipids(:,2)=chrome.lipids(:,2);
+chrome.water(:,2)=chrome.water(:,2).*0.1.*0.01;
+chrome.lipids(:,2)=chrome.lipids(:,2).*0.01;
 
 if(iscell(wavelen) && ~isempty(wavelen))
     if(isempty(wavelen{1}))

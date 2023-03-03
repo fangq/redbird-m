@@ -58,6 +58,8 @@ for md = rfcw
     phi(md).phi = containers.Map();
 end
 
+sdtmp = cell2mat(sd.values');
+srcnum = length(unique(sdtmp(:,1)));
 
 for waveid=wavelengths
 	wv=waveid{1};
@@ -87,8 +89,13 @@ for waveid=wavelengths
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%   Extract detector readings from the solutions
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-        detval(md).detphi(wv)=rbfemgetdet(phi(md).phi(wv), cfg, rhs); % or detval=rbfemgetdet(phi(wv), cfg, rhs); 
+        
+        tempdetval = rbfemgetdet(phi(md).phi(wv), cfg, rhs); % or detval=rbfemgetdet(phi(wv), cfg, rhs);
+        if size(sdwv,2) < 4
+            sdwv(:,4) = ones(size(sdwv,1),1).*md;
+        end
+        sdmd = sdwv(sdwv(:,4) == md | sdwv(:,4) == 3,:);
+        detval(md).detphi(wv) = tempdetval(unique(sdmd(:,2))-srcnum,unique(sdmd(:,1)));
     end
 end
 

@@ -1,4 +1,4 @@
-function [newJ, newy0, newphi]=rbmultispectral(sd, cfg, Jmua, y0, phi, params, Jd, prop)
+function [newJ, newy0, newphi]=rbmultispectral(sd, cfg, Jmua, y0, phi, params, rfcw, Jd, prop)
 %
 % [newJ, newy0, newphi]=rbmultispectral(Jmua, y0, phi, paramlist, Jd)
 %
@@ -46,7 +46,7 @@ if(isa(Jmua,'containers.Map') || (isstruct(Jmua) && isa(Jmua(1).J,'containers.Ma
 %         end
     end
     paramlist=fieldnames(params);
-    if(nargin>6 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
+    if(nargin>7 && length(intersect(paramlist,{'scatamp','scatpow'}))==2)
         dcoeff = containers.Map();
         for i=1:length(wv)
             dtemp=prop(wv{i});
@@ -74,12 +74,12 @@ if(isa(Jmua,'containers.Map') || (isstruct(Jmua) && isa(Jmua(1).J,'containers.Ma
     end
 else
     newJ.mua=Jmua;
-    if(nargin>6 && ~isa(Jd,'containers.Map'))
+    if(nargin>7 && ~isa(Jd,'containers.Map'))
         newJ.dcoeff=Jd;
     end
 end
 
-if(nargin>6 && ~isa(Jd,'containers.Map') && ~isstruct(Jd))
+if(nargin>7 && ~isa(Jd,'containers.Map') && ~isstruct(Jd))
     newJ.dcoeff=Jd;
 end
 
@@ -88,20 +88,20 @@ if(~isa(y0,'containers.Map') && ~isfield(y0,'detphi'))
 else
     if isstruct(y0)
         wv = keys(y0(1).detphi);
-        rfcw = length(phi);
+%         rfcw = length(phi);
     else
         wv=keys(y0);
-        rfcw = 1;
+%         rfcw = 1;
         temp = struct('y0',y0);clear y0
-        y0(1).detphi = temp.y0;     clear temp
+        y0(rfcw).detphi = temp.y0;     clear temp
     end
-    newy0 = struct('detphi',cell(1,rfcw));
+    newy0 = struct('detphi',cell(1,max(rfcw)));
     for i=1:length(wv)
         sdwv = sd(wv{i});
         if (size(sdwv,2) == 3)
-            sdwv(:,4) = 1;
+            sdwv(:,4) = rfcw;
         end
-        for j = 1:rfcw
+        for j = rfcw
             tempphi = reshape(y0(j).detphi(wv{i}),[],1);
             sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
             tempphi = tempphi(find(sdtemp(:,3)));
@@ -109,8 +109,8 @@ else
         end
     end
     
-    if (length(newy0) == 1)
-        newy0 = newy0(1).detphi;
+    if (length(rfcw) == 1)
+        newy0 = newy0(rfcw).detphi;
     end
 end
 
@@ -120,20 +120,20 @@ if(~isa(phi,'containers.Map') && ~isfield(phi,'detphi'))
 else
     if isstruct(phi)
         wv = keys(phi(1).detphi);
-        rfcw = length(phi);
+%         rfcw = length(phi);
     else
         wv=keys(phi);
-        rfcw = 1;
+%         rfcw = 1;
         temp = struct('phi',phi);   clear phi
-        phi(1).detphi = temp.phi;   clear temp
+        phi(rfcw).detphi = temp.phi;   clear temp
     end
-    newphi = struct('detphi',cell(1,rfcw));
+    newphi = struct('detphi',cell(1,max(rfcw)));
     for i=1:length(wv)
         sdwv = sd(wv{i});
         if (size(sdwv,2) == 3)
-            sdwv(:,4) = 1;
+            sdwv(:,4) = rfcw;
         end
-        for j = 1:rfcw
+        for j = rfcw
             tempphi = reshape(phi(j).detphi(wv{i}),[],1);
             sdtemp = sdwv(sdwv(:,4) == j | sdwv(:,4) == 3,:);
             tempphi = tempphi(find(sdtemp(:,3)));
@@ -141,8 +141,8 @@ else
         end
     end
     
-    if (length(newphi) == 1)
-        newphi = newphi(1).detphi;
+    if (length(rfcw) == 1)
+        newphi = newphi(rfcw).detphi;
     end
 end
 

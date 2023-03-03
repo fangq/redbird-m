@@ -1,4 +1,4 @@
-function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,varargin)
+function [recon, resid, cfg, updates, Jmua, detphi0iter, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,varargin)
 %
 % [newrecon, resid, newcfg]=rbrunrecon(maxiter,cfg,recon,detphi0,sd)
 %   or
@@ -109,7 +109,7 @@ rfcw = jsonopt('rfcw',1,opt);
 solverflag=jsonopt('solverflag',{},opt);
 blockscale = jsonopt('blockscale',1,opt);
 musscale = jsonopt('MusScale',0.5,opt);
-mode = jsonopt('mode',[],opt);
+mode = jsonopt('mode','image',opt);
 isreduced=0;
 
 % create or accept regularization matrix
@@ -127,9 +127,8 @@ end
 if(~isempty(prior) && isfield(recon,'seg') && ~isfield(Aregu,'lmat'))
     Aregu.lmat=rbprior(recon.seg,prior,opt);
 end
-
 if(nargin<5)
-    sd=rbsdmap(cfg,opt);
+   sd = rbsdmap(cfg);
 end
 
 if isfield(opt,'rfcw')
@@ -146,8 +145,12 @@ else
         end
     end
 end
-% start iterative Gauss-Newton based reconstruction
 
+if (length(rfcw) < 2 && (isstruct(detphi0) && length(detphi0) > 1))
+    detphi0 = detphi0(rfcw).detphi;
+end
+
+% start iterative Gauss-Newton based reconstruction
 for iter=1:maxiter
     tic
     
@@ -156,10 +159,7 @@ for iter=1:maxiter
     elseif (size(recon.prop,1) < 6)
         recon.prop
     end
-    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node))
-        figure(5),plotmesh([recon.node recon.param.hbo],recon.elem,'z=20');colorbar;shading interp
-        drawnow
-    end
+    
     % update forward mesh prop/param using recon mesh prop/param if given
     % for rbsyncprop to work, one must provide initial values of cfg.prop
     % (or cfg.param) if recon.prop (or recon.param) is specified
@@ -172,6 +172,11 @@ for iter=1:maxiter
             cfg.prop=rbupdateprop(cfg);
         end
     end
+    
+    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node))
+        figure(6),plotmesh([recon.node recon.param.hbo],recon.elem,'z=20');colorbar;shading interp
+        drawnow
+    end
     % run forward on forward mesh
     [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
 
@@ -181,7 +186,7 @@ for iter=1:maxiter
     else
         omegas = 0;
     end
-    if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0))) % if RF data
+    if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0)) && ismember(1,rfcw)) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
@@ -197,7 +202,7 @@ for iter=1:maxiter
                     [Jmua, Jd]=rbjacmex(cfg, sd, phi);
                 end
             else
-                [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol,'rfcw',rfcw);
 %                 [Jmua,Jd] = rbjtestnode(sd,phi,cfg.deldotdel,cfg.elem,cfg.evol,cfg);
             end
         end
@@ -213,7 +218,7 @@ for iter=1:maxiter
                     Jmua=rbjacmex(cfg, sd, phi);
                 end
             else
-                Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol,'rfcw',rfcw);
             end
         end
     end
@@ -223,9 +228,9 @@ for iter=1:maxiter
     % TODO: need to handle Jmua is a map but cfg.param is not defined
     if(isa(cfg.prop,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
         if(exist('Jd','var'))
-            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, rfcw, Jd, cfg.prop);
         else
-            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, rfcw);
         end
     else  % recon mua/d per wavelengths
         if(exist('Jd','var'))
@@ -300,7 +305,8 @@ for iter=1:maxiter
     resid(iter)=sum(abs(misfit));
     updates(iter).detphi=detphi;
    
-    if(isreduced==0 && ~isempty(prior))
+%     if(isreduced==0 && ~isempty(prior))
+    if(isreduced == 0 && ~isempty(fieldnames(Aregu)) && iter == 1)
         if(size(Jflat,1)>=size(Jflat,2) && ~isfield(Aregu,'ltl'))
             Aregu.ltl=Aregu.lmat'*Aregu.lmat;
         end
@@ -311,13 +317,14 @@ for iter=1:maxiter
     end
     
     
-    cn = blocks(1).hbo(2);
-    if ((blockscale == 1) && isstruct(Jmua) && strcmp(mode,'image'))
+    if ((blockscale == 1) && isstruct(Jmua))% && strcmp(mode,'image'))
+        blockfields = fieldnames(blocks);
+        cn = blocks(1).(blockfields{1})(2);
         scalefact = [];
         for zz = 1:length(fieldnames(Jmua))
-            if (zz<=length(intersect(fieldnames(Jmua),{'hbo','hbr'})))
+            if (zz<=length(intersect(fieldnames(Jmua),{'hbo','hbr','mua'})))
                 scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2)));
-            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'hbo','hbr'})))
+            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'hbo','hbr','dcoeff'})))
                 scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2))).*musscale;
             end
             

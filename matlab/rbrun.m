@@ -99,7 +99,7 @@ end
 
 mode=jsonopt('mode',mode,opt);
 prior=jsonopt('prior','',opt);
-if isfield(opt,'sd');
+if isfield(opt,'sd')
     sd = opt.sd;
 end
 

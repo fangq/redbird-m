@@ -37,7 +37,7 @@ cfg.prop=[
 ];
 
 
-cfg.omega=2*pi*70e6;
+% cfg.omega=2*pi*70e6;
 cfg.omega=0;
 
 tic

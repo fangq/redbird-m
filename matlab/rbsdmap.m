@@ -42,14 +42,14 @@ srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
 if isfield(cfg,'widesrc')
     widesrcnum = size(cfg.widesrc,1);
-    badwfsrc = find(sum(cfg.widesrc,2) == 0)';
+    badwfsrc = find((sum(cfg.widesrc,2) == 0) | isnan(sum(cfg.widesrc,2)))';
 else
     widesrcnum = 0;
     badwfsrc = [];
 end
 if isfield(cfg,'widedet')
     widedetnum = size(cfg.widedet,1);
-    badwfdet = find(sum(cfg.widedet,2) == 0)';
+    badwfdet = find((sum(cfg.widedet,2) == 0) | isnan(sum(cfg.widedet,2)))';
 else
     widedetnum = 0;
     badwfdet = [];
@@ -83,11 +83,13 @@ else
     dist=rbgetdistance(cfg.srcpos,cfg.detpos,badsrc,baddet,widesrc,widedet,cfg)';
 end
 
+src = 1:srcnum;widesrc = [1:widesrcnum]+srcnum;
 goodsrc=sort(setdiff(1:srcnum,badsrc));
 goodwfsrc = sort(setdiff(1:widesrcnum,badwfsrc));
 if ~isempty(goodwfsrc)
     goodwfsrc = goodwfsrc+srcnum;
 end
+det = 1:detnum;widedet = [1:widedetnum]+detnum;
 gooddet=sort(setdiff(1:detnum,baddet));
 goodwfdet = sort(setdiff(1:widedetnum,badwfdet));
 if ~isempty(goodwfdet)
@@ -97,7 +99,7 @@ end
 if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
     wavelengths=cfg.prop.keys;
     sd=containers.Map();
-    [ss,dd]=meshgrid([goodsrc goodwfsrc],srcnum+widesrcnum+[gooddet goodwfdet]);
+    [ss,dd]=meshgrid([src widesrc],srcnum+widesrcnum+[det widedet]);
 
     for wv=wavelengths
         wid=wv{1};
@@ -115,7 +117,7 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                  if exist('wfsrcmap','var')
                      wavesrc = rbremapsrc(wavesrc,wfsrcmap,srcnum);
                  end
-                 wavesrc = intersect([goodsrc goodwfsrc],wavesrc);
+                 goodwavesrc = intersect([goodsrc goodwfsrc],wavesrc);
              else
                  wavesrc = goodsrc;
              end
@@ -124,7 +126,7 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                  if exist('wfdetmap','var')
                      wavedet = rbremapsrc(wavedet,wfdetmap,detnum);
                  end
-                 wavedet = intersect([gooddet goodwfdet],wavedet);
+                 goodwavedet = intersect([gooddet goodwfdet],wavedet);
              else
                 wavedet = gooddet;
              end
@@ -140,7 +142,8 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
             sdwv(:,3)=(reshape(dist(unique(sdwv(:,2)) - (srcnum+widesrcnum),unique(sdwv(:,1))),[],1)<maxdist);
             %sdwv(idx,3)=(dist(:)<maxdist);
         else
-            sdwv(:,3) = 1;
+            sdwv(:,3) = 0;
+            sdwv(ismember(sdwv(:,1),goodwavesrc) & ismember(sdwv(:,2),goodwavedet+srcnum+widesrcnum),3) = 1;
         end
         
         if (isfield(cfg,'rfcw'))

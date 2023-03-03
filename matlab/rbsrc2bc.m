@@ -254,6 +254,7 @@ for wv = wavelengths
             if(exist('srcweight','var') && numel(srcweight)==size(srcbc,1))
                 wsrc=srcweight(i);
             end
+%             rhs(rhs(:,i)<1e-3*max(rhs(:,i)),i) = 0;
             rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
         end
         srcbc=rhs.';

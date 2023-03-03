@@ -58,7 +58,8 @@ if(nargin==3)
     goodsrc = unique(goodsrc);
     [~,goodidx] = find(sum(optodeloc(:,srcnum+wfsrcnum+1:srcnum+wfsrcnum+detnum+wfdetnum)));
     goodidx = unique(goodidx);
-    detval=optodeloc(:,goodidx+srcnum+wfsrcnum)'*phi(:,goodsrc);
+    detval=optodeloc(:,[1:detnum+wfdetnum]+srcnum+wfsrcnum)'*phi(:,[1:srcnum+wfsrcnum]);
+%     detval=optodeloc(:,goodidx+srcnum+wfsrcnum)'*phi(:,goodsrc);
 elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field det
     for i=1:srcnum
         for j=1:detnum

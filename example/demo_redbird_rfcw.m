@@ -58,21 +58,15 @@ cfg0.detpattern = srcpattern;
 cfg0.detweight = ones(1,32);
 
 cfg0.param=struct;
-cfg0.param.hbo=[15 30];
+cfg0.param.hbo=[10 15];
 cfg0.param.hbr=[4  8];
-cfg0.param.scatamp = [2.5 4];
-cfg0.param.scatpow = [3 3];
+cfg0.param.scatamp = [1.6e-6 2.4e-6];
+cfg0.param.scatpow = [0.9177 0.9177];
 
 cfg0.prop = containers.Map();  % if both prop and param are defined, param will ovewrite prop
 cfg0.prop('690')=[0 0 1 1; 0.006 0.8 0 1.37; 0.012 1 0 1.37];
 cfg0.prop('830')=[0 0 1 1; 0.005 0.5 0 1.37; 0.010 0.6 0 1.37];
 
-
-% cfg0.wavesrc = containers.Map({'690','830'},{[1:9],[1:9]});
-% cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:9],[1:9]});
-% 
-% cfg0.wavedet = containers.Map({'690','830'},{[1:9],[1:9]});
-% cfg0.rfcw.det = containers.Map({'RF','CW'},{[1:9],[1:9]});
 
 cfg0.wavesrc = containers.Map({'690','830'},{[1:10],[1:10]});
 cfg0.rfcw.src = containers.Map({'RF','CW'},{[1:9],[10]});
@@ -120,8 +114,8 @@ clear face
 
 sd = rbsdmap(cfg);
 % sd=rbsdmap(cfg,'wavesrc',containers.Map({'690','830'},{[1:2:25],[1:2:25]}));
-recon.bulk=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this gives initial guesses
-recon.param=struct('hbo',8,'hbr',2,'scatamp',2.7286,'scatpow',2.2781); % Required: this defines chromophores
+recon.bulk=struct('hbo',8,'hbr',2,'scatamp',1.8e-6,'scatpow',0.9); % Required: this gives initial guesses
+recon.param=struct('hbo',8,'hbr',2,'scatamp',1.8e-6,'scatpow',0.9); % Required: this defines chromophores
 recon.prop=containers.Map({'690','830'},{[],[]}); % Required: for wavelengths
 
 %%
