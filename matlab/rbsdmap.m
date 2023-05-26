@@ -42,14 +42,26 @@ srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
 if isfield(cfg,'widesrc')
     widesrcnum = size(cfg.widesrc,1);
-    badwfsrc = find((sum(cfg.widesrc,2) == 0) | isnan(sum(cfg.widesrc,2)))';
+    if isfield(cfg,'excludewfsrc')
+        badwfsrc = cfg.excludewfsrc;
+    elseif isfield(opt,'excludewfsrc')
+        badwfsrc = jsonopt('excludewfsrc',[],opt);
+    else
+        badwfsrc = find((sum(cfg.widesrc,2) == 0) | isnan(sum(cfg.widesrc,2)))';
+    end
 else
     widesrcnum = 0;
     badwfsrc = [];
 end
 if isfield(cfg,'widedet')
     widedetnum = size(cfg.widedet,1);
-    badwfdet = find((sum(cfg.widedet,2) == 0) | isnan(sum(cfg.widedet,2)))';
+    if isfield(cfg,'excludewfdet')
+        badwfdet = cfg.excludewfdet;
+    elseif isfield(opt,'excludewfdet')
+        badwfdet = jsonopt('excludewfdet',[],opt);
+    else
+        badwfdet = find((sum(cfg.widedet,2) == 0) | isnan(sum(cfg.widedet,2)))';
+    end    
 else
     widedetnum = 0;
     badwfdet = [];
@@ -131,6 +143,9 @@ if(isfield(cfg,'prop') && isa(cfg.prop,'containers.Map'))
                 wavedet = gooddet;
              end
              [ss,dd]=meshgrid(wavesrc,srcnum+widesrcnum+wavedet);
+        else
+            goodwavesrc = [goodsrc goodwfsrc];
+            goodwavedet = [gooddet goodwfdet];
         end
         sdwv=[ss(:),dd(:)];
 %         if(nargin<2 || (size(cfg.srcpos,2) == size(cfg.face,1)))

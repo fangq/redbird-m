@@ -44,7 +44,12 @@ else
 end
 
 if exist('sd','var')
-    activeOpt = unique(sd(:,1:2));
+    if (size(sd,2) > 3)
+        tempsd = sd(sd(:,3) == 1 & ismember(sd(:,4),[1 2 3]),:);
+    else
+        tempsd = sd(sd(:,3) == 1,:);
+    end
+    activeOpt = unique(tempsd(:,1:2));
 else
     activeOpt = 1:size([optsrc;optdet],1) + size([widesrc;widedet],1);
 end

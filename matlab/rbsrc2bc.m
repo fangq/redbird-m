@@ -255,7 +255,9 @@ for wv = wavelengths
                 wsrc=srcweight(i);
             end
 %             rhs(rhs(:,i)<1e-3*max(rhs(:,i)),i) = 0;
-            rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
+            rhs(:,i)=rhs(:,i)*(wsrc/abs(sum(rhs(:,i))));
+%             rhs(:,i)=rhs(:,i)*(wsrc/sum(abs(rhs(:,i))));
+%             rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
         end
         srcbc=rhs.';
         if exist('srcpattern','var')

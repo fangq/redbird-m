@@ -108,8 +108,10 @@ prior=jsonopt('prior','',opt);
 rfcw = jsonopt('rfcw',1,opt);
 solverflag=jsonopt('solverflag',{},opt);
 blockscale = jsonopt('blockscale',1,opt);
-musscale = jsonopt('MusScale',0.5,opt);
+musscale = jsonopt('musscale',0.5,opt);
 mode = jsonopt('mode','image',opt);
+tmesh = jsonopt('templatemesh',0,opt);
+debugplot = jsonopt('debugplot',0,opt);
 isreduced=0;
 
 % create or accept regularization matrix
@@ -173,20 +175,35 @@ for iter=1:maxiter
         end
     end
     
-    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node))
-        figure(6),plotmesh([recon.node recon.param.hbo],recon.elem,'z=20');colorbar;shading interp
+    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node) && debugplot==1)
+        figure(15),plotmesh([recon.node recon.param.hbo+recon.param.hbr],recon.elem,'z=32');colorbar;shading interp
         drawnow
     end
-    % run forward on forward mesh
+%     run forward on forward mesh
     [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
+    
+    if isfield(cfg,'sdscale')
+        for ii = 1:length(phi)
+            for wv = phi(ii).phi.keys
+                if ii == 1
+                    phi(ii).phi(wv{1}) = phi(ii).phi(wv{1}).*complex(cfg.sdscale(:,1),cfg.sdscale(:,2))';
+                elseif ii == 2
+                    phi(ii).phi(wv{1}) = phi(ii).phi(wv{1}).*cfg.sdscale(:,1)';
+                end
+            end
+        end
+    end
 
     % build Jacobians on forward mesh
     if isa(cfg.omega,'containers.Map')
         omegas = cell2mat(cfg.omega.values);
-    else
+    elseif (isfield(cfg,'omega') )
+        omegas = cfg.omega;
+      else
         omegas = 0;
     end
-    if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0)) && ismember(1,rfcw)) % if RF data
+    if(isfield(cfg,'omega') && (any(omegas>0)) && ismember(1,rfcw)) % if RF data
+%     if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0)) && ismember(1,rfcw)) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
@@ -324,14 +341,14 @@ for iter=1:maxiter
         for zz = 1:length(fieldnames(Jmua))
             if (zz<=length(intersect(fieldnames(Jmua),{'hbo','hbr','mua'})))
                 scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2)));
-            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'hbo','hbr','dcoeff'})))
+            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'scatamp','scatpow','dcoeff'})))
                 scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2))).*musscale;
             end
             
             Jflat(:,(zz-1)*cn+1:zz*cn) = Jflat(:,(zz-1)*cn+1:zz*cn).*scalefact(zz);
         end
     end
-                  
+    
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
     dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
@@ -393,6 +410,37 @@ for iter=1:maxiter
         updates=updates(1:iter);
         break;
     end
+    
+%      %% EXTRA STUFF ADDED BY MM
+%     
+%     if isfield(Aregu,'lmat') && tmesh == 1
+%         tempdata = recon.prop(:,1) - recon.prop0(:,1);
+%         norm_dmua_dx = (tempdata + abs(min(tempdata,[],1)))./max((tempdata + abs(min(tempdata,[],1))),[],1);
+%         %dmua_dx = norm_dmua_dx.*recon.prior(:,:,iter);
+%         dmua_dx = norm_dmua_dx.*recon.prior(:,:,1);
+%         priorweight(iter,:) = abs(nansum(dmua_dx,1)./max(abs(nansum(dmua_dx,1))));
+%         %priorweight_norm(iter,:) = priorweight(iter,:);
+%         if iter == 1
+%             priorweight_norm(iter,:) = priorweight(iter,:);
+%         else
+%             priorweight_norm(iter,:) = priorweight(iter-1,:)./priorweight(iter,:);
+%         end
+%         recon.prior(:,:,iter+1) = dmua_dx;%recon.prior(:,:,iter).*priorweight_norm(iter,:);
+%         Aregu.lmat = rbmakeL(cfg,recon,nansum(recon.prior(:,:,iter+1),2));
+%         Lr = qr(Aregu.lmat);
+%         Aregu.lir = inv(triu(Lr));
+%         figure,
+%         subplot(2,3,1),plot(priorweight_norm(iter,:)),
+%         subplot(2,3,2),plotmesh([recon.node nansum(recon.prior(:,:,iter+1),2)],recon.elem,'z = 20'),colorbar,shading interp,view(2),axis equal, axis tight
+%         subplot(2,3,3),plotmesh([recon.node recon.prop(:,1)],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
+%         subplot(2,3,4),plotmesh([recon.node tempdata],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
+%         subplot(2,3,5),plotmesh([recon.node norm_dmua_dx],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
+%         subplot(2,3,6),plotmesh([recon.node nansum(dmua_dx,2)],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
+%         
+%         set(gcf,'PaperOrientation','landscape');
+%         set(gcf,'Position',get(0,'Screensize'));
+%         drawnow
+%     end
 end
 
 if(isfield(recon,'node') && isfield(recon,'elem'))
