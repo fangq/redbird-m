@@ -25,6 +25,7 @@ if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || is
     error('you must define at least 1 source and 1 detector in order to use this function');
 end
 
+opt = {};
 if(length(varargin)==1)
     maxdist=varargin{1};
 elseif(~isempty(varargin))
