@@ -96,5 +96,6 @@ recon.bulk.hbr=newrecon.param.hbr;
 
 plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;
+plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'y=50','facecolor','interp','linestyle','none')
 plotmesh([newrecon.node,newrecon.param.hbo(:)],newrecon.elem,'x=70','facecolor','interp','linestyle','none')
 view(3);

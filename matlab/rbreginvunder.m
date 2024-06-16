@@ -76,21 +76,11 @@ if(nargin>=4 && ~isempty(invR))
     end
 end
 
-% Alen=size(Amat,2);
-% idx=find(sum(Amat)~=0);
-% Lidx = find(sum(Amat(:,1:nx)) ~= 0);
-% if(length(idx)<size(Amat,2))
-%     Amat=Amat(:,idx);
-%     invR = invR(Lidx,Lidx);
-%     if exist('len','var')
-%         len(2:end) = len(2:end) - (nx - length(Lidx)).*[1:length(len(2:end))]';
-%     end
-% end
-
 rhs=rhs(:);
 
 Hess=Amat*Amat'; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
 
+% [Hess,Gdiag]=rbnormalizediag(Hess);
 Hess(1:1+size(Hess,1):end)=Hess(1:1+size(Hess,1):end)+lambda;
 [Hess,Gdiag]=rbnormalizediag(Hess);
 

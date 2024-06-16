@@ -47,8 +47,9 @@ if isfield(cfg,'widesrc')
     elseif isfield(opt,'excludewfsrc')
         badwfsrc = jsonopt('excludewfsrc',[],opt);
     else
-        badwfsrc = find((sum(cfg.widesrc,2) == 0) | isnan(sum(cfg.widesrc,2)))';
+        badwfsrc = [];
     end
+    badwfsrc = unique([badwfsrc find((sum(cfg.widesrc,2) == 0) | isnan(sum(cfg.widesrc,2)))']);
 else
     widesrcnum = 0;
     badwfsrc = [];
@@ -60,8 +61,9 @@ if isfield(cfg,'widedet')
     elseif isfield(opt,'excludewfdet')
         badwfdet = jsonopt('excludewfdet',[],opt);
     else
-        badwfdet = find((sum(cfg.widedet,2) == 0) | isnan(sum(cfg.widedet,2)))';
-    end    
+        badwfdet = [];
+    end
+    badwfdet = unique([badwfdet find((sum(cfg.widedet,2) == 0) | isnan(sum(cfg.widedet,2)))']);
 else
     widedetnum = 0;
     badwfdet = [];

@@ -13,7 +13,12 @@ if (size(prior,1) == size(cfg.node,1))
 %     [f2rid,f2rweight] = tsearchn(recon.node,recon.elem,cfg.node);
     reconprior = meshremap(prior,recon.mapid,recon.mapweight,recon.elem,size(recon.node,1));    
     reconprior = reconprior./sum(reconprior,2);
-    reconprior(isnan(reconprior)) = 0;
+%     if (size(reconprior, 2) == 3)
+%         reconprior(:,3) = reconprior(:,3)./max(reconprior(:,3));
+%         reconprior(:,1:2) = reconprior(:,1:2).*(1- reconprior(:,3));
+%         reconprior = reconprior./sum(reconprior,2);
+%     end
+    reconprior(isnan(reconprior) | isinf(reconprior)) = 0;
     
     prior = reconprior;    
     clear reconprior
@@ -35,7 +40,7 @@ end
 Lmat = zeros(size(prior,1),size(prior,1));
 tic
 Lmat = squeeze(sum(abs(permute(prior,[3 2 1]) - prior),2));
-toc
+% toc
 
 Lmat(Lmat.^2 < ((alpha*size(prior,2)).^2)) = -alpha - Lmat(Lmat.^2 < ((alpha*size(prior,2)).^2))./size(prior,2);
 Lmat(Lmat >= alpha*size(prior,2)) = 0;

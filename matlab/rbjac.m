@@ -150,5 +150,7 @@ end
 
 if(iselem && nargout<3)
     Jmua_n=Jmua_e;
-    Jmua_e=Jd_e;
+    if nargout>2
+        Jmua_e=Jd_e;
+    end
 end

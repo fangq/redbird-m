@@ -71,10 +71,10 @@ recon.bulk=struct('mua',0.008,'musp',1);
 
 %% run image reconstruction
 
-[newrecon,resid] = rbrun(cfg,recon,detphi0);
+[newrecon,resid] = rbrun(cfg,recon,detphi0,'lambda',1e-4);
 
 
-%% plot reconstructed images
+% plot reconstructed images
 figure
 plotmesh([newrecon.node,newrecon.prop(:,1)],newrecon.elem,'z=20','facecolor','interp','linestyle','none')
 hold on;

@@ -110,7 +110,6 @@ solverflag=jsonopt('solverflag',{},opt);
 blockscale = jsonopt('blockscale',1,opt);
 musscale = jsonopt('musscale',0.5,opt);
 mode = jsonopt('mode','image',opt);
-tmesh = jsonopt('templatemesh',0,opt);
 debugplot = jsonopt('debugplot',0,opt);
 isreduced=0;
 
@@ -176,9 +175,10 @@ for iter=1:maxiter
     end
     
     if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node) && debugplot==1)
-        figure(15),plotmesh([recon.node recon.param.hbo+recon.param.hbr],recon.elem,'z=32');colorbar;shading interp
+        figure(15),plotmesh([recon.node recon.param.hbo+recon.param.hbr],recon.elem,sprintf('z=%d',(max(recon.node(:,3))+min(recon.node(:,3)))/2));colorbar;shading interp
         drawnow
     end
+    
 %     run forward on forward mesh
     [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
     
@@ -202,6 +202,7 @@ for iter=1:maxiter
       else
         omegas = 0;
     end
+    
     if(isfield(cfg,'omega') && (any(omegas>0)) && ismember(1,rfcw)) % if RF data
 %     if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0)) && ismember(1,rfcw)) % if RF data
         % currently, only support node-based values; rbjac supports
@@ -259,23 +260,31 @@ for iter=1:maxiter
             detphi = detphi(sdkeep);
         else
             Jmua=struct('mua',Jmua);
-            detphi0iter = detphi0;
-            detphi = detphi;
+            sdkeep = find(sd(:,3) == 1);
+            detphi0iter = detphi0(:);
+            detphi0iter = detphi0iter(sdkeep);
+            detphi = detphi(:);
+            detphi = detphi(sdkeep);
         end
     end
 
     % here, Jmua is a struct of unknown species; wavelengths
     % are vertically/row-wise concatenate; detphi and detphi0 are the
     % concatenated model and measurement RHS vectors
-
+    
     % mapping jacobians from forward mesh to reconstruction mesh
     if(ismexjac<2 && isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
         if isstruct(Jmua)
-            for ii = 1:length(Jmua)
-                Jmua(ii)=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua(ii),'UniformOutput',false); 
+            fi = fieldnames(Jmua);
+            if (size(Jmua(1).(fi{1}), 2) ~= size(cfg.elem, 1))
+                for ii = 1:length(Jmua)
+                    Jmua(ii)=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua(ii),'UniformOutput',false); 
+                end
             end
         else
-            Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+            if (size(Jmua,2) ~= size(cfg.elem,1))
+                Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+            end
         end
     end
 
@@ -298,7 +307,7 @@ for iter=1:maxiter
         end
         isreduced=1;
     end
-
+    
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
     % and Nn columns, Nsd is src/det pairs, Nw is number of wavelengths,
     % and Nn is the recon mesh, if present, or forward mesh node size.
@@ -319,20 +328,29 @@ for iter=1:maxiter
     end
 
     % store the residual
-    resid(iter)=sum(abs(misfit));
+    resid(iter, 1)=sum(abs(misfit));
     updates(iter).detphi=detphi;
-   
+    
+    % Edit 02/13/2024 to include image resid
+    if isfield(cfg, 'phi0img')
+        phiImg = OMCIgetImg(cfg, phi, [size(cfg.phi0img, 2) size(cfg.phi0img, 1)]);
+        resid(iter, 2) = nansum(nansum(nansum(abs(cfg.phi0img - phiImg), 1), 2), 3);
+        fprintf(sprintf('Image residual = %d\n', resid(iter,2)));
+        if strcmp(mode, 'image')
+            recon.imgResid(:,:,:, iter) = cfg.phi0img - phiImg;
+        end
+    end
+    
 %     if(isreduced==0 && ~isempty(prior))
     if(isreduced == 0 && ~isempty(fieldnames(Aregu)) && iter == 1)
-        if(size(Jflat,1)>=size(Jflat,2) && ~isfield(Aregu,'ltl'))
+        if((size(Jflat,1)>=size(Jflat,2)) && ~isfield(Aregu,'ltl'))
             Aregu.ltl=Aregu.lmat'*Aregu.lmat;
-        end
-        if(size(Jflat,1)<size(Jflat,2) && ~isfield(Aregu,'lir'))
+        elseif(size(Jflat,1)<size(Jflat,2) && ~isfield(Aregu,'lir'))
             Lr=qr(Aregu.lmat);
             Aregu.lir=inv(triu(Lr));
         end
     end
-    
+     
     
     if ((blockscale == 1) && isstruct(Jmua))% && strcmp(mode,'image'))
         blockfields = fieldnames(blocks);
@@ -349,9 +367,33 @@ for iter=1:maxiter
         end
     end
     
+        % Local recon test EXu 05262023
+    if isfield(recon,'Jmask')
+        blockfields = fieldnames(blocks);
+        if (size(Jflat,2) > size(recon.node,1)) && (size(Jflat, 2)/length(blockfields) == size(recon.node, 1))
+            for yy = 1:length(blockfields)
+                Jflat(:,(yy-1).*size(recon.node,1) + setdiff(1:size(recon.node,1),recon.Jmask)) = 0;
+            end
+        elseif (size(Jflat,2) > size(recon.elem,1)) && (size(Jflat, 2)/length(blockfields) == size(recon.elem, 1))
+            for yy = 1:length(blockfields)
+                Jflat(:,(yy-1).*size(recon.elem,1) + setdiff(1:size(recon.elem,1),recon.Jmask)) = 0;
+            end
+        else
+            if (size(Jflat, 2) == size(recon.node, 1))
+                Jflat(:,setdiff(1:size(recon.node,1),recon.Jmask)) = 0;
+            elseif (size(Jflat, 2) == size(recon.elem, 1))
+                Jflat(:,setdiff(1:size(recon.elem,1),recon.Jmask)) = 0;
+            end
+        end
+    end
+    
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
-    dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
+    if isfield(recon,'Jmask')
+        dmu_recon = rbreginv(Jflat,misfit,lambda,Aregu,blocks);
+    else
+        dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
+    end
     
     if (blockscale == 1 && exist('scalefact','var'))
         for zz = 1:length(scalefact)
@@ -410,39 +452,10 @@ for iter=1:maxiter
         updates=updates(1:iter);
         break;
     end
-    
-%      %% EXTRA STUFF ADDED BY MM
-%     
-%     if isfield(Aregu,'lmat') && tmesh == 1
-%         tempdata = recon.prop(:,1) - recon.prop0(:,1);
-%         norm_dmua_dx = (tempdata + abs(min(tempdata,[],1)))./max((tempdata + abs(min(tempdata,[],1))),[],1);
-%         %dmua_dx = norm_dmua_dx.*recon.prior(:,:,iter);
-%         dmua_dx = norm_dmua_dx.*recon.prior(:,:,1);
-%         priorweight(iter,:) = abs(nansum(dmua_dx,1)./max(abs(nansum(dmua_dx,1))));
-%         %priorweight_norm(iter,:) = priorweight(iter,:);
-%         if iter == 1
-%             priorweight_norm(iter,:) = priorweight(iter,:);
-%         else
-%             priorweight_norm(iter,:) = priorweight(iter-1,:)./priorweight(iter,:);
-%         end
-%         recon.prior(:,:,iter+1) = dmua_dx;%recon.prior(:,:,iter).*priorweight_norm(iter,:);
-%         Aregu.lmat = rbmakeL(cfg,recon,nansum(recon.prior(:,:,iter+1),2));
-%         Lr = qr(Aregu.lmat);
-%         Aregu.lir = inv(triu(Lr));
-%         figure,
-%         subplot(2,3,1),plot(priorweight_norm(iter,:)),
-%         subplot(2,3,2),plotmesh([recon.node nansum(recon.prior(:,:,iter+1),2)],recon.elem,'z = 20'),colorbar,shading interp,view(2),axis equal, axis tight
-%         subplot(2,3,3),plotmesh([recon.node recon.prop(:,1)],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
-%         subplot(2,3,4),plotmesh([recon.node tempdata],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
-%         subplot(2,3,5),plotmesh([recon.node norm_dmua_dx],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
-%         subplot(2,3,6),plotmesh([recon.node nansum(dmua_dx,2)],recon.elem,'z=20'),colorbar,shading interp,view(2),axis equal, axis tight
-%         
-%         set(gcf,'PaperOrientation','landscape');
-%         set(gcf,'Position',get(0,'Screensize'));
-%         drawnow
-%     end
+
 end
 
+recon.lambda = lambda;
 if(isfield(recon,'node') && isfield(recon,'elem'))
     [cfg,recon]=rbsyncprop(cfg,recon);
     cfg.prop=rbupdateprop(cfg);

@@ -22,10 +22,10 @@ nn=size(cfg.node,1);
 cfg.seg=ones(size(cfg.elem,1),1);
 cfg.srcpos=[30 30 0];
 cfg.srcdir=[0 0 1];
-cfg.detpos = [ 30 30 60 ];
+cfg.detpos = [ 30 30 30 ];
 cfg.detdir = [0 0 -1];
 
-cfg.prop=[0 0 1 1;0.005 1 0 1.37];
+cfg.prop=[0 0 1 1;0.01 1 0 1.37];
 cfg.omega=0;
 
 cfg=rbmeshprep(cfg);

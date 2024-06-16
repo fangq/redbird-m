@@ -5,7 +5,7 @@ function res=rbreginvover(Amat, rhs, lambda, LTL, blocks, varargin)
 % Solve an overdetermined Gauss-Newton normal equation
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
-%
+% 
 % input:
 %     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths 
 %     rhs: the right-hand-side vectors for all sources (independent of wavelengths)

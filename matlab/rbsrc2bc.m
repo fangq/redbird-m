@@ -239,7 +239,7 @@ for wv = wavelengths
         % 1/18 = 1/2*1/9, where 2 comes from the 1/2 in ls=(1+Reff)/(1-Reff)/2*D,
         % and 1/9 = (1/6+1/12+1/12)/3, where A/6 is <phi_i,phi_j> when i=j, and
         % A/12 is i!=j
-        Adiagbc=parea(:)*((1-Reff)/(18*(1+Reff)));
+        Adiagbc= parea(:)*((1-Reff)/(18*(1+Reff)));%ones(size(parea(:),1),1)*((1-Reff)/(18*(1+Reff)));
         Adiagbc=repmat(Adiagbc,1,size(srcbc,1)).*(srcbc');
         rhs=sparse(size(cfg.node,1),size(srcbc,1));
 
@@ -255,8 +255,8 @@ for wv = wavelengths
                 wsrc=srcweight(i);
             end
 %             rhs(rhs(:,i)<1e-3*max(rhs(:,i)),i) = 0;
-            rhs(:,i)=rhs(:,i)*(wsrc/abs(sum(rhs(:,i))));
-%             rhs(:,i)=rhs(:,i)*(wsrc/sum(abs(rhs(:,i))));
+%             rhs(:,i)=rhs(:,i)*(wsrc/abs(sum(rhs(:,i))));
+            rhs(:,i)=rhs(:,i)*(wsrc/sum(abs(rhs(:,i))));
 %             rhs(:,i)=rhs(:,i)*(wsrc/sum(rhs(:,i)));
         end
         srcbc=rhs.';

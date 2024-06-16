@@ -37,7 +37,13 @@ else
 end
 
 if(isfield(cfg,'srcpos') && ~isempty(cfg.srcpos))
-    pointsrc=cfg.srcpos+repmat(cfg.srcdir*ltr,size(cfg.srcpos,1),1);
+    if (size(cfg.srcdir, 1) == size(cfg.srcpos, 1))
+        pointsrc=cfg.srcpos+(cfg.srcdir.*ltr);
+    elseif (size(cfg.srcdir, 1) == 1)
+        pointsrc=cfg.srcpos+repmat(cfg.srcdir.*ltr,size(cfg.srcpos,1),1);
+    else
+        error('Please provide either one srcdir for all srcpos or one srcdir for each srcpos');
+    end
 end
 if (isfield(cfg,'widesrc') && ~isempty(cfg.widesrc))
     widesrc=cfg.widesrc;
@@ -45,7 +51,14 @@ end
 
 if(isfield(cfg,'detpos') && ~isempty(cfg.detpos))
 %     pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
-    pointdet = cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1);
+%     pointdet = cfg.detpos+repmat(cfg.detdir.*ltr,size(cfg.detpos,1),1);
+    if (size(cfg.detdir, 1) == size(cfg.detpos, 1))
+        pointdet=cfg.detpos+(cfg.detdir.*ltr);
+    elseif (size(cfg.detdir, 1) == 1)
+        pointdet=cfg.detpos+repmat(cfg.detdir.*ltr,size(cfg.detpos,1),1);
+    else
+        error('Please provide either one srcdir for all srcpos or one srcdir for each srcpos');
+    end
 end
 if(isfield(cfg,'widedet') && ~isempty(cfg.widedet))
     widedet = cfg.widedet;
