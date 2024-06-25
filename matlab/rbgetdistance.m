@@ -34,11 +34,11 @@ wsrcpos = [];
 wdetpos = [];
 
 if ~isempty(widesrc)
-    wsrcpos = wfCOM(widesrc,cfg);
+    wsrcpos = rbcomputewfcom(widesrc,cfg);
     srcpos = [srcpos; wsrcpos];
 end
 if ~isempty(widedet)
-    wdetpos = wfCOM(widedet,cfg);
+    wdetpos = rbcomputewfcom(widedet,cfg);
     detpos = [detpos; wdetpos];
 end
 
