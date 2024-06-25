@@ -98,7 +98,11 @@ else
 end
 
 mode=jsonopt('mode',mode,opt);
+method = jsonopt('method','normal',opt);
 prior=jsonopt('prior','',opt);
+if isfield(opt,'sd')
+    sd = opt.sd;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Run forward for the heterogeneous domain
@@ -212,4 +216,9 @@ end
 
 maxiter=jsonopt('maxiter',10,opt);
 
-[varargout{1:nargout}]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,opt);
+
+if strcmp(method,'jmask')
+    [varargout{1:nargout}]=rbrunrecon_jmask(maxiter,cfg,recon,detphi0,sd,opt);
+else
+    [varargout{1:nargout}]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,opt);
+end

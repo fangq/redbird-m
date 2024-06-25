@@ -1,4 +1,4 @@
-function newcfg=rbmeshprep(cfg)
+function [newcfg,sd]=rbmeshprep(cfg)
 %
 % newcfg=rbmeshprep(cfg)
 %
@@ -82,13 +82,15 @@ if(~isfield(cfg,'reff') || isempty(cfg.reff))
         cfg.musp0=bkprop(2)*(1-bkprop(3));
     end
 end
-if(isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'}))
+if (((isfield(cfg,'srctype') && ~ismember(cfg.srctype,{'pencil','isotropic'})) || isfield(cfg,'widesrcid')) && ~isfield(cfg,'widesrc'))
     cfg.srcpos0=cfg.srcpos;
-    cfg.srcpos=rbsrc2bc(cfg);
+%     cfg.srcpos=rbsrc2bc(cfg);
+    cfg = rbsrc2bc(cfg);
 end
-if(isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'}))
+if (((isfield(cfg,'dettype') && ~ismember(cfg.dettype,{'pencil','isotropic'})) || isfield(cfg,'widedetid')) && ~isfield(cfg,'widedet'))
     cfg.detpos0=cfg.detpos;
-    cfg.detpos=rbsrc2bc(cfg,1);
+%     cfg.detpos=rbsrc2bc(cfg,1);
+    cfg = rbsrc2bc(cfg,1);
 end
 if(~isfield(cfg,'cols') || isempty(cfg.cols))
     [cfg.rows,cfg.cols,cfg.idxcount]=rbfemnz(cfg.elem,size(cfg.node,1));
@@ -105,3 +107,4 @@ if(~isfield(cfg,'omega') || isempty(cfg.omega))
     cfg.omega=0;
 end
 newcfg=cfg;
+sd = rbsdmap(cfg);

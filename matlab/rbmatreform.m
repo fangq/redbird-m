@@ -40,16 +40,21 @@ function [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, form)
 if(nargin<4)
     form='complex';
 end
-
-rhs=ymeas-ymodel;
-
 nblock=1;
 
-if(strcmp(form,'complex'))
-    newA=Amat;
-    newrhs=rhs;
-    return;
+if isstruct(Amat)
+    Amat = cell2mat(squeeze(struct2cell(Amat)));
+    ymeas = struct2cell(ymeas);
+    ymodel = struct2cell(ymodel);
+    if (size(ymeas,1) < size(ymeas,2))
+        ymeas = ymeas.';
+        ymodel = ymodel.';
+    end
+    ymeas = cell2mat(ymeas);
+    ymodel = cell2mat(ymodel);
 end
+
+rhs=ymeas-ymodel;
 
 if(strcmp(form,'real') || strcmp(form,'reim'))
     newA=real(Amat);
@@ -75,9 +80,69 @@ if(strcmp(form,'logphase'))
         newrhs=log(abs(ymeas))-log(abs(ymodel));
     else
         newA=[real(temp) ; imag(temp)];
-	    newrhs=[log(abs(ymeas))-log(abs(ymodel)); 
-                angle(ymeas)   -angle(ymodel)];
+	    newrhs=[log(abs(ymeas)) - log(abs(ymodel)); 
+                angle(ymeas) - angle(ymodel)];
         nblock=1;
     end
     return;
 end
+
+
+%{
+if (~isstruct(Amat))
+    Amat = struct('J',Amat);
+    ymeas = struct('detphi',ymeas);
+    ymodel = struct('detphi',ymodel);
+end
+
+rfcw = length(Amat);
+Aout = [];
+rhsout = [];
+
+for ii = rfcw:-1:1
+    y0 = ymeas(ii).detphi;
+    y1 = ymodel(ii).detphi;
+    A = Amat(ii).J;
+    
+    rhs=y0-y1;
+
+    if(strcmp(form,'complex'))
+        newA=A;
+        newrhs=rhs;
+    end
+
+    if(strcmp(form,'real') || strcmp(form,'reim'))
+        newA=real(A);
+        newrhs=real(rhs);
+
+        if(~isreal(rhs) && ~isreal(A))
+            if(strcmp(form,'reim'))
+               newA=[real(A) -imag(A); 
+                     imag(A) real(A)];
+            else
+               newA=[newA; imag(A)];
+            end
+            newrhs=[newrhs; imag(rhs)];
+            nblock=1;
+        end
+    end
+
+    if(strcmp(form,'logphase'))
+        temp=repmat(conj(y1)./abs(y1.*y1),1,size(A,2)).*A;
+        if(isreal(y1))
+            newA=real(temp);
+            newrhs=log(abs(y0))-log(abs(y1));
+        else
+            newA=[real(temp) ; imag(temp)];
+            newrhs=[log(abs(y0))-log(abs(y1)); angle(y0)-angle(y1)];
+            nblock=1;
+        end
+    end
+    
+    Aout = [Aout; newA];
+    rhsout = [rhsout; newrhs];
+end
+
+newA = Aout;
+newrhs = rhsout;
+%}

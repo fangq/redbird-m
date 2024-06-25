@@ -27,7 +27,8 @@ function [detval, goodidx]=rbfemgetdet(phi, cfg, optodeloc, optodebary)
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~isfield(cfg,'srcpos') || isempty(cfg.srcpos) || ~isfield(cfg,'detpos') || isempty(cfg.detpos))
+if(((~isfield(cfg,'srcpos') || isempty(cfg.srcpos)) && ~isfield(cfg,'widesrc')) ...
+        || ((~isfield(cfg,'detpos') || isempty(cfg.detpos)) && ~isfield(cfg,'widedet')))
     detval=[];
     goodidx=[];
     return;
@@ -35,13 +36,30 @@ end
 
 srcnum=size(cfg.srcpos,1);
 detnum=size(cfg.detpos,1);
+if isfield(cfg,'widesrc')
+    wfsrcnum = size(cfg.widesrc,1);
+else
+    wfsrcnum = 0;
+end
+if isfield(cfg,'widedet')
+    wfdetnum = size(cfg.widedet,1);
+else
+    wfdetnum = 0;
+end
 
-goodidx=find(~isnan(optodeloc(srcnum+1:srcnum+detnum)));
-detval=zeros(detnum,srcnum);
-gooddetval=zeros(length(goodidx),srcnum);
+goodsrc = find(~isnan(optodeloc(1:srcnum+wfsrcnum)));
+goodidx=find(~isnan(optodeloc(srcnum+wfsrcnum+1:srcnum+wfsrcnum+detnum+wfdetnum)));
+detval=zeros(length(goodidx),length(goodsrc));
+gooddetval=zeros(srcnum,detnum);
 
 if(nargin==3)
-    detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
+%     detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
+    [~,goodsrc] = find(sum(optodeloc(:,1:srcnum+wfsrcnum)));
+    goodsrc = unique(goodsrc);
+    [~,goodidx] = find(sum(optodeloc(:,srcnum+wfsrcnum+1:srcnum+wfsrcnum+detnum+wfdetnum)));
+    goodidx = unique(goodidx);
+    detval=optodeloc(:,[1:detnum+wfdetnum]+srcnum+wfsrcnum)'*phi(:,[1:srcnum+wfsrcnum]);
+%     detval=optodeloc(:,goodidx+srcnum+wfsrcnum)'*phi(:,goodsrc);
 elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field det
     for i=1:srcnum
         for j=1:detnum
@@ -49,10 +67,12 @@ elseif(isempty(goodidx) && size(cfg.detpos,2)==size(cfg.node,1)) % wide-field de
         end
     end
 else
-    for i=1:length(goodidx)
-        if(~isnan(optodeloc(i)))
-            gooddetval(i,:)=sum(phi(cfg.elem(optodeloc(srcnum+goodidx(i)),:),1:srcnum).*repmat(optodebary(srcnum+goodidx(i),:)',1,srcnum),1);
+    if(~isempty(goodidx))
+        for i=goodidx'
+    %         if(~isnan(optodeloc(goodidx(i))))
+            gooddetval(i,goodsrc)=sum(phi(cfg.elem(optodeloc(srcnum+i),:),goodsrc).*repmat(optodebary(srcnum+i,:)',1,length(goodsrc)),1);
+    %         end
         end
     end
-    detval(goodidx,:)=gooddetval;
+    detval=gooddetval(goodidx,goodsrc);
 end

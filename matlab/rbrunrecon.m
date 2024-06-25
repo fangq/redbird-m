@@ -1,4 +1,4 @@
-function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,varargin)
+function [recon, resid, cfg, updates, Jmua, detphi0iter, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,varargin)
 %
 % [newrecon, resid, newcfg]=rbrunrecon(maxiter,cfg,recon,detphi0,sd)
 %   or
@@ -84,7 +84,7 @@ function [recon, resid, cfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,
 %
 
 if(maxiter==0 && nargin<3)
-    % return detphi as cfg and phi as recon
+    % return detphi as recon and phi as resid
     [recon,resid]=rbrunforward(cfg);
     return;
 end
@@ -105,7 +105,12 @@ convergetol=jsonopt('tol',0,opt);
 reform=jsonopt('reform','real',opt);
 ismexjac=jsonopt('mex',0,opt);
 prior=jsonopt('prior','',opt);
+rfcw = jsonopt('rfcw',1,opt);
 solverflag=jsonopt('solverflag',{},opt);
+blockscale = jsonopt('blockscale',1,opt);
+musscale = jsonopt('musscale',0.5,opt);
+mode = jsonopt('mode','image',opt);
+debugplot = jsonopt('debugplot',0,opt);
 isreduced=0;
 
 % create or accept regularization matrix
@@ -123,16 +128,39 @@ end
 if(~isempty(prior) && isfield(recon,'seg') && ~isfield(Aregu,'lmat'))
     Aregu.lmat=rbprior(recon.seg,prior,opt);
 end
-
 if(nargin<5)
-    sd=rbsdmap(cfg,opt);
+   sd = rbsdmap(cfg);
+end
+
+if isfield(opt,'rfcw')
+    rfcw = rfcw;
+else
+    if isa(sd,'containers.Map')
+        waves = sd.keys;
+        sdwv = sd(waves{1});
+        if (size(sdwv,2) > 3)
+            rfcw = unique(sdwv(:,4));
+            rfcw = rfcw(rfcw > 0)';
+        else
+            rfcw = 1;
+        end
+    end
+end
+
+if (length(rfcw) < 2 && (isstruct(detphi0) && length(detphi0) > 1))
+    detphi0 = detphi0(rfcw).detphi;
 end
 
 % start iterative Gauss-Newton based reconstruction
-
 for iter=1:maxiter
     tic
-
+    
+    if isfield(recon,'param')
+        recon.param
+    elseif (size(recon.prop,1) < 6)
+        recon.prop
+    end
+    
     % update forward mesh prop/param using recon mesh prop/param if given
     % for rbsyncprop to work, one must provide initial values of cfg.prop
     % (or cfg.param) if recon.prop (or recon.param) is specified
@@ -145,16 +173,43 @@ for iter=1:maxiter
             cfg.prop=rbupdateprop(cfg);
         end
     end
-    % run forward on forward mesh
-    [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag);
+    
+    if (isfield(recon,'param') && length(recon.param.hbo) == length(recon.node) && debugplot==1)
+        figure(15),plotmesh([recon.node recon.param.hbo+recon.param.hbr],recon.elem,sprintf('z=%d',(max(recon.node(:,3))+min(recon.node(:,3)))/2));colorbar;shading interp
+        drawnow
+    end
+    
+%     run forward on forward mesh
+    [detphi, phi]=rbrunforward(cfg,'solverflag',solverflag,'sd',sd,'rfcw',rfcw);
+    
+    if isfield(cfg,'sdscale')
+        for ii = 1:length(phi)
+            for wv = phi(ii).phi.keys
+                if ii == 1
+                    phi(ii).phi(wv{1}) = phi(ii).phi(wv{1}).*complex(cfg.sdscale(:,1),cfg.sdscale(:,2))';
+                elseif ii == 2
+                    phi(ii).phi(wv{1}) = phi(ii).phi(wv{1}).*cfg.sdscale(:,1)';
+                end
+            end
+        end
+    end
 
     % build Jacobians on forward mesh
-    if(isfield(cfg,'omega') && cfg.omega>0) % if RF data
+    if isa(cfg.omega,'containers.Map')
+        omegas = cell2mat(cfg.omega.values);
+    elseif (isfield(cfg,'omega') )
+        omegas = cfg.omega;
+      else
+        omegas = 0;
+    end
+    
+    if(isfield(cfg,'omega') && (any(omegas>0)) && ismember(1,rfcw)) % if RF data
+%     if(isfield(cfg,'omega') && (cfg.omega>0 || any(omegas>0)) && ismember(1,rfcw)) % if RF data
         % currently, only support node-based values; rbjac supports
         % multiple wavelengths, in such case, it returns a containers.Map
         if((isfield(cfg,'seg') && length(cfg.seg)==size(cfg.elem,1)) || size(cfg.prop,1)==size(cfg.elem,1))
             % element based properties
-            [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
+            [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol, 1);
         else
             % node based properties
             if(ismexjac) % use mex to build
@@ -165,7 +220,8 @@ for iter=1:maxiter
                     [Jmua, Jd]=rbjacmex(cfg, sd, phi);
                 end
             else
-                [Jmua, Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                [Jmua,~,Jd]=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol,'rfcw',rfcw);
+%                 [Jmua,Jd] = rbjtestnode(sd,phi,cfg.deldotdel,cfg.elem,cfg.evol,cfg);
             end
         end
     else % CW only
@@ -180,7 +236,7 @@ for iter=1:maxiter
                     Jmua=rbjacmex(cfg, sd, phi);
                 end
             else
-                Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol);
+                Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol,'rfcw',rfcw);
             end
         end
     end
@@ -188,69 +244,165 @@ for iter=1:maxiter
     
     % build Jacobians for chromophores in the form of a struct
     % TODO: need to handle Jmua is a map but cfg.param is not defined
-    if(isa(Jmua,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
+    if(isa(cfg.prop,'containers.Map') && isfield(cfg,'param') && isa(cfg.param,'struct'))
         if(exist('Jd','var'))
-            [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, cfg.param, Jd, cfg.prop);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, rfcw, Jd, cfg.prop);
         else
-            [Jmua,detphi0,detphi]=rbmultispectral(Jmua, detphi0, detphi, cfg.param);
+            [Jmua,detphi0iter,detphi]=rbmultispectral(sd, cfg, Jmua, detphi0, detphi, cfg.param, rfcw);
         end
     else  % recon mua/d per wavelengths
         if(exist('Jd','var'))
             Jmua=struct('mua',Jmua,'dcoeff',Jd);
+            sdkeep = find(sd(:,3) == 1);
+            detphi0iter = detphi0(:);
+            detphi = detphi(:);
+            detphi0iter = detphi0iter(sdkeep);
+            detphi = detphi(sdkeep);
         else
             Jmua=struct('mua',Jmua);
+            sdkeep = find(sd(:,3) == 1);
+            detphi0iter = detphi0(:);
+            detphi0iter = detphi0iter(sdkeep);
+            detphi = detphi(:);
+            detphi = detphi(sdkeep);
         end
     end
 
     % here, Jmua is a struct of unknown species; wavelengths
     % are vertically/row-wise concatenate; detphi and detphi0 are the
     % concatenated model and measurement RHS vectors
-
+    
     % mapping jacobians from forward mesh to reconstruction mesh
     if(ismexjac<2 && isfield(recon,'elem') && isfield(recon,'node') && isfield(recon,'mapid') && isfield(recon,'mapweight')) % dual-mesh reconstruction
-        Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+        if isstruct(Jmua)
+            fi = fieldnames(Jmua);
+            if (size(Jmua(1).(fi{1}), 2) ~= size(cfg.elem, 1))
+                for ii = 1:length(Jmua)
+                    Jmua(ii)=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua(ii),'UniformOutput',false); 
+                end
+            end
+        else
+            if (size(Jmua,2) ~= size(cfg.elem,1))
+                Jmua=structfun(@(x) transpose(meshremap(x.',recon.mapid, recon.mapweight,recon.elem,size(recon.node,1))), Jmua,'UniformOutput',false); 
+            end
+        end
     end
 
     if(isfield(recon,'seg') && isvector(recon.seg)) % reconstruction of segmented domains
-        Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
+        if (isstruct(Jmua) && (length(Jmua) > 1))
+            for ii = 1:length(Jmua)
+                Jmua(ii) = structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua(ii),'UniformOutput',false);
+            end
+        else
+            Jmua=structfun(@(x) rbmasksum(x,recon.seg(:)'), Jmua,'UniformOutput',false);
+        end
         isreduced=1;
     elseif(isfield(cfg,'seg') && isvector(cfg.seg)) % single-mesh bulk/seg recon
-        Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
+        if (isstruct(Jmua) && (length(Jmua) > 1))
+            for ii = 1:length(Jmua)
+                Jmua(ii)=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua(ii),'UniformOutput',false);
+            end
+        else
+            Jmua=structfun(@(x) rbmasksum(x,cfg.seg(:)'), Jmua,'UniformOutput',false);
+        end
         isreduced=1;
     end
-
+    
     % blocks contains unknown names and Jacob size, should be Nsd*Nw rows
     % and Nn columns, Nsd is src/det pairs, Nw is number of wavelengths,
     % and Nn is the recon mesh, if present, or forward mesh node size.
-    blocks=structfun(@size, Jmua, 'UniformOutput', false);
+    if (isstruct(Jmua) && (length(Jmua) > 1))
+        for ii = 1:length(Jmua)
+            blocks(ii) = structfun(@size, Jmua(ii), 'UniformOutput', false);
+        end
+    else
+        blocks=structfun(@size, Jmua, 'UniformOutput', false);
+    end
     
     % flatten Jmua into a horizontally/column contatenated matrix
     if(strcmp(reform,'complex')==0)
-        [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0(:), detphi(:), reform);
+        [Jflat,misfit]=rbmatreform(rbmatflat(Jmua), detphi0iter(:), detphi(:), reform);
     else
         Jflat=rbmatflat(Jmua);
-        misfit=detphi0(:)-detphi(:);
+        misfit=detphi0iter(:)-detphi(:);
     end
 
     % store the residual
-    resid(iter)=sum(abs(misfit));
+    resid(iter, 1)=sum(abs(misfit));
     updates(iter).detphi=detphi;
-   
-    if(isreduced==0 && ~isempty(prior))
-        if(size(Jflat,1)>=size(Jflat,2) && ~isfield(Aregu,'ltl'))
-            Aregu.ltl=Aregu.lmat'*Aregu.lmat;
+    
+    % Edit 02/13/2024 to include image resid
+    if isfield(cfg, 'phi0img')
+        phiImg = OMCIgetImg(cfg, phi, [size(cfg.phi0img, 2) size(cfg.phi0img, 1)]);
+        resid(iter, 2) = nansum(nansum(nansum(abs(cfg.phi0img - phiImg), 1), 2), 3);
+        fprintf(sprintf('Image residual = %d\n', resid(iter,2)));
+        if strcmp(mode, 'image')
+            recon.imgResid(:,:,:, iter) = cfg.phi0img - phiImg;
         end
-        if(size(Jflat,1)<size(Jflat,2) && ~isfield(Aregu,'lir'))
+    end
+    
+%     if(isreduced==0 && ~isempty(prior))
+    if(isreduced == 0 && ~isempty(fieldnames(Aregu)) && iter == 1)
+        if((size(Jflat,1)>=size(Jflat,2)) && ~isfield(Aregu,'ltl'))
+            Aregu.ltl=Aregu.lmat'*Aregu.lmat;
+        elseif(size(Jflat,1)<size(Jflat,2) && ~isfield(Aregu,'lir'))
             Lr=qr(Aregu.lmat);
             Aregu.lir=inv(triu(Lr));
         end
     end
+     
+    
+    if ((blockscale == 1) && isstruct(Jmua))% && strcmp(mode,'image'))
+        blockfields = fieldnames(blocks);
+        cn = blocks(1).(blockfields{1})(2);
+        scalefact = [];
+        for zz = 1:length(fieldnames(Jmua))
+            if (zz<=length(intersect(fieldnames(Jmua),{'hbo','hbr','mua'})))
+                scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2)));
+            elseif (exist('Jd','var') &&  zz>length(intersect(fieldnames(Jmua),{'scatamp','scatpow','dcoeff'})))
+                scalefact(zz) = 1/sqrt(sum(sum(Jflat(:,(zz-1)*cn+1:zz*cn).^2))).*musscale;
+            end
+            
+            Jflat(:,(zz-1)*cn+1:zz*cn) = Jflat(:,(zz-1)*cn+1:zz*cn).*scalefact(zz);
+        end
+    end
+    
+        % Local recon test EXu 05262023
+    if isfield(recon,'Jmask')
+        blockfields = fieldnames(blocks);
+        if (size(Jflat,2) > size(recon.node,1)) && (size(Jflat, 2)/length(blockfields) == size(recon.node, 1))
+            for yy = 1:length(blockfields)
+                Jflat(:,(yy-1).*size(recon.node,1) + setdiff(1:size(recon.node,1),recon.Jmask)) = 0;
+            end
+        elseif (size(Jflat,2) > size(recon.elem,1)) && (size(Jflat, 2)/length(blockfields) == size(recon.elem, 1))
+            for yy = 1:length(blockfields)
+                Jflat(:,(yy-1).*size(recon.elem,1) + setdiff(1:size(recon.elem,1),recon.Jmask)) = 0;
+            end
+        else
+            if (size(Jflat, 2) == size(recon.node, 1))
+                Jflat(:,setdiff(1:size(recon.node,1),recon.Jmask)) = 0;
+            elseif (size(Jflat, 2) == size(recon.elem, 1))
+                Jflat(:,setdiff(1:size(recon.elem,1),recon.Jmask)) = 0;
+            end
+        end
+    end
+    
     % solver the inversion (J*delta_x=delta_y) using regularized
     % Gauss-Newton normal equation
-    dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
+    if isfield(recon,'Jmask')
+        dmu_recon = rbreginv(Jflat,misfit,lambda,Aregu,blocks);
+    else
+        dmu_recon=rbreginv(Jflat, misfit, lambda, Aregu, blocks, solverflag{:});  % solve the update on the recon mesh
+    end
+    
+    if (blockscale == 1 && exist('scalefact','var'))
+        for zz = 1:length(scalefact)
+            dmu_recon((zz-1)*cn+1:zz*cn) = dmu_recon((zz-1)*cn+1:zz*cn).*scalefact(zz);
+        end
+    end
    
     % obtain linear index of each output species
-    len=cumsum([1; structfun(@(x) x(2), blocks)]);
+    len=cumsum([1; structfun(@(x) x(2), blocks(1))]);
     output=fieldnames(blocks);
     for i=1:length(output)
         dx=dmu_recon(len(i):len(i+1)-1);
@@ -300,8 +452,10 @@ for iter=1:maxiter
         updates=updates(1:iter);
         break;
     end
+
 end
 
+recon.lambda = lambda;
 if(isfield(recon,'node') && isfield(recon,'elem'))
     [cfg,recon]=rbsyncprop(cfg,recon);
     cfg.prop=rbupdateprop(cfg);

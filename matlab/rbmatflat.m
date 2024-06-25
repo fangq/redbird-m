@@ -38,11 +38,18 @@ if(isa(Amat,'containers.Map')) % maps are vertically concatenated (wavelength)
     end
 elseif(isstruct(Amat)) % structs are horizontally concatenated (chromorphores)
     allkeys=fieldnames(Amat);
+    rfcw = length(Amat);
+    Anew = struct('J',cell(size(Amat)));
     if(nargin<2)
         weight=ones(length(allkeys),1);
     end
     for i=1:length(allkeys)
-        Anew=[Anew, Amat.(allkeys{i})*weight(i)];
+        for j = 1:rfcw
+            Anew(j).J=[Anew(j).J, Amat(j).(allkeys{i})*weight(i)];
+        end
+    end
+    if (length(Anew) == 1)
+        Anew = Anew(1).J;
     end
 elseif(iscell(Amat)) % cells are combined via cell2mat
     Anew=cell2mat(Amat);
