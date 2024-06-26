@@ -154,13 +154,7 @@ end
 % start iterative Gauss-Newton based reconstruction
 for iter=1:maxiter
     tic
-    
-    if isfield(recon,'param')
-        recon.param
-    elseif (size(recon.prop,1) < 6)
-        recon.prop
-    end
-    
+
     % update forward mesh prop/param using recon mesh prop/param if given
     % for rbsyncprop to work, one must provide initial values of cfg.prop
     % (or cfg.param) if recon.prop (or recon.param) is specified
