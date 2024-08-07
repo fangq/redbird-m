@@ -1,10 +1,10 @@
-function ltr=rbgetltr(cfg,wavelength)
+function ltr = rbgetltr(cfg, wavelength)
 %
 % ltr=rbgetltr(cfg,wavelength)
 %
-% Compute the transport mean free path (l_tr=1/mu_tr) in mm in a medium 
-% where mu_tr=mua+musp is the transport coefficient, mua is the absorption 
-% coeff and musp=mus*(1-g) is the reduced scattering coeff, mus is the 
+% Compute the transport mean free path (l_tr=1/mu_tr) in mm in a medium
+% where mu_tr=mua+musp is the transport coefficient, mua is the absorption
+% coeff and musp=mus*(1-g) is the reduced scattering coeff, mus is the
 % scattering coeff and g is the anisotropy
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -19,18 +19,17 @@ function ltr=rbgetltr(cfg,wavelength)
 %     ltr: transport mean free path in mm
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-bkprop=rbgetbulk(cfg);
-if(isa(bkprop,'containers.Map'))
-    if(nargin==1)
-        wavelength=bkprop.keys;
-        wavelength=wavelength{1};
+bkprop = rbgetbulk(cfg);
+if (isa(bkprop, 'containers.Map'))
+    if (nargin == 1)
+        wavelength = bkprop.keys;
+        wavelength = wavelength{1};
     end
-    bkprop=bkprop(wavelength);
+    bkprop = bkprop(wavelength);
 end
-ltr=1/(bkprop(1)+bkprop(2)*(1-bkprop(3)));
-
+ltr = 1 / (bkprop(1) + bkprop(2) * (1 - bkprop(3)));

@@ -1,8 +1,8 @@
-function [Jscatpow,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
+function [Jscatpow, dDdscatpow] = rbjacscatpow(Jd, dcoeff, wavelen)
 %
 % [Jscatpow,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
 %
-% Create the Jacobian matrix for the scattering power using the Jacobian 
+% Create the Jacobian matrix for the scattering power using the Jacobian
 % of the diffusion coeff (D)
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -17,13 +17,12 @@ function [Jscatpow,dDdscatpow]=rbjacscatpow(Jd, dcoeff, wavelen)
 %     dDdscatpow: partial derivative of D - diffusion coeff - to the scat power
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
 % dDdscatpow=dcoeff.*log(wavelen/500);
-dDdscatpow=dcoeff.*log(wavelen.*1e-9);
+dDdscatpow = dcoeff .* log(wavelen .* 1e-9);
 
-
-Jscatpow=Jd.*dDdscatpow;
+Jscatpow = Jd .* dDdscatpow;

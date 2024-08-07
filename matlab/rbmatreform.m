@@ -1,4 +1,4 @@
-function [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, form)
+function [newA, newrhs, nblock] = rbmatreform(Amat, ymeas, ymodel, form)
 %
 % [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, output)
 %
@@ -9,8 +9,8 @@ function [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, form)
 %
 % input:
 %     Amat: the LHS of the matrix equation
-%     ymeas: the vector that stores the measured data for the model to fit 
-%     ymodel: the model predicted measurements at all source detector pairs, 
+%     ymeas: the vector that stores the measured data for the model to fit
+%     ymodel: the model predicted measurements at all source detector pairs,
 %           with a length matching that of ymeas
 %     form: a string to indicate which form of output system, can be one of
 %         'complex': no transformation, Amat and RHS keep original forms,
@@ -27,26 +27,26 @@ function [newA, newrhs, nblock]=rbmatreform(Amat, ymeas, ymodel, form)
 %             PhD Thesis, Section 3.2, Eq. 3.25
 %
 % output:
-%     newA: the reformed LHS matrix 
+%     newA: the reformed LHS matrix
 %     newrhs: the reformed RHS matrix
 %     nblock: nblock=length(newrhs)/size(Amat,1)
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin<4)
-    form='complex';
+if (nargin < 4)
+    form = 'complex';
 end
-nblock=1;
+nblock = 1;
 
 if isstruct(Amat)
     Amat = cell2mat(squeeze(struct2cell(Amat)));
     ymeas = struct2cell(ymeas);
     ymodel = struct2cell(ymodel);
-    if (size(ymeas,1) < size(ymeas,2))
+    if (size(ymeas, 1) < size(ymeas, 2))
         ymeas = ymeas.';
         ymodel = ymodel.';
     end
@@ -54,39 +54,38 @@ if isstruct(Amat)
     ymodel = cell2mat(ymodel);
 end
 
-rhs=ymeas-ymodel;
+rhs = ymeas - ymodel;
 
-if(strcmp(form,'real') || strcmp(form,'reim'))
-    newA=real(Amat);
-    newrhs=real(rhs);
+if (strcmp(form, 'real') || strcmp(form, 'reim'))
+    newA = real(Amat);
+    newrhs = real(rhs);
 
-    if(~isreal(rhs) && ~isreal(Amat))
-        if(strcmp(form,'reim'))
-           newA=[real(Amat) -imag(Amat); 
-                 imag(Amat) real(Amat)];
+    if (~isreal(rhs) && ~isreal(Amat))
+        if (strcmp(form, 'reim'))
+            newA = [real(Amat) -imag(Amat)
+                    imag(Amat) real(Amat)];
         else
-           newA=[newA; imag(Amat)];
+            newA = [newA; imag(Amat)];
         end
-	    newrhs=[newrhs; imag(rhs)];
-        nblock=1;
+        newrhs = [newrhs; imag(rhs)];
+        nblock = 1;
     end
-    return;
+    return
 end
 
-if(strcmp(form,'logphase'))
-    temp=repmat(conj(ymodel)./abs(ymodel.*ymodel),1,size(Amat,2)).*Amat;
-    if(isreal(ymodel))
-        newA=real(temp);
-        newrhs=log(abs(ymeas))-log(abs(ymodel));
+if (strcmp(form, 'logphase'))
+    temp = repmat(conj(ymodel) ./ abs(ymodel .* ymodel), 1, size(Amat, 2)) .* Amat;
+    if (isreal(ymodel))
+        newA = real(temp);
+        newrhs = log(abs(ymeas)) - log(abs(ymodel));
     else
-        newA=[real(temp) ; imag(temp)];
-	    newrhs=[log(abs(ymeas)) - log(abs(ymodel)); 
-                angle(ymeas) - angle(ymodel)];
-        nblock=1;
+        newA = [real(temp); imag(temp)];
+        newrhs = [log(abs(ymeas)) - log(abs(ymodel))
+                  angle(ymeas) - angle(ymodel)];
+        nblock = 1;
     end
-    return;
+    return
 end
-
 
 %{
 if (~isstruct(Amat))
@@ -103,7 +102,7 @@ for ii = rfcw:-1:1
     y0 = ymeas(ii).detphi;
     y1 = ymodel(ii).detphi;
     A = Amat(ii).J;
-    
+
     rhs=y0-y1;
 
     if(strcmp(form,'complex'))
@@ -117,7 +116,7 @@ for ii = rfcw:-1:1
 
         if(~isreal(rhs) && ~isreal(A))
             if(strcmp(form,'reim'))
-               newA=[real(A) -imag(A); 
+               newA=[real(A) -imag(A);
                      imag(A) real(A)];
             else
                newA=[newA; imag(A)];
@@ -138,7 +137,7 @@ for ii = rfcw:-1:1
             nblock=1;
         end
     end
-    
+
     Aout = [Aout; newA];
     rhsout = [rhsout; newrhs];
 end

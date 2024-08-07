@@ -1,4 +1,4 @@
-function varargout=rbfemmatrix(varargin)
+function varargout = rbfemmatrix(varargin)
 % [Adiag, Aoff, deldotdel]=rbfemmatrix(cfg)
 %   or
 % [Jmua, Jd]=rbfemmatrix(cfg, sd, phi, deldotdel, isnodal)
@@ -12,9 +12,9 @@ function varargout=rbfemmatrix(varargin)
 %     sd: the source-detector mapping table
 %     phi: the forward solutions at all sources
 %     deldotdel: grad*phi dot product with grad phi, computed as part of
-%           the computation 
+%           the computation
 %     isnodal: 0 for element-based Jacobian and 1 for node-based Jacobian
-%     mapid: the list of element indices of the reconstruction mesh where 
+%     mapid: the list of element indices of the reconstruction mesh where
 %           each forward mesh node is enclosed
 %     mapweight: the barycentric coordinates of the forward mesh nodes
 %           inside the reconstruction mesh elements
@@ -28,7 +28,7 @@ function varargout=rbfemmatrix(varargin)
 %     Jd: (optional) the node or elementary Jacobian for diffusion coeff D
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %

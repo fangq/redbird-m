@@ -1,8 +1,8 @@
-function Jchrome=rbjacchrome(Jmua, chromorphores)
+function Jchrome = rbjacchrome(Jmua, chromorphores)
 %
 % Jchrome=rbjacchrome(Jmua, extin)
 %
-% Building the Jacobian matrices for chromorphores from Jacobian of the 
+% Building the Jacobian matrices for chromorphores from Jacobian of the
 % absorption coeff and extinction coeff.
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -12,35 +12,35 @@ function Jchrome=rbjacchrome(Jmua, chromorphores)
 %     chromorphores: list of chmorphores supported by rbextinction
 %
 % output:
-%     Jchrome: the Jacobian for all chmorphores, in a struct Jchrome.{hbo,hbr,...} 
+%     Jchrome: the Jacobian for all chmorphores, in a struct Jchrome.{hbo,hbr,...}
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~ismatrix(Jmua)) % if a containers.Map, flatten it
+if (~ismatrix(Jmua)) % if a containers.Map, flatten it
     error('Jmua must be a containers.Map with elements of each wavelength');
 end
 
-if (isstruct(Jmua) && isfield(Jmua,'J'))
+if (isstruct(Jmua) && isfield(Jmua, 'J'))
     wavelengths = keys(Jmua(1).J);
     rfcw = length(Jmua);
 else
-    wavelengths=keys(Jmua);
+    wavelengths = keys(Jmua);
     rfcw = 1;
 end
-extin=rbextinction(wavelengths, chromorphores);
+extin = rbextinction(wavelengths, chromorphores);
 
-Jchrome=struct;
+Jchrome = struct;
 
-for i=1:length(chromorphores)
+for i = 1:length(chromorphores)
     for k = 1:rfcw
-        if (isa(Jmua,'containers.Map'))
-            Jchrome(k).(chromorphores{i})=rbmatflat(Jmua,extin(:,i));
+        if (isa(Jmua, 'containers.Map'))
+            Jchrome(k).(chromorphores{i}) = rbmatflat(Jmua, extin(:, i));
         else
-            Jchrome(k).(chromorphores{i}) = rbmatflat(Jmua(k).J,extin(:,i));
+            Jchrome(k).(chromorphores{i}) = rbmatflat(Jmua(k).J, extin(:, i));
         end
     end
 end

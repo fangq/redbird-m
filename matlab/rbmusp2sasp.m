@@ -1,4 +1,4 @@
-function [sa,sp]=rbmusp2sasp(musp,lambda)
+function [sa, sp] = rbmusp2sasp(musp, lambda)
 %
 % [sa,sp]=rbmusp2sasp(musp,lambda)
 %
@@ -16,11 +16,11 @@ function [sa,sp]=rbmusp2sasp(musp,lambda)
 %     sp: scattering power
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-lambda=lambda/500;
-sp=log(musp(1)/musp(2))/log(lambda(2)/lambda(1));
-sa=0.5*( musp(1)/lambda(1)^(-sp) + musp(2)/lambda(2)^(-sp) );
+lambda = lambda / 500;
+sp = log(musp(1) / musp(2)) / log(lambda(2) / lambda(1));
+sa = 0.5 * (musp(1) / lambda(1)^(-sp) + musp(2) / lambda(2)^(-sp));

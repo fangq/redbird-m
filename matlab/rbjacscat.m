@@ -1,4 +1,4 @@
-function Jscat=rbjacscat(Jd, dcoeff, scatpow, wv)
+function Jscat = rbjacscat(Jd, dcoeff, scatpow, wv)
 %
 % Jscat=rbjacchrome(Jmua, dcoeff, wv)
 %
@@ -17,28 +17,28 @@ function Jscat=rbjacscat(Jd, dcoeff, scatpow, wv)
 %     Jscat: the Jacobian in a struct as Jscat.{scatamp,scatpow}
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin<4)
-    wv=keys(Jd);
+if (nargin < 4)
+    wv = keys(Jd);
 end
 
 % Jscat=[J(scatamp),J(scatpow)]
-if isa(Jd,'containers.Map')
-    Jscat=struct('scatamp',[],'scatpow',[]);
-    for i=1:length(wv)
-%     Jscat.scatamp(((i-1)*size(Jd(wv{i}),1)+1):(i)*size(Jd(wv{i}),1),:) =...
-%         rbjacscatamp(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}), scatpow);
-%     Jscat.scatpow(((i-1)*size(Jd(wv{i}),1)+1):(i)*size(Jd(wv{i}),1),:) =...
-%         rbjacscatpow(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}));
-    Jscat.scatamp = [Jscat.scatamp; rbjacscatamp(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}), scatpow)];
-    Jscat.scatpow = [Jscat.scatpow; rbjacscatpow(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}))];
+if isa(Jd, 'containers.Map')
+    Jscat = struct('scatamp', [], 'scatpow', []);
+    for i = 1:length(wv)
+        %     Jscat.scatamp(((i-1)*size(Jd(wv{i}),1)+1):(i)*size(Jd(wv{i}),1),:) =...
+        %         rbjacscatamp(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}), scatpow);
+        %     Jscat.scatpow(((i-1)*size(Jd(wv{i}),1)+1):(i)*size(Jd(wv{i}),1),:) =...
+        %         rbjacscatpow(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}));
+        Jscat.scatamp = [Jscat.scatamp; rbjacscatamp(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}), scatpow)];
+        Jscat.scatpow = [Jscat.scatpow; rbjacscatpow(Jd(wv{i}), dcoeff(wv{i}), str2double(wv{i}))];
     end
 elseif isstruct(Jd)
-    Jscat = struct('scatamp',{[],[]},'scatpow',{[],[]});
+    Jscat = struct('scatamp', {[], []}, 'scatpow', {[], []});
     for ii = 1:2
         for ll = 1:length(wv)
             Jscat(ii).scatamp = [Jscat(ii).scatamp; rbjacscatamp(Jd(ii).J(wv{ll}), dcoeff(wv{ll}), str2double(wv{ll}), scatpow)];
@@ -48,5 +48,3 @@ elseif isstruct(Jd)
 end
 % Jscat.scatamp=zeros(size(cell2mat(Jd.values'),1),size(cell2mat(Jd.values'),2));
 % Jscat.scatpow=Jscat.scatamp;
-
-

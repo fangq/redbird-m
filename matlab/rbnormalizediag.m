@@ -1,4 +1,4 @@
-function [A, di]=rbnormalizediag(A0)
+function [A, di] = rbnormalizediag(A0)
 %
 % [A, di]=rbnormalizediag(A0)
 %
@@ -14,11 +14,11 @@ function [A, di]=rbnormalizediag(A0)
 %     A: the square mtarix after normalization with all diagonal elements 1
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-Adiag=diag(A0);
-di=1./sqrt(Adiag);
-A=(di*di').*A0;
+Adiag = diag(A0);
+di = 1 ./ sqrt(Adiag);
+A = (di * di') .* A0;

@@ -1,4 +1,4 @@
-function res=rbreginvunder(Amat, rhs, lambda, invR, blocks, varargin)
+function res = rbreginvunder(Amat, rhs, lambda, invR, blocks, varargin)
 %
 % res=rbreginvunder(Amat, rhs, lambda, invR)
 %
@@ -7,7 +7,7 @@ function res=rbreginvunder(Amat, rhs, lambda, invR, blocks, varargin)
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
-%     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths 
+%     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths
 %     rhs: the right-hand-side vectors for all sources (independent of wavelengths)
 %     lambda: the Tikhonov regularization parameter
 %     invR: the inversion of the upper triangular matrix of QR-decomposed L
@@ -16,7 +16,7 @@ function res=rbreginvunder(Amat, rhs, lambda, invR, blocks, varargin)
 %     res: the least-square solution of the matrix equation
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
@@ -34,87 +34,87 @@ function res=rbreginvunder(Amat, rhs, lambda, invR, blocks, varargin)
 % so we have
 %    delta_mu=(invR*Z')*inv(Z*Z' + lambda*I)*(y-phi)
 
-Alen = size(Amat,2);
-idx = find(sum(Amat)~=0);
-if(length(idx)<size(Amat,2))
-    Amat=Amat(:,idx);
+Alen = size(Amat, 2);
+idx = find(sum(Amat) ~= 0);
+if (length(idx) < size(Amat, 2))
+    Amat = Amat(:, idx);
 end
 
-emptydata=find(sum(Amat')~=0);
-if(length(emptydata)<size(Amat,1))
-    Amat=Amat(emptydata,:);
-    rhs=rhs(emptydata);
+emptydata = find(sum(Amat') ~= 0);
+if (length(emptydata) < size(Amat, 1))
+    Amat = Amat(emptydata, :);
+    rhs = rhs(emptydata);
 end
 
-if(nargin>=4 && ~isempty(invR))
-    nx=size(invR,1);
-    oldnx = Alen/length(fieldnames(blocks));
-    if (nx > length(idx)/length(fieldnames(blocks)))
-        Lidx = idx(idx<=nx);
-        invR = invR(Lidx,Lidx);
+if (nargin >= 4 && ~isempty(invR))
+    nx = size(invR, 1);
+    oldnx = Alen / length(fieldnames(blocks));
+    if (nx > length(idx) / length(fieldnames(blocks)))
+        Lidx = idx(idx <= nx);
+        invR = invR(Lidx, Lidx);
         oldnx = nx;
-        nx = size(invR,1);
+        nx = size(invR, 1);
     end
-    if(nx==size(Amat,2))
-        Amat=Amat*invR;  %Z=J*invR
+    if (nx == size(Amat, 2))
+        Amat = Amat * invR;  % Z=J*invR
     else
-        if(isempty(blocks)) % assume the Hess matrix size is multiples of LTL
-            for i=1:nx:size(Amat,1)
-                Amat(:,i:i+nx-1)=Amat(:,i:i+nx-1)*invR;
+        if (isempty(blocks)) % assume the Hess matrix size is multiples of LTL
+            for i = 1:nx:size(Amat, 1)
+                Amat(:, i:i + nx - 1) = Amat(:, i:i + nx - 1) * invR;
             end
         else
-%             len=cumsum([1; structfun(@(x) x(2), blocks)]);
+            %             len=cumsum([1; structfun(@(x) x(2), blocks)]);
             len = cumsum([1; structfun(@(x) x(2), blocks(1))]);
-            len(2:end) = len(2:end) - (oldnx - nx).*[1:length(len(2:end))]';
-            for i=1:length(fieldnames(blocks))
-%                 Amat(:,(i-1)*nx+1:i*nx) = Amat(:,(i-1)*nx+1:i*nx)*invR;
-                if(nx==len(i+1)-len(i))  % if the block size match LTL
-                    Amat(:,len(i):len(i+1)-1)=Amat(:,len(i):len(i+1)-1)*invR;
+            len(2:end) = len(2:end) - (oldnx - nx) .* [1:length(len(2:end))]';
+            for i = 1:length(fieldnames(blocks))
+                %                 Amat(:,(i-1)*nx+1:i*nx) = Amat(:,(i-1)*nx+1:i*nx)*invR;
+                if (nx == len(i + 1) - len(i))  % if the block size match LTL
+                    Amat(:, len(i):len(i + 1) - 1) = Amat(:, len(i):len(i + 1) - 1) * invR;
                 end
             end
         end
     end
 end
 
-rhs=rhs(:);
+rhs = rhs(:);
 
-Hess=Amat*Amat'; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
+Hess = Amat * Amat'; % Gauss-Hessian matrix, approximation to Hessian (2nd order)
 
 % [Hess,Gdiag]=rbnormalizediag(Hess);
-Hess(1:1+size(Hess,1):end)=Hess(1:1+size(Hess,1):end)+lambda;
-[Hess,Gdiag]=rbnormalizediag(Hess);
+Hess(1:1 + size(Hess, 1):end) = Hess(1:1 + size(Hess, 1):end) + lambda;
+[Hess, Gdiag] = rbnormalizediag(Hess);
 
-res=Gdiag(:).*rbfemsolve(Hess, Gdiag(:).*rhs, varargin{:});
+res = Gdiag(:) .* rbfemsolve(Hess, Gdiag(:) .* rhs, varargin{:});
 
-if(nargin>=4 && ~isempty(invR))
-    nx=size(invR,1);
-    if(nx==size(Amat,2))
-        res=invR*(Amat'*res);
+if (nargin >= 4 && ~isempty(invR))
+    nx = size(invR, 1);
+    if (nx == size(Amat, 2))
+        res = invR * (Amat' * res);
     else
-        if(isempty(blocks)) % assume the Hess matrix size is multiples of LTL
-            for i=1:nx:size(Amat,1)
-                res(i:i+nx-1)=invR*(Amat(:,i:i+nx-1)'*res(i:i+nx-1));
+        if (isempty(blocks)) % assume the Hess matrix size is multiples of LTL
+            for i = 1:nx:size(Amat, 1)
+                res(i:i + nx - 1) = invR * (Amat(:, i:i + nx - 1)' * res(i:i + nx - 1));
             end
         else
-            len=cumsum([1; structfun(@(x) x(2), blocks(1))]);
-            len(2:end) = len(2:end) - (oldnx - nx).*[1:length(len(2:end))]';
+            len = cumsum([1; structfun(@(x) x(2), blocks(1))]);
+            len(2:end) = len(2:end) - (oldnx - nx) .* [1:length(len(2:end))]';
             res0 = [];
-            for i=1:length(fieldnames(blocks))
-%                 res0((i-1)*nx+1:i*nx)=invR*(Amat(:,(i-1)*nx+1:i*nx)'*res);%(len(i):len(i+1)-1));
-                if(nx==len(i+1)-len(i))  % if the block size match LTL
-                    res0(len(i):len(i+1)-1)=invR*(Amat(:,len(i):len(i+1)-1)'*res);%(len(i):len(i+1)-1));
+            for i = 1:length(fieldnames(blocks))
+                %                 res0((i-1)*nx+1:i*nx)=invR*(Amat(:,(i-1)*nx+1:i*nx)'*res);%(len(i):len(i+1)-1));
+                if (nx == len(i + 1) - len(i))  % if the block size match LTL
+                    res0(len(i):len(i + 1) - 1) = invR * (Amat(:, len(i):len(i + 1) - 1)' * res); % (len(i):len(i+1)-1));
                 end
             end
             res = res0';
-            clear res0
+            clear res0;
         end
     end
 else
-    res=Amat'*res;
+    res = Amat' * res;
 end
 
-if(length(idx)<Alen)
-    res0=zeros(Alen,size(res,2));
-    res0(idx,:)=res;
-    res=res0;
+if (length(idx) < Alen)
+    res0 = zeros(Alen, size(res, 2));
+    res0(idx, :) = res;
+    res = res0;
 end

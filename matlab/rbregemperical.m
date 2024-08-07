@@ -1,4 +1,4 @@
-function lambda=rbregemperical(Hess, residual, alpha)
+function lambda = rbregemperical(Hess, residual, alpha)
 %
 % lambda=rbregemperical(Hess, residual, alpha)
 %
@@ -15,11 +15,10 @@ function lambda=rbregemperical(Hess, residual, alpha)
 %     lambda: the estimated emperical regularization parameter
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-
-ggav=mean(diag(Hess));
-lambda=alpha*ggav*residual*residual;
+ggav = mean(diag(Hess));
+lambda = alpha * ggav * residual * residual;

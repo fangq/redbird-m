@@ -1,4 +1,4 @@
-function cfg=rbsetmesh(cfg0,node,elem,prop,propidx)
+function cfg = rbsetmesh(cfg0, node, elem, prop, propidx)
 %
 % cfg=rbsetmesh(cfg0,node,elem,prop,propidx)
 %
@@ -17,26 +17,26 @@ function cfg=rbsetmesh(cfg0,node,elem,prop,propidx)
 %     cfg: the updated redbird data structure
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-names=fieldnames(cfg0);
-names=intersect(names,{'face','area','evol','deldotdel','isreoriented','nvol','cols','idxsum','musp0'});
+names = fieldnames(cfg0);
+names = intersect(names, {'face', 'area', 'evol', 'deldotdel', 'isreoriented', 'nvol', 'cols', 'idxsum', 'musp0'});
 
-cfg0.node=node;
-cfg0.elem=elem;
-if(nargin>3)
-    cfg0.prop=prop;
+cfg0.node = node;
+cfg0.elem = elem;
+if (nargin > 3)
+    cfg0.prop = prop;
 end
-if(nargin>4)
-    cfg0.seg=propidx;
+if (nargin > 4)
+    cfg0.seg = propidx;
 end
 
-if(~isempty(names))
-    cfg=rmfield(cfg0,names);
+if (~isempty(names))
+    cfg = rmfield(cfg0, names);
 else
-    cfg=cfg0;
+    cfg = cfg0;
 end
-cfg=rbmeshprep(cfg);
+cfg = rbmeshprep(cfg);

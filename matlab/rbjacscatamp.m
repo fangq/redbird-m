@@ -1,8 +1,8 @@
-function [Jscatamp,dDdscatamp]=rbjacscatamp(Jd, dcoeff, wavelen, scatpow)
+function [Jscatamp, dDdscatamp] = rbjacscatamp(Jd, dcoeff, wavelen, scatpow)
 %
 % [Jscatamp,dDdscatamp]=rbjacscatamp(Jd, dcoeff, wavelen, scatpow)
 %
-% Create the Jacobian matrix for the scattering amplitude using the Jacobian 
+% Create the Jacobian matrix for the scattering amplitude using the Jacobian
 % of the diffusion coeff (D)
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -18,12 +18,12 @@ function [Jscatamp,dDdscatamp]=rbjacscatamp(Jd, dcoeff, wavelen, scatpow)
 %     dDdscatamp: partial derivative of D - diffusion coeff - to the scat amplitude
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
 % dDdscatamp=-3.*dcoeff.*dcoeff.*(wavelen./500).^(-scatpow.');
-dDdscatamp=-3.*dcoeff.*dcoeff.*(wavelen.*1e-9).^(-scatpow.');
+dDdscatamp = -3 .* dcoeff .* dcoeff .* (wavelen .* 1e-9).^(-scatpow.');
 
-Jscatamp=Jd.*dDdscatamp;
+Jscatamp = Jd .* dDdscatamp;

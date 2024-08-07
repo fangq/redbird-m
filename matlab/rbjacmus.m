@@ -1,4 +1,4 @@
-function Jmus=rbjacmus(Jd, mus, g)
+function Jmus = rbjacmus(Jd, mus, g)
 %
 % Jmus=rbjacmus(Jd, musp, g)
 %
@@ -15,12 +15,12 @@ function Jmus=rbjacmus(Jd, mus, g)
 %     Jmus: the nodal Jacobian of the absorption coeff.
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin<3)
-    g=0;
+if (nargin < 3)
+    g = 0;
 end
-Jmus=-Jd*(1/(3*mus*mus*(1-g)));
+Jmus = -Jd * (1 / (3 * mus * mus * (1 - g)));

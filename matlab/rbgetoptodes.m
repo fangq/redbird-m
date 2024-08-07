@@ -1,4 +1,4 @@
-function [pointsrc,pointdet,widesrc,widedet]=rbgetoptodes(cfg,wv)
+function [pointsrc, pointdet, widesrc, widedet] = rbgetoptodes(cfg, wv)
 %
 % [pointsrc, widesrc]=rbgetoptodes(cfg)
 %
@@ -20,46 +20,46 @@ function [pointsrc,pointdet,widesrc,widedet]=rbgetoptodes(cfg,wv)
 %          Nw is the total point source+point detector number
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-pointsrc=[];        % EXu - Separated source and detector so easier to concatenate in rbfemrhs
+pointsrc = [];        % EXu - Separated source and detector so easier to concatenate in rbfemrhs
 pointdet = [];
-widesrc=[];
+widesrc = [];
 widedet = [];
 
-if nargin>1
-    ltr = rbgetltr(cfg,wv);
+if nargin > 1
+    ltr = rbgetltr(cfg, wv);
 else
     ltr = rbgetltr(cfg);
 end
 
-if(isfield(cfg,'srcpos') && ~isempty(cfg.srcpos))
+if (isfield(cfg, 'srcpos') && ~isempty(cfg.srcpos))
     if (size(cfg.srcdir, 1) == size(cfg.srcpos, 1))
-        pointsrc=cfg.srcpos+(cfg.srcdir.*ltr);
+        pointsrc = cfg.srcpos + (cfg.srcdir .* ltr);
     elseif (size(cfg.srcdir, 1) == 1)
-        pointsrc=cfg.srcpos+repmat(cfg.srcdir.*ltr,size(cfg.srcpos,1),1);
+        pointsrc = cfg.srcpos + repmat(cfg.srcdir .* ltr, size(cfg.srcpos, 1), 1);
     else
         error('Please provide either one srcdir for all srcpos or one srcdir for each srcpos');
     end
 end
-if (isfield(cfg,'widesrc') && ~isempty(cfg.widesrc))
-    widesrc=cfg.widesrc;
+if (isfield(cfg, 'widesrc') && ~isempty(cfg.widesrc))
+    widesrc = cfg.widesrc;
 end
 
-if(isfield(cfg,'detpos') && ~isempty(cfg.detpos))
-%     pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
-%     pointdet = cfg.detpos+repmat(cfg.detdir.*ltr,size(cfg.detpos,1),1);
+if (isfield(cfg, 'detpos') && ~isempty(cfg.detpos))
+    %     pointsrc=[pointsrc; cfg.detpos+repmat(cfg.detdir*ltr,size(cfg.detpos,1),1)];
+    %     pointdet = cfg.detpos+repmat(cfg.detdir.*ltr,size(cfg.detpos,1),1);
     if (size(cfg.detdir, 1) == size(cfg.detpos, 1))
-        pointdet=cfg.detpos+(cfg.detdir.*ltr);
+        pointdet = cfg.detpos + (cfg.detdir .* ltr);
     elseif (size(cfg.detdir, 1) == 1)
-        pointdet=cfg.detpos+repmat(cfg.detdir.*ltr,size(cfg.detpos,1),1);
+        pointdet = cfg.detpos + repmat(cfg.detdir .* ltr, size(cfg.detpos, 1), 1);
     else
         error('Please provide either one srcdir for all srcpos or one srcdir for each srcpos');
     end
 end
-if(isfield(cfg,'widedet') && ~isempty(cfg.widedet))
+if (isfield(cfg, 'widedet') && ~isempty(cfg.widedet))
     widedet = cfg.widedet;
 end

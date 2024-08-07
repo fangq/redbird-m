@@ -1,4 +1,4 @@
-function varargout=rbplotforward(cfg, phi, idx, varargin)
+function varargout = rbplotforward(cfg, phi, idx, varargin)
 %
 % h=rbplotforward(cfg, phi, idx, 'param1',value1, 'param2',value2,...)
 %
@@ -16,24 +16,24 @@ function varargout=rbplotforward(cfg, phi, idx, varargin)
 %     h: the handles of the plotted graphics objects
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin<3)
-    idx=1;
+if (nargin < 3)
+    idx = 1;
 end
 
-len=length(idx);
+len = length(idx);
 
-hd=zeros(len,1);
+hd = zeros(len, 1);
 
-for i=1:len
-    subplot(1,len,i);
-    hd(i)=plotmesh([cfg.node, phi(:,idx(i))], cfg.elem,varargin{:});
+for i = 1:len
+    subplot(1, len, i);
+    hd(i) = plotmesh([cfg.node, phi(:, idx(i))], cfg.elem, varargin{:});
 end
 
-if(nargout>0)
-    varargout{1}=hd;
+if (nargout > 0)
+    varargout{1} = hd;
 end

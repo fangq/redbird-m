@@ -1,4 +1,4 @@
-function res=rbreginv(Amat, rhs, lambda, Areg, varargin)
+function res = rbreginv(Amat, rhs, lambda, Areg, varargin)
 %
 % res=rbreginv(Amat, rhs, lambda)
 %   or
@@ -12,13 +12,13 @@ function res=rbreginv(Amat, rhs, lambda, Areg, varargin)
 % author: Qianqian Fang (q.fang <at> neu.edu)
 %
 % input:
-%     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths 
+%     Amat: the left-hand-side matrices (a containers.Map object) at specified wavelengths
 %     rhs: the right-hand-side vectors for all sources (independent of wavelengths)
 %     lambda: the Tikhonov regularization parameter
 %     Areg (optional): the regularization matrix, use identity matrix if
 %         not given, if Areg is given, it can be one of the three cases:
 %         - if over-determined, it is the inversion of the unknown covariance
-%             matrix Cx, where Cx=inv(L'L) 
+%             matrix Cx, where Cx=inv(L'L)
 %         - if under-determined, it is the inversion of the R matrix from
 %             qr(L) where Cx=inv(L'L)
 %         - if A is a struct, it looks for A.ltl for over-determined case
@@ -31,31 +31,31 @@ function res=rbreginv(Amat, rhs, lambda, Areg, varargin)
 %     res: the least-square solution of the matrix equation
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin<4)
-    Areg=[];
+if (nargin < 4)
+    Areg = [];
 end
 
-if(size(Amat,1)>=size(Amat,2)) % overdetermined case
-    if(isstruct(Areg))
-        if(isfield(Areg,'ltl'))
-            Areg=Areg.ltl;
+if (size(Amat, 1) >= size(Amat, 2)) % overdetermined case
+    if (isstruct(Areg))
+        if (isfield(Areg, 'ltl'))
+            Areg = Areg.ltl;
         else
-            Areg=[];
+            Areg = [];
         end
     end
-    res=rbreginvover(Amat, rhs, lambda, Areg, varargin{:});
+    res = rbreginvover(Amat, rhs, lambda, Areg, varargin{:});
 else                         % underdetermined case
-    if(isstruct(Areg))
-        if(isfield(Areg,'lir'))
-            Areg=Areg.lir;
+    if (isstruct(Areg))
+        if (isfield(Areg, 'lir'))
+            Areg = Areg.lir;
         else
-            Areg=[];
+            Areg = [];
         end
     end
-    res=rbreginvunder(Amat, rhs, lambda, Areg, varargin{:});
+    res = rbreginvunder(Amat, rhs, lambda, Areg, varargin{:});
 end

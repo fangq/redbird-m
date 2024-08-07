@@ -1,4 +1,4 @@
-function varargout=rbplot(cfg, data, varargin)
+function varargout = rbplot(cfg, data, varargin)
 %
 % h=rbplot(cfg, data, varargin)
 %
@@ -14,20 +14,20 @@ function varargout=rbplot(cfg, data, varargin)
 %     h: the handles of the plotted graphics objects
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(nargin==1)
-    cfg.detpos(:,4)=1;
+if (nargin == 1)
+    cfg.detpos(:, 4) = 1;
     mcxpreview(cfg);
-    return;
+    return
 end
-if(size(data,2)==size(cfg.node,1) || size(data,2)==size(cfg.elem,1))
-    [varargout{1:nargout}]=rbplotjacobian(cfg,data,varargin{:});
-elseif(size(data,1)==size(cfg.node,1) || size(data,1)==size(cfg.elem,1))
-    [varargout{1:nargout}]=rbplotforward(cfg,data,varargin{:});
+if (size(data, 2) == size(cfg.node, 1) || size(data, 2) == size(cfg.elem, 1))
+    [varargout{1:nargout}] = rbplotjacobian(cfg, data, varargin{:});
+elseif (size(data, 1) == size(cfg.node, 1) || size(data, 1) == size(cfg.elem, 1))
+    [varargout{1:nargout}] = rbplotforward(cfg, data, varargin{:});
 else
     error('data row or column counts must match the node or elem number');
 end

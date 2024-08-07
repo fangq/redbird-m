@@ -1,4 +1,4 @@
-function cfgkey=rbgetcfg(cfgs,key)
+function cfgkey = rbgetcfg(cfgs, key)
 %
 % cfgkey=rbgetcfg(cfgs,wavelength)
 %
@@ -17,19 +17,19 @@ function cfgkey=rbgetcfg(cfgs,key)
 %     cfgkey: the single-wavelength cfg structure at the given wavelength
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(~ischar(key))
-    key=num2str(key);
+if (~ischar(key))
+    key = num2str(key);
 end
 
-cfgkey=structfun(@(x) getkey(x,key), cfgs);
+cfgkey = structfun(@(x) getkey(x, key), cfgs);
 
-function newx=getkey(x,key)
-newx=x;
-if(isa(x,'containers.Map'))
-    newx=x(key);
+function newx = getkey(x, key)
+newx = x;
+if (isa(x, 'containers.Map'))
+    newx = x(key);
 end

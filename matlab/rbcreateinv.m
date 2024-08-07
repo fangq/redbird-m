@@ -1,9 +1,9 @@
-function [finalAmat, finalrhs, nblock]=rbcreateinv(Amat, ymeas, ymodel, params, output)
+function [finalAmat, finalrhs, nblock] = rbcreateinv(Amat, ymeas, ymodel, params, output)
 %
 % [finalAmat, finalrhs, nblock]=rbcreateinv(Amat, ymeas, ymodel, params, output)
 %
 % Convert an inverse problem to the log-amplitude and unwrapped phase form
-% i.e. Amat*x=[ymeas - ymodel] => 
+% i.e. Amat*x=[ymeas - ymodel] =>
 % [Alogamp Aphase]*x=[log10(ymeas)-log10(ymodel);angle(ymeas)-angle(ymodel)]
 %
 % author: Qianqian Fang (q.fang <at> neu.edu)
@@ -13,12 +13,12 @@ function [finalAmat, finalrhs, nblock]=rbcreateinv(Amat, ymeas, ymodel, params, 
 %     ymeas: complex valued measurement data
 %     ymodel: complex valued model prediction
 %     param: unknown parameters for multiple wavelengths
-%     output: 'complex': complex-valued system, 
+%     output: 'complex': complex-valued system,
 %                     finalAmat=Amat; finalrhs=ymeas-ymodel
-%             'real': real-valued system, 
+%             'real': real-valued system,
 %                     finalAmat=[Re(Amat) -Im(Amat);Im(Amat) Re(Amat)]
 %                     finalrhs =[Re(ymeas-ymodel) ; Im(ymeas-ymodel)]
-%             'logphase': real-valued system, 
+%             'logphase': real-valued system,
 %                     finalAmat=see manual
 %                     finalrhs =[log10(ymeas)-log10(ymodel) ; angle(ymeas)-angle(ymodel)]
 %
@@ -29,97 +29,97 @@ function [finalAmat, finalrhs, nblock]=rbcreateinv(Amat, ymeas, ymodel, params, 
 %          this happens, nblock is set to 2, otherwise 1
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
 % convert an inverse problem to the log-amplitude and unwrapped phase form
-%  
+%
 
-if(nargin<5)
-    output='complex';
+if (nargin < 5)
+    output = 'complex';
 end
 
-if(nargin<4)
-    param=[];
+if (nargin < 4)
+    param = [];
 end
 
-wavelengths={''};
+wavelengths = {''};
 
-if(isa(Amat,'containers.Map'))
-    wavelengths=Amat.keys;
+if (isa(Amat, 'containers.Map'))
+    wavelengths = Amat.keys;
 else
-    Amat=containers.Map({''},{Amat});
-    ymeas=containers.Map({''},{ymeas});
-    ymodel=containers.Map({''},{ymodel});
+    Amat = containers.Map({''}, {Amat});
+    ymeas = containers.Map({''}, {ymeas});
+    ymodel = containers.Map({''}, {ymodel});
 end
 
-newA=containers.Map();
-newrhs=containers.Map();
+newA = containers.Map();
+newrhs = containers.Map();
 
-nblock=1;
+nblock = 1;
 
-if(strcmp(output,'complex'))
-    newA=Amat;
-    for waveid=wavelengths
-        wv=waveid{1};
-        newrhs(wv)=ymeas(wv)-ymodel(wv);
+if (strcmp(output, 'complex'))
+    newA = Amat;
+    for waveid = wavelengths
+        wv = waveid{1};
+        newrhs(wv) = ymeas(wv) - ymodel(wv);
     end
 else
-    for waveid=wavelengths
-        wv=waveid{1};
-        rhs=ymeas(wv)-ymodel(wv);
-        if(strcmp(output,'real'))
-            newA(wv)=real(Amat(wv));
-            newrhs(wv)=real(rhs);
+    for waveid = wavelengths
+        wv = waveid{1};
+        rhs = ymeas(wv) - ymodel(wv);
+        if (strcmp(output, 'real'))
+            newA(wv) = real(Amat(wv));
+            newrhs(wv) = real(rhs);
 
-            if(~isreal(rhs) && ~isreal(Amat(wv)))
-                newA(wv)=[real(Amat(wv)) -imag(Amat(wv)); 
-                      imag(Amat(wv)) real(Amat(wv))];
-                newrhs(wv)=[real(rhs); imag(rhs)];
-                nblock=2;
+            if (~isreal(rhs) && ~isreal(Amat(wv)))
+                newA(wv) = [real(Amat(wv)) -imag(Amat(wv))
+                            imag(Amat(wv)) real(Amat(wv))];
+                newrhs(wv) = [real(rhs); imag(rhs)];
+                nblock = 2;
             end
-        elseif(strcmp(output,'logphase'))
-            temp=conj(ymodel(wv))./abs(ymodel(wv).*ymodel(wv));
-            temp=repmat(temp(:),1,size(Amat(wv),2)).*Amat(wv);
-            if(isreal(ymodel(wv)))
-                newA(wv)=real(temp);
-                temp=log(abs(ymeas(wv)))-log(abs(ymodel(wv)));
-                newrhs(wv)=temp(:);
+        elseif (strcmp(output, 'logphase'))
+            temp = conj(ymodel(wv)) ./ abs(ymodel(wv) .* ymodel(wv));
+            temp = repmat(temp(:), 1, size(Amat(wv), 2)) .* Amat(wv);
+            if (isreal(ymodel(wv)))
+                newA(wv) = real(temp);
+                temp = log(abs(ymeas(wv))) - log(abs(ymodel(wv)));
+                newrhs(wv) = temp(:);
             else
-                newA(wv)=[real(temp) ; imag(temp)];
-                temp=log(abs(ymeas(wv)))-log(abs(ymodel(wv)));
-                ptemp=angle(ymeas(wv))   -angle(ymodel(wv));
-                newrhs(wv)=[temp(:); ptemp(:)];
-                nblock=2;
+                newA(wv) = [real(temp); imag(temp)];
+                temp = log(abs(ymeas(wv))) - log(abs(ymodel(wv)));
+                ptemp = angle(ymeas(wv))   - angle(ymodel(wv));
+                newrhs(wv) = [temp(:); ptemp(:)];
+                nblock = 2;
             end
         end
     end
 end
 
-finalAmat=[];
-finalrhs=[];
+finalAmat = [];
+finalrhs = [];
 
-if(isa(params,'struct'))
-    paramlist=intersect(fieldnames(params),{'hbo','hbr','water','lipids','aa3'});
-    if(isempty(paramlist))
+if (isa(params, 'struct'))
+    paramlist = intersect(fieldnames(params), {'hbo', 'hbr', 'water', 'lipids', 'aa3'});
+    if (isempty(paramlist))
         error('specified parameters are not supported');
     end
-    extins=rbextinction(wavelengths,paramlist);
-    for i=1:length(wavelengths)
-        wv=waveid{i};
-        wvAmat=[];
-        for j=1:length(paramlist)
-            wvAmat=[wvAmat, newA(wv)*extins(i,j)];
+    extins = rbextinction(wavelengths, paramlist);
+    for i = 1:length(wavelengths)
+        wv = waveid{i};
+        wvAmat = [];
+        for j = 1:length(paramlist)
+            wvAmat = [wvAmat, newA(wv) * extins(i, j)];
         end
-        finalAmat=[finalAmat; wvAmat];
-        finalrhs =[finalrhs; newrhs(wv)];
+        finalAmat = [finalAmat; wvAmat];
+        finalrhs = [finalrhs; newrhs(wv)];
     end
 else
-    for i=1:length(wavelengths)
-        wv=waveid{i};
-        finalAmat=[finalAmat; newA(wv)];
-        finalrhs =[finalrhs; newrhs(wv)];
+    for i = 1:length(wavelengths)
+        wv = waveid{i};
+        finalAmat = [finalAmat; newA(wv)];
+        finalrhs = [finalrhs; newrhs(wv)];
     end
 end

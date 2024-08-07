@@ -1,4 +1,4 @@
-function varargout=rbrun(cfg,recon,detphi0,varargin)
+function varargout = rbrun(cfg, recon, detphi0, varargin)
 %
 % detphi=rbrun(cfg)
 % newrecon=rbrun(cfg,recon,detphi0)
@@ -46,7 +46,7 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 %                       are outside of the recon mesh
 %               recon.param: initial guess of multi-spectral parameters
 %                     (wavelength independent) such as chromophore
-%                     concentrations and scattering amp/power; 
+%                     concentrations and scattering amp/power;
 %                     this must be defined, but can be an empty struct;
 %                     rbrun needs the subfield names from this struct to
 %                     determine which parameters to use
@@ -73,34 +73,34 @@ function varargout=rbrun(cfg,recon,detphi0,varargin)
 %              given, the output sequence is the same as that of rbrunrecon
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-mode='image';
-opt=struct;
-if(nargin==4 || (~isempty(varargin) && (~ischar(varargin{1}) || bitand(length(varargin),1)==1 && ~ischar(varargin{1}))))
-    sd=varargin{1};
-    if(length(varargin)==2 && ~ischar(varargin{1}) && ischar(varargin{2}))
-        mode=varargin{2};
+mode = 'image';
+opt = struct;
+if (nargin == 4 || (~isempty(varargin) && (~ischar(varargin{1}) || bitand(length(varargin), 1) == 1 && ~ischar(varargin{1}))))
+    sd = varargin{1};
+    if (length(varargin) == 2 && ~ischar(varargin{1}) && ischar(varargin{2}))
+        mode = varargin{2};
     end
-    if(length(varargin)>=3)
-        opt=varargin2struct(varargin{2:end});
+    if (length(varargin) >= 3)
+        opt = varargin2struct(varargin{2:end});
     end
 else
-    if(length(varargin)==2 && ~ischar(varargin{1}) && ischar(varargin{2}))
-        sd=varargin{1};
-        mode=varargin{2};
+    if (length(varargin) == 2 && ~ischar(varargin{1}) && ischar(varargin{2}))
+        sd = varargin{1};
+        mode = varargin{2};
     else
-        opt=varargin2struct(varargin{:});
+        opt = varargin2struct(varargin{:});
     end
 end
 
-mode=jsonopt('mode',mode,opt);
-method = jsonopt('method','normal',opt);
-prior=jsonopt('prior','',opt);
-if isfield(opt,'sd')
+mode = jsonopt('mode', mode, opt);
+method = jsonopt('method', 'normal', opt);
+prior = jsonopt('prior', '', opt);
+if isfield(opt, 'sd')
     sd = opt.sd;
 end
 
@@ -108,18 +108,18 @@ end
 %%   Run forward for the heterogeneous domain
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if(nargin==1)
-    [varargout{1:nargout}]=rbrunforward(cfg);
-    return;
-elseif(nargin==2)
-    if(~isfield(recon,'detphi0'))
+if (nargin == 1)
+    [varargout{1:nargout}] = rbrunforward(cfg);
+    return
+elseif (nargin == 2)
+    if (~isfield(recon, 'detphi0'))
         error('you must give detphi0 as input');
     else
-        detphi0=recon.detphi0;
+        detphi0 = recon.detphi0;
     end
 end
-if(isstruct(detphi0) && isfield(detphi0,'srcpos'))
-    detphi0=rbrunforward(detphi0);
+if (isstruct(detphi0) && isfield(detphi0, 'srcpos'))
+    detphi0 = rbrunforward(detphi0);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,98 +127,97 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 switch mode
-    case {'bulk','seg','image'}
-        if(strcmp(mode,'bulk'))
-            if(isfield(recon,'node'))
-                recon.seg=ones(size(recon.node,1),1);
+    case {'bulk', 'seg', 'image'}
+        if (strcmp(mode, 'bulk'))
+            if (isfield(recon, 'node'))
+                recon.seg = ones(size(recon.node, 1), 1);
             else
-                cfg.seg=ones(size(cfg.node,1),1);
+                cfg.seg = ones(size(cfg.node, 1), 1);
             end
-            maxseg=1;
-        elseif(strcmp(mode,'image'))
-            if(~isempty(prior) && isfield(recon,'seg') && ~isfield(opt,'lmat'))
-                opt.lmat=rbprior(recon.seg,prior,opt);
+            maxseg = 1;
+        elseif (strcmp(mode, 'image'))
+            if (~isempty(prior) && isfield(recon, 'seg') && ~isfield(opt, 'lmat'))
+                opt.lmat = rbprior(recon.seg, prior, opt);
             end
-            if(isfield(recon,'seg'))
-                recon=rmfield(recon,'seg');
+            if (isfield(recon, 'seg'))
+                recon = rmfield(recon, 'seg');
             end
-            if(isfield(cfg,'seg'))
-                cfg=rmfield(cfg,'seg');
+            if (isfield(cfg, 'seg'))
+                cfg = rmfield(cfg, 'seg');
             end
-            if(isfield(recon,'node'))
-                maxseg=size(recon.node,1);
+            if (isfield(recon, 'node'))
+                maxseg = size(recon.node, 1);
             else
-                maxseg=size(cfg.node,1);
+                maxseg = size(cfg.node, 1);
             end
         else
-            if(isfield(recon,'node'))
-                maxseg=max(cfg.seg);
+            if (isfield(recon, 'node'))
+                maxseg = max(cfg.seg);
             else
-                maxseg=max(cfg.seg);
+                maxseg = max(cfg.seg);
             end
         end
-        if(isfield(recon,'param') && isstruct(recon.param) && isfield(recon,'bulk'))
-            types=fieldnames(recon.param);
-            for ch=1:length(types)
-               recon.param.(types{ch})=recon.bulk.(types{ch})*ones(maxseg,1);
+        if (isfield(recon, 'param') && isstruct(recon.param) && isfield(recon, 'bulk'))
+            types = fieldnames(recon.param);
+            for ch = 1:length(types)
+                recon.param.(types{ch}) = recon.bulk.(types{ch}) * ones(maxseg, 1);
             end
-            if(strcmp(mode,'image'))
-                for ch=1:length(types)
-                   cfg.param.(types{ch})=recon.bulk.(types{ch})*ones(size(cfg.node,1),1);
+            if (strcmp(mode, 'image'))
+                for ch = 1:length(types)
+                    cfg.param.(types{ch}) = recon.bulk.(types{ch}) * ones(size(cfg.node, 1), 1);
                 end
             end
             % cfg.prop will be updated inside rbrunrecon;
         end
-        if((~isfield(recon,'param') && isfield(recon,'prop') && isempty(recon.prop)) ...
-            || (~isfield(recon,'param') && ~isfield(recon,'prop')))
-            nref=1.37;
-            if(isfield(recon.bulk,'n'))
-                nref=recon.bulk.n;
+        if ((~isfield(recon, 'param') && isfield(recon, 'prop') && isempty(recon.prop)) || ...
+            (~isfield(recon, 'param') && ~isfield(recon, 'prop')))
+            nref = 1.37;
+            if (isfield(recon.bulk, 'n'))
+                nref = recon.bulk.n;
             end
-            if(isfield(recon.bulk,'musp'))
-                recon.prop=repmat([recon.bulk.mua,recon.bulk.musp,0,nref],maxseg,1);
+            if (isfield(recon.bulk, 'musp'))
+                recon.prop = repmat([recon.bulk.mua, recon.bulk.musp, 0, nref], maxseg, 1);
             else
-                recon.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],maxseg,1);
+                recon.prop = repmat([recon.bulk.mua, 1 / (3 * recon.bulk.dcoeff), 0, nref], maxseg, 1);
             end
-            if(strcmp(mode,'image'))
-                if(isfield(recon.bulk,'musp'))
-                    cfg.prop=repmat([recon.bulk.mua,recon.bulk.musp,0,nref],size(cfg.node,1),1);
+            if (strcmp(mode, 'image'))
+                if (isfield(recon.bulk, 'musp'))
+                    cfg.prop = repmat([recon.bulk.mua, recon.bulk.musp, 0, nref], size(cfg.node, 1), 1);
                 else
-                    cfg.prop=repmat([recon.bulk.mua,1/(3*recon.bulk.dcoeff),0,nref],size(cfg.node,1),1);
+                    cfg.prop = repmat([recon.bulk.mua, 1 / (3 * recon.bulk.dcoeff), 0, nref], size(cfg.node, 1), 1);
                 end
             end
-            if(strcmp(mode,'image')==0)
-                recon.prop=[0 0 1 1; recon.prop];
+            if (strcmp(mode, 'image') == 0)
+                recon.prop = [0 0 1 1; recon.prop];
             end
         end
 end
 
-if(isfield(recon,'seg') && ~isempty(recon.seg))
-    if(numel(recon.seg)==1 || length(unique(recon.seg))==1)
-        recon.seg=ones(size(recon.node,1),1);
+if (isfield(recon, 'seg') && ~isempty(recon.seg))
+    if (numel(recon.seg) == 1 || length(unique(recon.seg)) == 1)
+        recon.seg = ones(size(recon.node, 1), 1);
         fprintf('[rbrun]: run bulk estimation ...\n');
-    elseif(isvector(recon.seg))
+    elseif (isvector(recon.seg))
         fprintf('[rbrun]: run segmented tissue property estimation ...\n');
-    elseif(min(size(recon.seg))>=2)
-        if(strcmp(mode,'fuzzy'))
+    elseif (min(size(recon.seg)) >= 2)
+        if (strcmp(mode, 'fuzzy'))
             fprintf('[rbrun]: run fuzzy-segmentation based property estimation ...\n');
-        elseif(strcmp(mode,'prior'))
+        elseif (strcmp(mode, 'prior'))
             fprintf('[rbrun]: run compositional-prior guided reconstruction ...\n');
-        elseif(strcmp(mode,'roi'))
+        elseif (strcmp(mode, 'roi'))
             fprintf('[rbrun]: run roi-based compositional-prior guided reconstruction ...\n');
         end
     end
 end
 
-if(~exist('sd','var'))
-    sd=rbsdmap(cfg);
+if (~exist('sd', 'var'))
+    sd = rbsdmap(cfg);
 end
 
-maxiter=jsonopt('maxiter',10,opt);
+maxiter = jsonopt('maxiter', 10, opt);
 
-
-if strcmp(method,'jmask')
-    [varargout{1:nargout}]=rbrunrecon_jmask(maxiter,cfg,recon,detphi0,sd,opt);
+if strcmp(method, 'jmask')
+    [varargout{1:nargout}] = rbrunrecon_jmask(maxiter, cfg, recon, detphi0, sd, opt);
 else
-    [varargout{1:nargout}]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,opt);
+    [varargout{1:nargout}] = rbrunrecon(maxiter, cfg, recon, detphi0, sd, opt);
 end

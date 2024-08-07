@@ -1,4 +1,4 @@
-function [Anew, allkeys]=rbmatflat(Amat, weight)
+function [Anew, allkeys] = rbmatflat(Amat, weight)
 %
 % [Anew, allkeys]=rbmatflat(Amat)
 %
@@ -12,45 +12,45 @@ function [Anew, allkeys]=rbmatflat(Amat, weight)
 %     weight: the weight mutiplying to each sub block before concatenation
 %
 % output:
-%     Anew: the flattened LHS matrix 
+%     Anew: the flattened LHS matrix
 %     allkeys: the wavelength labels in the Amat input if it is a containers.Map, or []
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-allkeys=[];
-if(~isstruct(Amat) && ~isa(Amat,'containers.Map'))
-    Anew=Amat;
-    return;
+allkeys = [];
+if (~isstruct(Amat) && ~isa(Amat, 'containers.Map'))
+    Anew = Amat;
+    return
 end
 
-Anew=[];
-if(isa(Amat,'containers.Map')) % maps are vertically concatenated (wavelength)
-    allkeys=Amat.keys;
-    if(nargin<2)
-        weight=ones(length(allkeys),1);
+Anew = [];
+if (isa(Amat, 'containers.Map')) % maps are vertically concatenated (wavelength)
+    allkeys = Amat.keys;
+    if (nargin < 2)
+        weight = ones(length(allkeys), 1);
     end
-    for i=1:length(allkeys)
-        Anew=[Anew; Amat(allkeys{i})*weight(i)];
+    for i = 1:length(allkeys)
+        Anew = [Anew; Amat(allkeys{i}) * weight(i)];
     end
-elseif(isstruct(Amat)) % structs are horizontally concatenated (chromorphores)
-    allkeys=fieldnames(Amat);
+elseif (isstruct(Amat)) % structs are horizontally concatenated (chromorphores)
+    allkeys = fieldnames(Amat);
     rfcw = length(Amat);
-    Anew = struct('J',cell(size(Amat)));
-    if(nargin<2)
-        weight=ones(length(allkeys),1);
+    Anew = struct('J', cell(size(Amat)));
+    if (nargin < 2)
+        weight = ones(length(allkeys), 1);
     end
-    for i=1:length(allkeys)
+    for i = 1:length(allkeys)
         for j = 1:rfcw
-            Anew(j).J=[Anew(j).J, Amat(j).(allkeys{i})*weight(i)];
+            Anew(j).J = [Anew(j).J, Amat(j).(allkeys{i}) * weight(i)];
         end
     end
     if (length(Anew) == 1)
         Anew = Anew(1).J;
     end
-elseif(iscell(Amat)) % cells are combined via cell2mat
-    Anew=cell2mat(Amat);
+elseif (iscell(Amat)) % cells are combined via cell2mat
+    Anew = cell2mat(Amat);
 end

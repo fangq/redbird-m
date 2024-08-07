@@ -1,4 +1,4 @@
-function dist=rbgetdistance(srcpos,detpos,badsrc,baddet,widesrc,widedet,cfg)
+function dist = rbgetdistance(srcpos, detpos, badsrc, baddet, widesrc, widedet, cfg)
 %
 % dist=rbgetdistance(srcpos,detpos)
 %
@@ -17,45 +17,45 @@ function dist=rbgetdistance(srcpos,detpos,badsrc,baddet,widesrc,widedet,cfg)
 %           the dist entries are 0s
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-srcnum=size(srcpos,1) + size(widesrc,1);
-detnum=size(detpos,1) + size(widedet,1);
+srcnum = size(srcpos, 1) + size(widesrc, 1);
+detnum = size(detpos, 1) + size(widedet, 1);
 
-if(size(srcpos,2)>4 || size(detpos,2)>4)
-    dist=zeros(srcnum,detnum);
-    return;
+if (size(srcpos, 2) > 4 || size(detpos, 2) > 4)
+    dist = zeros(srcnum, detnum);
+    return
 end
 
 wsrcpos = [];
 wdetpos = [];
 
 if ~isempty(widesrc)
-    wsrcpos = wfCOM(widesrc,cfg);
+    wsrcpos = wfCOM(widesrc, cfg);
     srcpos = [srcpos; wsrcpos];
 end
 if ~isempty(widedet)
-    wdetpos = wfCOM(widedet,cfg);
+    wdetpos = wfCOM(widedet, cfg);
     detpos = [detpos; wdetpos];
 end
 
-if(nargin<4)
-    baddet=[];
-    if(nargin<3)
-        badsrc=[];
+if (nargin < 4)
+    baddet = [];
+    if (nargin < 3)
+        badsrc = [];
     end
 end
 
-goodsrc=setdiff(1:srcnum,badsrc);
-gooddet=setdiff(1:detnum,baddet);
+goodsrc = setdiff(1:srcnum, badsrc);
+gooddet = setdiff(1:detnum, baddet);
 
-dd=repmat(srcpos(goodsrc,:),length(gooddet),1)-kron(detpos(gooddet,:),ones(length(goodsrc),1));
-dd=dd.*dd;
-dd=sqrt(sum(dd,2));
-dd=reshape(dd,length(goodsrc),length(gooddet));
+dd = repmat(srcpos(goodsrc, :), length(gooddet), 1) - kron(detpos(gooddet, :), ones(length(goodsrc), 1));
+dd = dd .* dd;
+dd = sqrt(sum(dd, 2));
+dd = reshape(dd, length(goodsrc), length(gooddet));
 
-dist=inf*ones(srcnum,detnum);
-dist(goodsrc,gooddet)=dd;
+dist = inf * ones(srcnum, detnum);
+dist(goodsrc, gooddet) = dd;

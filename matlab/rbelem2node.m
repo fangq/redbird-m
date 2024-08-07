@@ -1,4 +1,4 @@
-function nodeval=rbelem2node(elem,elemval,nodelen)
+function nodeval = rbelem2node(elem, elemval, nodelen)
 %
 % nodeval=rbelem2node(elem,elemval,nodelen)
 %
@@ -17,28 +17,28 @@ function nodeval=rbelem2node(elem,elemval,nodelen)
 %     nodeval: the interpolated values at each node
 %
 % license:
-%     GPL version 3, see LICENSE_GPLv3.txt files for details 
+%     GPL version 3, see LICENSE_GPLv3.txt files for details
 %
 % -- this function is part of Redbird-m toolbox
 %
 
-if(isstruct(elem))
-    nodelen=size(elem.node,1);
-    elem=elem.elem;
+if (isstruct(elem))
+    nodelen = size(elem.node, 1);
+    elem = elem.elem;
 end
 
-nelem=size(elem);
-nval=size(elemval);
+nelem = size(elem);
+nval = size(elemval);
 
-if(nval(2)==nelem(1))
-    nodeval=zeros(nval(1),nodelen);
-    for j=1:nelem(2)
-        nodeval(:,elem(:,j))=nodeval(:,elem(:,j))+elemval(:,elem(:,j));
+if (nval(2) == nelem(1))
+    nodeval = zeros(nval(1), nodelen);
+    for j = 1:nelem(2)
+        nodeval(:, elem(:, j)) = nodeval(:, elem(:, j)) + elemval(:, elem(:, j));
     end
 else
-    nodeval=zeros(nodelen,nval(1));
-    for j=1:nelem(2)
-        nodeval(elem(:,j),:)=nodeval(elem(:,j),:)+elemval(elem(:,j),:);
+    nodeval = zeros(nodelen, nval(1));
+    for j = 1:nelem(2)
+        nodeval(elem(:, j), :) = nodeval(elem(:, j), :) + elemval(elem(:, j), :);
     end
 end
-nodeval=nodeval*0.25;
+nodeval = nodeval * 0.25;
