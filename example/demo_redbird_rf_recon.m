@@ -19,11 +19,11 @@ clear cfg cfg0 recon;
 
 s0 = [70, 50, 20];
 
-[nobbx, fcbbx] = meshabox([40 0 0], [160, 120, 60], 30);
+[nobbx, fcbbx] = meshabox([40 0 0], [160, 120, 60], 10);
 [nosp, fcsp] = meshasphere(s0, 5, 1);
 [no, fc] = mergemesh(nobbx, fcbbx, nosp, fcsp);
 
-[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 40, 'tetgen', [41 1 1; s0]);
+[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 10, 'tetgen', [41 1 1; s0]);
 
 cfg0.seg = cfg0.elem(:, 5);
 cfg0.srcdir = [0 0 1];
@@ -60,13 +60,13 @@ detphi0 = rbrunforward(cfg0);
 % numerical error - so, set density to 10 gives the best result, need
 % to debug this further
 
-[node, face, elem] = meshabox([40 0 0], [160, 120, 60], 30);
+[node, face, elem] = meshabox([40 0 0], [160, 120, 60], 10);
 cfg = rbsetmesh(cfg, node, elem, cfg.prop, ones(size(node, 1), 1));
 
 sd = rbsdmap(cfg);
 
 % create coarse reconstruction mesh
-[recon.node, face, recon.elem] = meshabox([40 0 0], [160, 120, 60], 40);
+[recon.node, face, recon.elem] = meshabox([40 0 0], [160, 120, 60], 30);
 [recon.mapid, recon.mapweight] = tsearchn(recon.node, recon.elem, cfg.node);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +77,7 @@ sd = rbsdmap(cfg);
 recon.bulk = struct('mua', 0.003, 'musp', 0.8);
 
 % calling rbrunrecon is equivalent to calling the below for-loop
-newrecon = rbrun(cfg, recon, detphi0, sd, 'bulk');
+newrecon = rbrun(cfg, recon, detphi0, sd, 'mode', 'bulk', 'lambda', 1e-3);
 
 newrecon.prop;
 
@@ -92,13 +92,13 @@ recon.bulk = struct('mua', newrecon.prop(2, 1), 'musp', newrecon.prop(2, 2));
 recon.prop = [];
 
 % calling rbrunrecon is equivalent to calling the below for-loop
-[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'image');
+[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'mode', 'image', 'lambda', 1e-3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-plotmesh([newcfg.node, newcfg.prop(:, 1)], newcfg.elem, 'z=20', 'facecolor', 'interp', 'linestyle', 'none');
+plotmesh([newrecon.node, newrecon.prop(:, 1)], newrecon.elem, 'z=20', 'facecolor', 'interp', 'linestyle', 'none');
 hold on;
-plotmesh([newcfg.node, newcfg.prop(:, 1)], newcfg.elem, 'x=70', 'facecolor', 'interp', 'linestyle', 'none');
+plotmesh([newrecon.node, newrecon.prop(:, 1)], newrecon.elem, 'x=70', 'facecolor', 'interp', 'linestyle', 'none');
 view(3);

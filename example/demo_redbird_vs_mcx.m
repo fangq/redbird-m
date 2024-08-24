@@ -80,7 +80,7 @@ if (exist('mcxlab', 'file'))
     xcfg.nphoton = 1e8;
     xcfg.vol = uint8(ones(60, 60, 30));
     xcfg.srcdir = [0 0 1 0];
-    xcfg.gpuid = 2;
+    %     xcfg.gpuid = 2;
     xcfg.autopilot = 1;
     xcfg.prop = cfg.prop;
     xcfg.tstart = 0;
@@ -88,7 +88,7 @@ if (exist('mcxlab', 'file'))
     xcfg.tstep = 5e-9;
     xcfg.seed = 99999;
     xcfg.issrcfrom0 = 0;
-    xcfg.isreflect = 0;
+    xcfg.isreflect = 1;
 
     % a uniform planar source outside the volume
     xcfg.srctype = 'pencil';

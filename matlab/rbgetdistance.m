@@ -22,6 +22,12 @@ function dist = rbgetdistance(srcpos, detpos, badsrc, baddet, widesrc, widedet, 
 % -- this function is part of Redbird-m toolbox
 %
 
+if (nargin < 6)
+    widedet = [];
+    if (nargin < 5)
+        widesrc = [];
+    end
+end
 srcnum = size(srcpos, 1) + size(widesrc, 1);
 detnum = size(detpos, 1) + size(widedet, 1);
 
@@ -34,12 +40,10 @@ wsrcpos = [];
 wdetpos = [];
 
 if ~isempty(widesrc)
-    wsrcpos = wfCOM(widesrc, cfg);
-    srcpos = [srcpos; wsrcpos];
+    srcpos = [srcpos; nan(size(widesrc, 1), 3)];
 end
 if ~isempty(widedet)
-    wdetpos = wfCOM(widedet, cfg);
-    detpos = [detpos; wdetpos];
+    detpos = [detpos; nan(size(widedet, 1), 3)];
 end
 
 if (nargin < 4)
@@ -56,6 +60,7 @@ dd = repmat(srcpos(goodsrc, :), length(gooddet), 1) - kron(detpos(gooddet, :), o
 dd = dd .* dd;
 dd = sqrt(sum(dd, 2));
 dd = reshape(dd, length(goodsrc), length(gooddet));
+dd(isnan(dd)) = 0;
 
 dist = inf * ones(srcnum, detnum);
 dist(goodsrc, gooddet) = dd;

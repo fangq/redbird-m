@@ -26,7 +26,6 @@ rs = 5;            % radius of the sphere (in mm)
 
 [cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 40, 'tetgen', [41 1 1; s0]);
 
-% [cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn = size(cfg0.node, 1);
 cfg0.seg = cfg0.elem(:, 5);
 cfg0.srcdir = [0 0 1];
@@ -57,7 +56,7 @@ cfg0 = rbmeshprep(cfg0);
 %%   run forward for all wavelengths
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-detphi0 = rbrunrecon(0, cfg0);
+detphi0 = rbrun(cfg0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   run reconstruction using the forward data, setup dual-mesh
@@ -68,7 +67,7 @@ clear face;
 
 cfg = rbsetmesh(cfg, node, elem, cfg.prop, ones(size(node, 1), 1));
 
-[recon.node, face, recon.elem] = meshabox([40 0 0], [160, 120, 60], 40);
+[recon.node, face, recon.elem] = meshabox([40 0 0], [160, 120, 60], 25);
 clear face;
 [recon.mapid, recon.mapweight] = tsearchn(recon.node, recon.elem, cfg.node);
 
@@ -80,7 +79,7 @@ sd = rbsdmap(cfg);
 recon.bulk = struct('hbo', 8, 'hbr', 2); % Required: this gives initial guesses
 recon.param = struct('hbo', 8, 'hbr', 2); % Required: this defines chromophores
 recon.prop = containers.Map({'690', '830'}, {[], []}); % Required: for wavelengths
-[newrecon, resid] = rbrun(cfg, recon, detphi0, sd, 'bulk');
+[newrecon, resid] = rbrun(cfg, recon, detphi0, sd, 'mode', 'bulk', 'lambda', 1e-3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   take the fitted bulk and set it for full image recon
@@ -88,7 +87,7 @@ recon.prop = containers.Map({'690', '830'}, {[], []}); % Required: for wavelengt
 
 recon.bulk.hbo = newrecon.param.hbo;
 recon.bulk.hbr = newrecon.param.hbr;
-[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'image');
+[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'mode', 'image', 'lambda', 1e-3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

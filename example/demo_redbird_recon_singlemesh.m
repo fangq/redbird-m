@@ -24,7 +24,7 @@ s0 = [70, 50, 20];
 [nosp, fcsp] = meshasphere(s0, 5, 1);
 [no, fc] = mergemesh(nobbx, fcbbx, nosp, fcsp);
 
-[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 40, 'tetgen', [41 1 1; s0]);
+[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 20, 'tetgen', [41 1 1; s0]);
 nn = size(cfg0.node, 1);
 cfg0.seg = cfg0.elem(:, 5);
 cfg0.srcdir = [0 0 1];
@@ -61,7 +61,7 @@ detphi0 = rbrun(cfg0);
 % numerical error - so, set density to 10 gives the best result, need
 % to debug this further
 
-[node, face, elem] = meshabox([40 0 0], [160, 120, 60], 30);
+[node, face, elem] = meshabox([40 0 0], [160, 120, 60], 10);
 cfg = rbsetmesh(cfg, node, elem, cfg.prop, ones(size(node, 1), 1));
 
 sd = rbsdmap(cfg);
@@ -74,7 +74,7 @@ sd = rbsdmap(cfg);
 recon.bulk = struct('mua', 0.003, 'musp', 0.6);
 
 % run stream-lined image reconstruction
-newrecon = rbrun(cfg, recon, detphi0, sd, 'bulk');
+newrecon = rbrun(cfg, recon, detphi0, sd, 'mode', 'bulk', 'lambda', 1e-3);
 
 newrecon.prop;
 
@@ -86,7 +86,7 @@ newrecon.prop;
 recon.bulk = struct('mua', newrecon.prop(2, 1), 'musp', newrecon.prop(2, 2));
 
 % run stream-lined image reconstruction
-[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'image');
+[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'mode', 'image', 'lambda', 1e-3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

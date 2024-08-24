@@ -89,7 +89,7 @@ if (maxiter == 0 && nargin < 3)
     return
 end
 
-resid = zeros(1, maxiter);
+resid = zeros(maxiter, 1);
 updates = repmat(struct, 1, maxiter);
 
 opt = varargin2struct(varargin{:});

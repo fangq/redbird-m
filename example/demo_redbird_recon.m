@@ -80,7 +80,7 @@ cfg.prop = cfg.prop(ones(size(cfg.node, 1), 1) + 1, :);
 cfg = rmfield(cfg, 'seg');
 
 % run stream-lined image reconstruction
-[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'mex', 0);
+[newrecon, resid, newcfg] = rbrun(cfg, recon, detphi0, sd, 'mex', 0, 'lambda', 1e-4);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Plotting results

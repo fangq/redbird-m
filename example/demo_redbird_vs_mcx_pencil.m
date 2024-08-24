@@ -26,6 +26,8 @@ cfg.seg = ones(size(cfg.elem, 1), 1);
 
 cfg.srcpos = [29.5 29.5 0];
 cfg.srcdir = [0 0 1];
+cfg.detpos = [29.5 29.5 0];
+cfg.detdir = [0 0 -1];
 
 cfg.prop = [0 0 1 1; 0.005 1 0 1.37];
 cfg.omega = 0;
@@ -79,7 +81,7 @@ end
 
 cl = get(subplot(211), 'clim');
 subplot(212);
-plotmesh([cfg.node full(log10(phi(:, 1)))], cfg.elem, 'x>30');
+plotmesh([cfg.node full(log10(abs(phi(:, 1))))], cfg.elem, 'x>30');
 view([-1 0 0]);
 shading interp;
 set(gca, 'clim', cl);
@@ -96,7 +98,7 @@ clines = 0:-0.5:-5;
 vphi = griddata(cutpos(:, 2), cutpos(:, 3), cutvalue, xi + 0.5, yi);
 
 figure;
-[c, h] = contour(xi, yi, log10(vphi), clines, 'r-', 'LineWidth', 2);
+[c, h] = contour(xi, yi, log10(abs(vphi)), clines, 'r-', 'LineWidth', 2);
 
 cwf = squeeze(fcw(30, :, :))';
 hold on;

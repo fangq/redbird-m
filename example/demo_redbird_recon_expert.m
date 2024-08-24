@@ -24,7 +24,7 @@ s0 = [70, 50, 20];
 [nosp, fcsp] = meshasphere(s0, 5, 1);
 [no, fc] = mergemesh(nobbx, fcbbx, nosp, fcsp);
 
-[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 40, 'tetgen', [41 1 1; s0]);
+[cfg0.node, cfg0.elem] = s2m(no, fc(:, 1:3), 1, 10, 'tetgen', [41 1 1; s0]);
 
 % [cfg.node, cfg.face, cfg.elem]=meshabox([0 0 0],[60 60 30],3);
 nn = size(cfg0.node, 1);
@@ -95,9 +95,12 @@ for i = 1:maxiter
     % Jmua=rbjacmuafast(sd, phi, cfg.nvol); % use approximated nodal-adjoint for mua
     % Jmua=rbjac(sd, phi, cfg.deldotdel, cfg.elem, cfg.evol); % or use native code to build nodal-based Jacobian for mua
     Jmua_recon = meshremap(Jmua.', recon.mapid, recon.mapweight, recon.elem, size(recon.node, 1)).';
-    [Jmua_recon, misfit] = rbcreateinv(Jmua_recon, detphi0(:), detphi(:), 'logphase');
+    [Jmua_recon, misfit] = rbcreateinv(Jmua_recon, detphi0(:), detphi(:), 'real');
     resid(i) = sum(abs(misfit));         % store the residual
-    dmu_recon = rbreginv(Jmua_recon, misfit, 0.05);  % solve the update on the recon mesh
+    blockscale = 1 / sqrt(sum(sum(Jmua_recon.^2)));
+    Jmua_recon = Jmua_recon .* blockscale;    % Normalization of J matrix
+    dmu_recon = rbreginv(Jmua_recon, misfit, 1e-3);  % solve the update on the recon mesh
+    dmu_recon = dmu_recon .* blockscale;      % De-normalization of property updates
     recon.prop(:, 1) = recon.prop(:, 1) + dmu_recon(:);          % update forward mesh mua vector
     cfg.prop = meshinterp(recon.prop, recon.mapid, recon.mapweight, recon.elem, cfg.prop); % interpolate the update to the forward mesh
     fprintf(1, 'iter [%4d]: residual=%e, relres=%e (time=%f s)\n', i, resid(i), resid(i) / resid(1), toc);

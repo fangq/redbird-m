@@ -50,7 +50,7 @@ save config.mat;
 %%   Build LHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Amat, deldotdel] = rbfemlhs(cfg);
+[Amat, deldotdel] = rbfemlhs(cfg, cfg.deldotdel);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%   Build RHS
