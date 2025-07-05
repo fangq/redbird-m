@@ -216,8 +216,4 @@ end
 
 maxiter = jsonopt('maxiter', 10, opt);
 
-if strcmp(method, 'jmask')
-    [varargout{1:nargout}] = rbrunrecon_jmask(maxiter, cfg, recon, detphi0, sd, opt);
-else
-    [varargout{1:nargout}] = rbrunrecon(maxiter, cfg, recon, detphi0, sd, opt);
-end
+[varargout{1:nargout}] = rbrunrecon(maxiter, cfg, recon, detphi0, sd, opt);

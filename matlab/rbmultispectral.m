@@ -65,7 +65,7 @@ if (isa(Jmua, 'containers.Map') || (isstruct(Jmua) && isa(Jmua(1).J, 'containers
         for i = 1:length(allkeys)
             if (isstruct(newJ) && length(newJ) > 1)
                 newJ(1).(allkeys{i}) = Jscat(1).(allkeys{i});
-                newJ(2).(allkeys{i}) = Jscat(2).(allkeys{i}); % zeros(size(newJ(2).(chromophores{1})));
+                newJ(2).(allkeys{i}) = Jscat(2).(allkeys{i});
             else
                 newJ.(allkeys{i}) = Jscat.(allkeys{i});
             end
@@ -150,16 +150,3 @@ else
         newphi = newphi(rfcw).detphi;
     end
 end
-
-%     for i=1:length(wv)
-%          if(~isa(sd,'containers.Map'))
-%             [~,sdwv] = intersect(sdAll,sd,'rows');
-%         else
-%             sdtemp = sd(wv{i});
-%             [~,sdwv] = intersect(sdAll,sdtemp,'rows');
-%             clear sdtemp
-%         end
-%         newphitemp = reshape(phi(wv{i}),[],1);
-%         newphi=[newphi; newphitemp(sdwv)];
-%         clear newphitemp
-%     end

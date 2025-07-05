@@ -2,7 +2,7 @@
 % Redbird - A Diffusion Solver for Diffuse Optical Tomography,
 %      Copyright Qianqina Fang, 2018
 %
-% In this example, we show the most basic usage of Redbird.
+% In this example, we show the basic utility of Redbird.
 %
 % This file is part of Redbird URL:http://mcx.sf.net/mmc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

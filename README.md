@@ -91,19 +91,18 @@ The main driver function, `rbrunforward()`, takes a configuration structure `cfg
 * `node`, `face`, `elem`: mesh node coordinates, surface triangles, and tetrahedra
 * `seg`: tissue labels per element (or per node if same length as `node`)
 * `prop`: single-wavelength optical properties (label-wise), same format as MCX/MMC
-* `param`: multi-spectral properties (e.g., chromophore concentrations), used to compute `prop` if defined
+    * or `param`: multi-spectral properties (e.g., chromophore concentrations), used to compute `prop` if defined
 * `srcpos`, `srcdir`: source positions and direction vectors
 * `detpos`, `detdir`: detector positions and direction vectors
-* `omega`: modulation frequency in Hz for frequency-domain DOI/DOT
+* `omega`: modulation angular frequency in the unit of rad for frequency-domain DOI/DOT
 
-#### Inverse Solver Input (`rbrunrecon()`)
-
-Besides the forward `cfg`, the inverse solver requires a `recon` struct:
+Besides the forward `cfg`, the inverse solver `rbrunrecon()` requires a `recon` struct:
 
 * `node`, `elem`: optional reconstruction mesh (typically coarser); enables **dual-mesh**
 * `lambda`: Tikhonov regularization parameter
 * `bulk`: initial guesses (single-wavelength: `mua`, `musp`, etc. or multi-spectral: `hbo`, `hbr`, etc.)
-* `prop` or `param`: initial guess of nodal property distributions
+    * or `prop`: initial distribution of single-wavelength optical properties, with length matching that of `cfg.node` or `cfg.elem`
+    * or `param`: initial distribution of multi-spectral optical properties, with length matching that of `cfg.node` or `cfg.elem`
 
 ### Streamlined forward and inverse solvers
 

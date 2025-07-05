@@ -54,9 +54,9 @@ gooddetval = zeros(srcnum, detnum);
 
 if (nargin == 3)
     %     detval=optodeloc(:,srcnum+1:srcnum+detnum)'*phi(:,1:srcnum);
-    [~, goodsrc] = find(sum(optodeloc(:, 1:srcnum + wfsrcnum)));
+    [tf, goodsrc] = find(sum(optodeloc(:, 1:srcnum + wfsrcnum)));
     goodsrc = unique(goodsrc);
-    [~, goodidx] = find(sum(optodeloc(:, srcnum + wfsrcnum + 1:srcnum + wfsrcnum + detnum + wfdetnum)));
+    [tf, goodidx] = find(sum(optodeloc(:, srcnum + wfsrcnum + 1:srcnum + wfsrcnum + detnum + wfdetnum)));
     goodidx = unique(goodidx);
     detval = optodeloc(:, [1:detnum + wfdetnum] + srcnum + wfsrcnum)' * phi(:, [1:srcnum + wfsrcnum]);
     %     detval=optodeloc(:,goodidx+srcnum+wfsrcnum)'*phi(:,goodsrc);

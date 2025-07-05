@@ -155,7 +155,7 @@ if (isfield(cfg, 'prop') && isa(cfg.prop, 'containers.Map'))
         if (~isinf(maxdist))
             [s2, d2] = meshgrid(1:srcnum, (1:detnum) + srcnum + widesrcnum);
             sd2 = [s2(:) d2(:)];
-            [~, idx] = ismember(sdwv, sd2, 'rows');
+            [tf, idx] = ismember(sdwv, sd2, 'rows');
             idx = idx(find(idx));
             sdwv(:, 3) = 1;
             sdwv(:, 3) = (reshape(dist(unique(sdwv(:, 2)) - (srcnum + widesrcnum), unique(sdwv(:, 1))), [], 1) < maxdist);
