@@ -1,81 +1,81 @@
 function [recon, resid, cfg, updates, Jmua, detphi0iter, phi] = rbrunrecon(maxiter, cfg, recon, detphi0, sd, varargin)
-%
-% [newrecon, resid, newcfg]=rbrunrecon(maxiter,cfg,recon,detphi0,sd)
-%   or
-% [newrecon, resid, newcfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,'param1',value1,'param2',value2,...)
-%
-% Perform a single iteration of a Gauss-Newton reconstruction
-%
-% author: Qianqian Fang (q.fang <at> neu.edu)
-%
-% input:
-%     maxiter: number of iterations
-%     cfg: simulation settings stored as a redbird data structure
-%     recon: reconstruction data structure, recon may have
-%         node: reconstruction mesh node list
-%         elem: reconstruction mesh elem list
-%         bulk: a struct storing the initial guesses of the param
-%              (wavelength-independent optical properties) and prop
-%              (wavelength-dependent optical properties), accepted
-%              subfields include
-%
-%              mua/musp/dcoeff/n/g: used to initialize recon/cfg.prop
-%              hbo/hbr/scatamp/scatpow: used to initialize recon/cfg.param
-%         param: wavelength-independent parameter on the recon mesh
-%         prop: wavelength-dependent optical properties on the recon mesh
-%         lambda: Tikhonov regularization parameter
-%         mapid: the list of element indices of the reconstruction mesh where each forward mesh
-%           node is enclosed
-%         mapweight: the barycentric coordinates of the forward mesh nodes inside the
-%           reconstruction mesh elements
-%     detphi0: measurement data vector or matrix
-%     sd (optional): source detector mapping table, if not provided, call
-%         rbsdmap(cfg) to compute
-%     param/value: acceptable optional parameters include
-%         'lambda': Tikhonov regularization parameter (0.05), overwrite recon.lambda
-%         'report': 1 (default) to print residual and runtimes; 0: silent
-%         'tol': convergence tolerance, if relative residual is less than
-%                this value, stop, default is 0, which runs maxiter
-%                iterations
-%         'reform': 'real': transform A*x=b so that A/x/b are all real
-%                   'complex': do not transform A*x=b
-%                   'logphase': transform Ax=b to [Alogamp,Aphase]*x=[log10(b),angle(b)]
-%         'mex': 0 (default) use matlab native code rbjac to build Jacobian
-%                1: use mex-file rbfemmatrix to rapidly compute Jacobian
-%                  on forward (dense) mesh then interpolate to coarse mesh
-%                2: call mex rbfemmatrix to build Jacobian directly on the
-%                   recon mesh (coarse).
-%                setting mex to 2 gives the fastest speed (2x faster than 0)
-%         'prior': apply structure-prior-guided reconstruction,
-%                supported methods include
-%
-%                'laplace': this is also known as the "soft-prior", where
-%                    the L matrix used in (J'J+lambda*L'L)dx=dy is a
-%                    Laplace smoothing matrix where l(i,j)=1 if i=j or
-%                    -1/N_seg if i~=j, where N_seg is the total number of
-%                    nodes/elems that are within each label or region;
-%                    recon.seg must be a vector of integer labels
-%                'comp': use compositional-priors, recon.seg must be a
-%                    N-by-Nc matrix where N is the number of nodes, Nc is
-%                    the number of tissue compositions, each element in the
-%                    matrix must be a number between 0-1, denoting the
-%                    volume fraction of each composition; the row-sum must
-%                    be 1 for each node.
-%
-% output:
-%     recon: the updated recon structure, containing recon mesh and
-%          reconstructed values in recon.prop or recon.param
-%     resid: the residual betweet the model and the measurement data for
-%          each iteration
-%     cfg: the updated cfg structure, containing forward mesh and
-%          reconstructed values in cfg.prop or cfg.param
-%     updates: a struct array, where the i-th element stores the update
-%          vectors for each unknown block
-%     Jmua: Jacobian in a struct form, each element is the Jacobian of an
-%          unknown block
-%     detphi: the final model prediction that best fits the data detphi0
-%     phi: the final forward solutions resulting from the estimation
-%
+
+[newrecon, resid, newcfg]=rbrunrecon(maxiter,cfg,recon,detphi0,sd)
+  or
+[newrecon, resid, newcfg, updates, Jmua, detphi, phi]=rbrunrecon(maxiter,cfg,recon,detphi0,sd,'param1',value1,'param2',value2,...)
+
+Perform a single iteration of a Gauss-Newton reconstruction
+
+author: Qianqian Fang (q.fang <at> neu.edu)
+
+input:
+    maxiter: number of iterations
+    cfg: simulation settings stored as a redbird data structure
+    recon: reconstruction data structure, recon may have
+        node: reconstruction mesh node list
+        elem: reconstruction mesh elem list
+        bulk: a struct storing the initial guesses of the param
+             (wavelength-independent optical properties) and prop
+             (wavelength-dependent optical properties), accepted
+             subfields include
+
+             mua/musp/dcoeff/n/g: used to initialize recon/cfg.prop
+             hbo/hbr/scatamp/scatpow: used to initialize recon/cfg.param
+        param: wavelength-independent parameter on the recon mesh
+        prop: wavelength-dependent optical properties on the recon mesh
+        lambda: Tikhonov regularization parameter
+        mapid: the list of element indices of the reconstruction mesh where each forward mesh
+          node is enclosed
+        mapweight: the barycentric coordinates of the forward mesh nodes inside the
+          reconstruction mesh elements
+    detphi0: measurement data vector or matrix
+    sd (optional): source detector mapping table, if not provided, call
+        rbsdmap(cfg) to compute
+    param/value: acceptable optional parameters include
+        'lambda': Tikhonov regularization parameter (0.05), overwrite recon.lambda
+        'report': 1 (default) to print residual and runtimes; 0: silent
+        'tol': convergence tolerance, if relative residual is less than
+               this value, stop, default is 0, which runs maxiter
+               iterations
+        'reform': 'real': transform A*x=b so that A/x/b are all real
+                  'complex': do not transform A*x=b
+                  'logphase': transform Ax=b to [Alogamp,Aphase]*x=[log10(b),angle(b)]
+        'mex': 0 (default) use matlab native code rbjac to build Jacobian
+               1: use mex-file rbfemmatrix to rapidly compute Jacobian
+                 on forward (dense) mesh then interpolate to coarse mesh
+               2: call mex rbfemmatrix to build Jacobian directly on the
+                  recon mesh (coarse).
+               setting mex to 2 gives the fastest speed (2x faster than 0)
+        'prior': apply structure-prior-guided reconstruction,
+               supported methods include
+
+               'laplace': this is also known as the "soft-prior", where
+                   the L matrix used in (J'J+lambda*L'L)dx=dy is a
+                   Laplace smoothing matrix where l(i,j)=1 if i=j or
+                   -1/N_seg if i~=j, where N_seg is the total number of
+                   nodes/elems that are within each label or region;
+                   recon.seg must be a vector of integer labels
+               'comp': use compositional-priors, recon.seg must be a
+                   N-by-Nc matrix where N is the number of nodes, Nc is
+                   the number of tissue compositions, each element in the
+                   matrix must be a number between 0-1, denoting the
+                   volume fraction of each composition; the row-sum must
+                   be 1 for each node.
+
+output:
+    recon: the updated recon structure, containing recon mesh and
+         reconstructed values in recon.prop or recon.param
+    resid: the residual betweet the model and the measurement data for
+         each iteration
+    cfg: the updated cfg structure, containing forward mesh and
+         reconstructed values in cfg.prop or cfg.param
+    updates: a struct array, where the i-th element stores the update
+         vectors for each unknown block
+    Jmua: Jacobian in a struct form, each element is the Jacobian of an
+         unknown block
+    detphi: the final model prediction that best fits the data detphi0
+    phi: the final forward solutions resulting from the estimation
+
 %
 % license:
 %     GPL version 3, see LICENSE_GPLv3.txt files for details

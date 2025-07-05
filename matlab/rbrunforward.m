@@ -31,7 +31,7 @@ function [detval, phi, Amat, rhs, sflag] = rbrunforward(cfg, varargin)
 %
 
 opt = varargin2struct(varargin{:});
-rfcw = jsonopt('rfcw', [1], opt);
+rfcw = jsonopt('rfcw', 1, opt);
 
 if (~isfield(cfg, 'deldotdel'))
     cfg.deldotdel = rbdeldotdel(cfg);
@@ -71,7 +71,7 @@ for waveid = wavelengths
         %%   Build RHS
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        [rhs, loc, bary] = rbfemrhs(cfg, sd, wv, md);
+        rhs = rbfemrhs(cfg, sd, wv, md);
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%   Build LHS
