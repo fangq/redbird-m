@@ -7,6 +7,23 @@
 * **Version**: 0.5.0 (Cardinal)
 * **GitHub**: [https://github.com/fangq/redbird](https://github.com/fangq/redbird)
 
+---
+
+
+## Table of Contents
+- [Introduction](#introduction)
+- [How to Install](#how-to-install)
+- [Workflow Overview](#workflow-overview)
+- [How to Use](#how-to-use)
+  - [Input Data Structure](#input-data-structure)
+  - [Streamlined Forward and Inverse Solvers](#streamlined-forward-and-inverse-solvers)
+    - [rbrun](#rbrun)
+    - [rbrunforward](#rbrunforward)
+    - [rbrunrecon](#rbrunrecon)
+- [How to Cite](#how-to-cite)
+
+---------
+
 ## Introduction
 
 **Redbird** is a compact, portable, and feature-rich diffuse optical imaging (DOI) and diffuse optical tomography (DOT) toolbox for MATLAB and GNU Octave. It provides a fast, experimentally-validated forward solver for the diffusion equation using the finite-element (FE) method, along with advanced non-linear image reconstruction algorithms.
@@ -201,6 +218,7 @@ output:
     detphi: the final model prediction that best fits the data detphi0
     phi: the final forward solutions resulting from the estimation
 ```
+---
 
 ## How to cite
 
