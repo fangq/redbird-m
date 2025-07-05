@@ -4,7 +4,7 @@
 
 * **Copyright**: (C) Qianqian Fang (2005–2025) \<q.fang at neu.edu>, Edward Xu (2024) \<xu.ed at northeastern.edu>
 * **License**: GNU Public License V3 or later
-* **Version**: 0.5.0 (Cardinal)
+* **Version**: 0.5.0 (Northern Cardinal)
 * **GitHub**: [https://github.com/fangq/redbird](https://github.com/fangq/redbird)
 * **Acknowledgement**: This project is supported by the US National Institute of Health (NIH)
   grant [R01-CA204443](https://reporter.nih.gov/project-details/10982160)
