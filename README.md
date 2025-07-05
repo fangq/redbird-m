@@ -6,6 +6,8 @@
 * **License**: GNU Public License V3 or later
 * **Version**: 0.5.0 (Cardinal)
 * **GitHub**: [https://github.com/fangq/redbird](https://github.com/fangq/redbird)
+* **Acknowledgement**: This project is supported by the US National Institute of Health (NIH)
+  grant [R01-CA204443](https://reporter.nih.gov/project-details/10982160)
 
 ---
 
