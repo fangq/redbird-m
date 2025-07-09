@@ -262,12 +262,13 @@ The multi-spectral reconstruction was initially published in
 - Fang Q, Meaney PM, Paulsen KD, "Microwave image reconstruction of tissue property dispersion 
   characteristics utilizing multiple frequency information", IEEE Transactions on Microwave 
   Theory and Techniques, vol. 52, No. 8, pp. 1866-1875, Aug. 2004.
-which had inspired and subsequently applied to DOT imaging by Shuba Srinivasan in the same group 
+
+which had inspired and subsequently applied to DOT imaging by Shuba Srinivasan, a PhD student working in the same research team
 - S. Srinivasan, B. W. Pogue, S. Jiang, H. Dehghani, and K. D. Paulsen, "Spectrally constrained 
   chromophore and scattering NIR tomography provides quantitative and robust reconstruction," Appl. Opt. 44, 1858–69 (2005).
 
 Over the last two decades, redbird has been the underlying data analysis 
-tool behind many DOT related publications, including
+tool behind a list of DOT related publications from the author's lab, including
 
 - Fang Q, Selb J, Carp SA, Kopans DB, Moore RH, Brooks DH, Miller EL, Boas DA, "Combined optical 
   and tomosynthesis breast imaging," Radiology, (cover article) vol. 258, No. 1, pp. 89-97, 2011.
